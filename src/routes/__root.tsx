@@ -8,9 +8,77 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { warmPages } from "@/lib/lazyPages";
+
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { TenantProvider } from "@/contexts/TenantContext";
+import { ConnectivityProvider } from "@/contexts/ConnectivityContext";
+import { TenantGate } from "@/components/TenantGate";
+import { StatusBarColor } from "@/components/StatusBarColor";
+import { registerTenantChangeListener } from '@/integrations/supabase/client';
+import { scheduleNativeSplashFallback } from '@/lib/nativeSplash';
+import { initNativeBars } from '@/lib/nativeStatusBar';
+
+import { useOfflineCache } from "@/hooks/useOfflineCache";
+import { useGlobalImagePreloader } from "@/hooks/useGlobalImagePreloader";
+import { useEdgeToEdge } from "@/hooks/useEdgeToEdge";
+import { useKeyboardInsets } from "@/hooks/useKeyboardInsets";
+import { useAndroidBackButton } from "@/hooks/useAndroidBackButton";
+import { useAutoOnlineRedirect } from "@/hooks/useAutoOnlineRedirect";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+
+const CHUNK_RELOAD_KEY = "iftin:chunk-reload";
+const CHUNK_ERROR_PATTERN =
+  /Failed to fetch dynamically imported module|Importing a module script failed|Loading chunk|Failed to fetch/i;
+
+function isChunkLoadError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  return CHUNK_ERROR_PATTERN.test(message);
+}
+
+function recoverFromStaleChunk() {
+  try {
+    const previousAttempt = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? 0);
+    if (Date.now() - previousAttempt < 30_000) return false;
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+    window.location.reload();
+    return true;
+  } catch {
+    window.location.reload();
+    return true;
+  }
+}
+
+const chunkRecoveryScript = `
+  (() => {
+    const key = ${JSON.stringify(CHUNK_RELOAD_KEY)};
+    window.addEventListener('vite:preloadError', (event) => {
+      event.preventDefault();
+      try {
+        const previousAttempt = Number(sessionStorage.getItem(key) || 0);
+        if (Date.now() - previousAttempt < 30000) return;
+        sessionStorage.setItem(key, String(Date.now()));
+      } catch {}
+      window.location.reload();
+    });
+  })();
+`;
 
 function NotFoundComponent() {
   return (
@@ -39,6 +107,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    if (isChunkLoadError(error)) recoverFromStaleChunk();
   }, [error]);
 
   return (
@@ -77,21 +146,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Iftin Agents — Buy Mobile Data & Airtime in Somalia" },
+      { name: "description", content: "Buy mobile data bundles and airtime instantly from Somali networks with fast, secure mobile-money payments." },
+      { name: "author", content: "Iftin Agents" },
+      { property: "og:title", content: "Iftin Agents — Buy Mobile Data & Airtime in Somalia" },
+      { property: "og:description", content: "Buy mobile data bundles and airtime instantly from Somali networks with fast, secure mobile-money payments." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+
+      { name: "twitter:title", content: "Iftin Agents — Buy Mobile Data & Airtime in Somalia" },
+      { name: "twitter:description", content: "Buy mobile data bundles and airtime instantly from Somali networks with fast, secure mobile-money payments." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1687266c-6eb1-4513-bf02-edb8a7c0f98a/id-preview-accb2e9d--687e4eda-5f5d-4e1b-8e82-ab2c0c1293a5.lovable.app-1785847005734.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1687266c-6eb1-4513-bf02-edb8a7c0f98a/id-preview-accb2e9d--687e4eda-5f5d-4e1b-8e82-ab2c0c1293a5.lovable.app-1785847005734.png" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.png", type: "image/png" },
     ],
   }),
   shellComponent: RootShell,
@@ -105,6 +178,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: chunkRecoveryScript }} />
       </head>
       <body>
         {children}
@@ -114,13 +188,81 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AppContent() {
+  useOfflineCache();
+  useGlobalImagePreloader();
+  useEdgeToEdge();
+  useKeyboardInsets();
+  useAutoOnlineRedirect();
+  const { showExitDialog, handleExitApp, handleCancelExit } = useAndroidBackButton();
+
+  // Safety net: never leave the user stuck behind the native splash screen.
+  useEffect(() => {
+    scheduleNativeSplashFallback();
+  }, []);
+
+  // Lock the native status/navigation bars to the build color once, and keep
+  // them there across background/foreground switches.
+  useEffect(() => initNativeBars(), []);
+
+
+  return (
+    <>
+      <StatusBarColor />
+      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <Outlet />
+
+      <AlertDialog open={showExitDialog} onOpenChange={handleCancelExit}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ka bax App-ka?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ma hubtaa inaad rabto inaad ka baxdo Najax Data app-ka?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelExit}>Maya</AlertDialogCancel>
+            <AlertDialogAction onClick={handleExitApp}>Haa, Ka bax</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  // Bogagga kale ayaa la soo dejiyaa marka app-ku nasanayo, si taabashadu
+  // u noqoto mid isla markiiba furta.
+  useEffect(() => {
+    warmPages();
+  }, []);
+
+  useEffect(() => {
+    return registerTenantChangeListener((prev, next) => {
+      if (prev !== next) queryClient.clear();
+    });
+  }, [queryClient]);
+
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <ConnectivityProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <TenantProvider>
+                <TenantGate>
+                  <AppContent />
+                </TenantGate>
+              </TenantProvider>
+            </TooltipProvider>
+          </LanguageProvider>
+        </ThemeProvider>
+      </ConnectivityProvider>
     </QueryClientProvider>
   );
 }
+

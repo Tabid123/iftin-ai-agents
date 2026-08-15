@@ -1,0 +1,28 @@
+{
+  "name": "Iftin Agents - Noqo Wakiilka Shirkadaha Internet-ka",
+  "short_name": "Iftin Agents",
+  "description": "Platform-ka wakiilada internet-ka ee Soomaaliya.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1E3A8A",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/__l5e/assets-v1/d96e2999-538c-4315-b4d9-6361bcb74289/iftin-agents-splash.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/__l5e/assets-v1/d96e2999-538c-4315-b4d9-6361bcb74289/iftin-agents-splash.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["business", "utilities"],
+  "lang": "so",
+  "dir": "ltr"
+}

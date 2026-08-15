@@ -1,0 +1,198 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from "@/lib/router-compat"
+import { supabase } from '@/integrations/supabase/client'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { toast } from '@/hooks/use-toast'
+import { Loader2 } from 'lucide-react'
+
+export default function ResellerNewPage() {
+  const navigate = useNavigate()
+  const [plans, setPlans] = useState<any[]>([])
+  const [loading, setLoading] = useState(false)
+  const [form, setForm] = useState({
+    name: '', slug: '', owner_email: '', owner_password: '',
+    plan_id: '', primary_color: '276 100% 20%', period_days: 30,
+    delivery_mode: 'android_device',
+    iftin_api_key: '',
+    iftin_callback_secret: '',
+
+  })
+
+  useEffect(() => {
+    supabase.from('subscription_plans').select('id, name, price_monthly')
+      .eq('is_active', true).then(({ data }) => {
+        const list = data ?? []
+        setPlans(list)
+        if (list[0]) setForm(f => ({ ...f, plan_id: (list[0] as any).id }))
+      })
+  }, [])
+
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault(); setLoading(true)
+    try {
+      // Slug waa subdomain kaliya (tusaale "marwan"), ma aha domain buuxa
+      const slug = form.slug.toLowerCase().trim().split('.')[0].replace(/[^a-z0-9-]/g, '')
+      if (slug.length < 2) throw new Error('Slug waa inuu noqdaa ugu yaraan 2 xaraf (tusaale: marwan)')
+
+      const { data, error } = await supabase.functions.invoke('platform-create-tenant', {
+        body: { ...form, slug },
+      })
+      if (error) {
+        // Edge function non-2xx: soo saar farriinta dhabta ah
+        let msg = error.message
+        try {
+          const res = (error as any)?.context
+          if (res && typeof res.json === 'function') {
+            const j = await res.json()
+            msg = j?.error ?? msg
+          }
+        } catch { /* ignore */ }
+        throw new Error(msg)
+      }
+      if ((data as any)?.error) throw new Error((data as any).error)
+      const tenantId = (data as any).tenant.id
+
+
+      // api_partner: key-ga Iftin isla markiiba waa la keydiyaa (server-side kaliya)
+      if (form.delivery_mode === 'api_partner' && form.iftin_api_key.trim()) {
+        const { data: cd, error: ce } = await supabase.functions.invoke('iftin-credential', {
+          body: {
+            tenant_id: tenantId,
+            action: 'save',
+            api_key: form.iftin_api_key.trim(),
+            callback_secret: form.iftin_callback_secret.trim() || null,
+          },
+        })
+        if (ce || (cd as any)?.error) {
+          toast({
+            title: 'Reseller la sameeyay, laakiin key-ga ma keydsamin',
+            description: (cd as any)?.error ?? ce?.message,
+            variant: 'destructive',
+          })
+        } else {
+          toast({ title: '✅ Key-ga Iftin waa la keydiyay' })
+        }
+      }
+
+      toast({ title: '✅ Reseller la sameeyay', description: form.name })
+      navigate(`/admin/resellers/${tenantId}`)
+    } catch (e: any) {
+      toast({ title: 'Khalad', description: e.message, variant: 'destructive' })
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <div className="p-6 max-w-2xl">
+      <h1 className="text-2xl font-bold mb-4">Reseller Cusub</h1>
+      <Card>
+        <CardHeader><CardTitle>Faahfaahin</CardTitle></CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Magaca</Label>
+                <Input required value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Subdomain (slug)</Label>
+                <Input required
+                  placeholder="marwan" value={form.slug}
+                  onChange={e => setForm({ ...form, slug: e.target.value.toLowerCase() })} />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Subdomain kaliya (tusaale: <b>marwan</b>) — ha ku darin ".iftinagents.com"
+                </p>
+              </div>
+
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Owner email</Label>
+                <Input type="email" required value={form.owner_email}
+                  onChange={e => setForm({ ...form, owner_email: e.target.value })} />
+              </div>
+              <div>
+                <Label>Owner password (min 8)</Label>
+                <Input type="text" required minLength={8} value={form.owner_password}
+                  onChange={e => setForm({ ...form, owner_password: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Plan</Label>
+                <select className="w-full h-10 rounded-md border bg-background px-3"
+                  value={form.plan_id}
+                  onChange={e => setForm({ ...form, plan_id: e.target.value })}>
+                  {plans.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} — ${p.price_monthly}/bil
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <Label>Period (maalmood)</Label>
+                <Input type="number" min={1} value={form.period_days}
+                  onChange={e => setForm({ ...form, period_days: +e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <Label>Delivery mode</Label>
+              <select className="w-full h-10 rounded-md border bg-background px-3"
+                value={form.delivery_mode}
+                onChange={e => setForm({ ...form, delivery_mode: e.target.value })}>
+                <option value="android_device">android_device — APK / SIM / USSD</option>
+                <option value="api_partner">api_partner — Iftin API (X-API-Key)</option>
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                api_partner: dalabyada Iftin Internet API-ga ayaa loo dirayaa.
+                android_device: APK-ga reseller-ka (SIM/USSD).
+              </p>
+            </div>
+
+            {form.delivery_mode === 'api_partner' && (
+              <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
+                <div>
+                  <div className="text-sm font-medium">Key-ga Iftin (partner)</div>
+                  <p className="text-xs text-muted-foreground">
+                    Key-ga Iftin Internet ayaa bixiya. Server-side kaliya ayuu kaydsan —
+                    frontend-ka marnaba lama tuso.
+                  </p>
+                </div>
+                <div>
+                  <Label>Iftin API key</Label>
+                  <Input type="password" autoComplete="off" placeholder="ift_live_…"
+                    required minLength={20}
+                    value={form.iftin_api_key}
+                    onChange={e => setForm({ ...form, iftin_api_key: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Callback secret (webhook) — ikhtiyaari</Label>
+                  <Input type="password" autoComplete="off" placeholder="whsec_…"
+                    value={form.iftin_callback_secret}
+                    onChange={e => setForm({ ...form, iftin_callback_secret: e.target.value })} />
+                </div>
+              </div>
+            )}
+
+
+            <div>
+              <Label>Primary color (HSL "H S% L%")</Label>
+              <Input value={form.primary_color}
+                onChange={e => setForm({ ...form, primary_color: e.target.value })} />
+            </div>
+
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Samee Reseller
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
