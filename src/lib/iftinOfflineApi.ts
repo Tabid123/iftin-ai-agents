@@ -130,10 +130,10 @@ const somaliMessage = (r: OfflineApiResult): string => {
   return r.message || (code ? `Khalad: ${code}` : `Khalad (${r.status})`);
 };
 
-/** Registers a customer at Iftin. Local storage is only updated by callers on ok. */
+/** Registers a customer at Iftin. Iftin is the only source of truth — no local copy. */
 export async function registerOfflineCustomer(
   input: OfflineRegisterInput,
-  opts: { queueOnFailure?: boolean } = { queueOnFailure: true },
+  opts: { queueOnFailure?: boolean } = { queueOnFailure: false },
 ): Promise<OfflineApiResult> {
   const sender_phone = normalizePhone(input.senderPhone);
   const receiver_phone = normalizePhone(input.receiverPhone);

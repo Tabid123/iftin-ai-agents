@@ -96,7 +96,7 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
     const provider = isADSL ? { id: 'adsl', name: 'ADSL' } : detectProvider(receiverPhone);
     
     if (provider) {
-      // Iftin Partner API first (mobile packages only; ADSL stays local).
+      // Iftin Partner API is the only store (mobile packages only; ADSL is local-free too).
       if (!isADSL) {
         const apiRes = await registerOfflineCustomer({
           senderPhone,
@@ -105,67 +105,25 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
         });
         if (!apiRes.ok) {
           toast({
-            variant: apiRes.queued ? "default" : "destructive",
-            title: apiRes.queued ? "Waa la safeeyay" : "Lama diiwaan gelin",
+            variant: "destructive",
+            title: "Lama diiwaan gelin",
             description: `${apiRes.message ?? 'Khalad'}${apiRes.error ? ` (${apiRes.error})` : ''}`,
             duration: 4000,
           });
-          if (!apiRes.queued) return;
+          return;
         }
+        toast({
+          title: "Lagu guuleystay",
+          description: `${senderPhone} → ${receiverPhone}`,
+          duration: 2000,
+        });
       }
 
-      // Save phone numbers to localStorage
+      // Session-only values used by the ordering flow.
       localStorage.setItem('offlineSenderPhone', senderPhone);
       localStorage.setItem('offlineReceiverPhone', receiverPhone);
 
-      // Save to database if online
-      if (isOnline) {
-        try {
-          let providerDbId: string | null = null;
-          const { data: providerData } = await supabase
-            .from('providers_config')
-            .select('id')
-            .ilike('provider_name', provider.name)
-            .maybeSingle();
-
-          if (providerData) {
-            providerDbId = providerData.id;
-          }
-
-          const tenantId = getTenantId();
-          const { error: upsertError } = await supabase
-            .from('offline_registrations')
-            .upsert({
-              ...(tenantId ? { tenant_id: tenantId } : {}),
-              sender_phone: senderPhone,
-              receiver_phone: receiverPhone,
-              provider_id: providerDbId,
-              provider_name: provider.name,
-              is_active: true
-            }, {
-              // Registrations are per reseller (tenant), not global.
-              onConflict: 'tenant_id,sender_phone'
-            });
-
-          if (upsertError) {
-            console.error('Registration error:', upsertError);
-            toast({
-              variant: "destructive",
-              title: "Khalad",
-              description: upsertError.message,
-              duration: 3000,
-            });
-          } else {
-            toast({
-              title: "Lagu guuleystay",
-              description: "Lambarada ayaa database-ka lagu kaydiyey",
-              duration: 2000,
-            });
-          }
-        } catch (error) {
-          console.error('Registration save error:', error);
-        }
-      }
+      
       
       navigate(`/categories/${provider.id}`, {
         state: {

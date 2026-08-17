@@ -92,75 +92,13 @@ const IftinOfflineCustomers: React.FC = () => {
       const tenantId = await resolveTenantId();
       if (!tenantId) throw new Error('Reseller-ka lama garanayo');
 
-      const [iftinRes, localRes] = await Promise.all([
-        listOfflineRegistrations({ data: { tenantId } }).catch((e: any) => ({
-          ok: false as const, status: 0, message: e?.message ?? 'Liiska lama soo dejin',
-        })),
-        Promise.resolve(
-          supabase
-            .from('offline_registrations')
-            .select('*')
-            .order('created_at', { ascending: false }),
-        ).catch(() => ({ data: null } as any)),
-      ]);
-
-      const iftinRows: Row[] = iftinRes.ok ? (iftinRes.data as OfflineRegistration[]) : [];
-
-      const localRows: Row[] = ((localRes as any)?.data ?? []).map((r: any) => ({
-        id: r.id,
-        sender_phone: r.sender_phone,
-        receiver_phone: r.receiver_phone,
-        provider_id: r.provider_id,
-        provider_name: r.provider_name,
-        notes: r.notes,
-        is_active: r.is_active,
-        created_at: r.created_at,
-        __local: true as const,
+      // Iftin is the single source of truth — no local registrations are used.
+      const iftinRes = await listOfflineRegistrations({ data: { tenantId } }).catch((e: any) => ({
+        ok: false as const, status: 0, message: e?.message ?? 'Liiska lama soo dejin',
       }));
 
-      const seen = new Set(iftinRows.map((r) => digits(r.sender_phone)));
-      const localOnly = localRows.filter((r) => !seen.has(digits(r.sender_phone)));
-      const merged = [...iftinRows, ...localOnly];
-
-      setRows(merged);
-      if (!iftinRes.ok && merged.length === 0) throw new Error(iftinRes.message);
-
-      // Auto-push registrations that exist locally but not yet at Iftin.
-      if (iftinRes.ok && localOnly.length > 0) {
-        const toPush = localOnly.filter((r) => {
-          const s = digits(r.sender_phone);
-          const rc = digits(r.receiver_phone);
-          if (s.length !== 9 || rc.length !== 9 || s === rc) return false;
-          if (!r.provider_name && !r.provider_id) return false;
-          return !pushedRef.current.has(s);
-        });
-        if (toPush.length > 0) {
-          let sent = 0;
-          for (const r of toPush) {
-            pushedRef.current.add(digits(r.sender_phone));
-            const res = await registerOfflineCustomer(
-              {
-                senderPhone: digits(r.sender_phone),
-                receiverPhone: digits(r.receiver_phone),
-                providerName: r.provider_name ?? null,
-                tenantId,
-              },
-              { queueOnFailure: false },
-            );
-            if (res.ok || res.status === 409) sent += 1;
-            else pushedRef.current.delete(digits(r.sender_phone));
-          }
-          if (sent > 0) {
-            toast({ title: 'Iftin waa loo diray', description: `${sent} diiwaan ayaa la sync gareeyay` });
-            const again = await listOfflineRegistrations({ data: { tenantId } }).catch(() => null);
-            if (again?.ok) {
-              const rows2 = again.data as OfflineRegistration[];
-              const seen2 = new Set(rows2.map((r) => digits(r.sender_phone)));
-              setRows([...rows2, ...localRows.filter((r) => !seen2.has(digits(r.sender_phone)))]);
-            }
-          }
-        }
-      }
+      if (!iftinRes.ok) throw new Error((iftinRes as any).message ?? 'Liiska lama soo dejin');
+      setRows((iftinRes.data as OfflineRegistration[]) ?? []);
     } catch (e: any) {
       setError(e?.message ?? 'Liiska lama soo dejin');
     } finally {
