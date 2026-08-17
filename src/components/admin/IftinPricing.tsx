@@ -116,18 +116,13 @@ export default function IftinPricing() {
 
   return (
     <div className="space-y-6 p-3 sm:p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <p className="text-sm text-muted-foreground">
-          Packages-ka wuxuu ka yimaadaa Iftin (read-only). Adigu waxaad beddeli kartaa
-          <span className="font-semibold"> sell price </span>oo kaliya. Iftin wuxuu kaa qaadanayaa base price;
-          faa'iidadaadu waa sell price − base price. Qiimo kastoo la keydiyo waxaa toos loogu dirayaa
-          liiska Iftin (partner pricing) si lacagta macmiilku u match noqoto.
-        </p>
-        <Button onClick={syncAll} disabled={syncing} variant="outline" className="shrink-0">
-          {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          Dhammaan u dir Iftin
-        </Button>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Packages-ka wuxuu ka yimaadaa Iftin (read-only). Adigu waxaad beddeli kartaa
+        <span className="font-semibold"> sell price </span>oo kaliya. Iftin wuxuu kaa qaadanayaa base price;
+        faa'iidadaadu waa sell price − base price. Qiimo kastoo la keydiyo si toos ah ayaa loogu dirayaa
+        liiska Iftin (partner pricing).
+      </p>
+
 
       {Object.entries(grouped).map(([providerId, list]) => (
         <div key={providerId} className="rounded-xl border bg-card overflow-hidden">
