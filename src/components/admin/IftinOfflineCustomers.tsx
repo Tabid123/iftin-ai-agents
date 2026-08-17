@@ -23,6 +23,8 @@ import {
   deleteOfflineRegistration, listOfflineRegistrations, saveOfflineRegistration,
   type OfflineRegistration,
 } from '@/lib/iftinOffline.functions';
+import { registerOfflineCustomer } from '@/lib/iftinOfflineApi';
+
 
 const digits = (p?: string | null) => String(p ?? '').replace(/\D/g, '').slice(-9);
 const pretty = (p?: string | null) => (p ? `+252${digits(p)}` : '—');
