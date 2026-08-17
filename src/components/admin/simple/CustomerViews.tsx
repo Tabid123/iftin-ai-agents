@@ -147,13 +147,15 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
 
   const loadRegs = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('offline_registrations').select('*').order('created_at', { ascending: false });
-    setRegs(data || []);
+    const res = await listOfflineCustomers();
+    const list = (res.ok ? (res.data?.registrations ?? res.data) : []) as any[];
+    setRegs(Array.isArray(list) ? list : []);
+    if (!res.ok) toast.error(res.message ?? (isSo ? 'Liiska lama soo dejin' : 'Failed to load'));
     setLoading(false);
-  }, []);
+  }, [isSo]);
 
   useEffect(() => { loadRegs(); }, [loadRegs]);
-  useRealtimeRefresh(['offline_registrations'], loadRegs, 800, { notify: true, lang: isSo ? 'so' : 'en' });
+
 
   const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
   const activeRegs = regs.filter(r => r.is_active).length;
