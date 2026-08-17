@@ -109,48 +109,63 @@ const OfflineMode = () => {
     }
     
     try {
+      // 1) Iftin Partner API FIRST — sender and receiver stay separate fields.
+      const apiRes = await registerOfflineCustomer({
+        senderPhone,
+        receiverPhone,
+        providerName: detectedProvider.name,
+      });
+
+      if (!apiRes.ok) {
+        toast({
+          title: apiRes.queued ? "Waa la safeeyay" : "Lama diiwaan gelin",
+          description: `${apiRes.message ?? 'Khalad'}${apiRes.error ? ` (${apiRes.error})` : ''}`,
+          variant: apiRes.queued ? "default" : "destructive",
+          duration: 4000
+        });
+        if (!apiRes.queued) {
+          setIsRegistering(false);
+          return;
+        }
+      }
+
+      // 2) Only after a 2xx (or a queued retry) do we keep it locally.
       localStorage.setItem('offlineSenderPhone', senderPhone);
       localStorage.setItem('offlineReceiverPhone', receiverPhone);
-      if (navigator.onLine) {
-        // Try to find provider by name first, fallback to saving without provider_id
-        let providerDbId: string | null = null;
-        const { data: providerData } = await supabase
-          .from('providers_config')
-          .select('id')
-          .ilike('provider_name', detectedProvider.name)
-          .maybeSingle();
-        
-        if (providerData) {
-          providerDbId = providerData.id;
-        }
 
-        const tenantId = getTenantId();
-        const { error: upsertError } = await supabase
-          .from('offline_registrations')
-          .upsert({
-            ...(tenantId ? { tenant_id: tenantId } : {}),
-            sender_phone: senderPhone,
-            receiver_phone: receiverPhone,
-            provider_id: providerDbId,
-            provider_name: detectedProvider.name,
-            is_active: true
-            // Registrations are per reseller (tenant), not global.
-          }, { onConflict: 'tenant_id,sender_phone' });
-        if (upsertError) {
-          console.error('Registration error:', upsertError);
-          toast({
-            title: "Khalad",
-            description: upsertError.message,
-            variant: "destructive",
-            duration: 3000
-          });
-        } else {
-          toast({
-            title: "Lagu guuleystay",
-            description: "Lambarada ayaa database-ka lagu kaydiyey",
-            duration: 2000
-          });
-        }
+      let providerDbId: string | null = null;
+      const { data: providerData } = await supabase
+        .from('providers_config')
+        .select('id')
+        .ilike('provider_name', detectedProvider.name)
+        .maybeSingle();
+
+      if (providerData) {
+        providerDbId = providerData.id;
+      }
+
+      const tenantId = getTenantId();
+      const { error: upsertError } = await supabase
+        .from('offline_registrations')
+        .upsert({
+          ...(tenantId ? { tenant_id: tenantId } : {}),
+          sender_phone: senderPhone,
+          receiver_phone: receiverPhone,
+          provider_id: providerDbId,
+          provider_name: detectedProvider.name,
+          is_active: true
+          // Registrations are per reseller (tenant), not global.
+        }, { onConflict: 'tenant_id,sender_phone' });
+      if (upsertError) {
+        console.error('Registration error:', upsertError);
+      }
+
+      if (apiRes.ok) {
+        toast({
+          title: "Lagu guuleystay",
+          description: `Diiwaan gelin: ${senderPhone} → ${receiverPhone}`,
+          duration: 2000
+        });
       }
       navigate('/providers');
     } catch (error) {
