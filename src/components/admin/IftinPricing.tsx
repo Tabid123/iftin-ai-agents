@@ -71,20 +71,8 @@ export default function IftinPricing() {
     return res.data;
   };
 
-  const syncAll = async () => {
-    setSyncing(true);
-    try {
-      const prices = rows
-        .map((r) => ({ package_id: r.id, price: Number(drafts[r.id] ?? r.sell_price) }))
-        .filter((p) => p.price > 0);
-      const out = await pushPrices(prices);
-      toast({ title: 'Iftin la keydiyay', description: `${out.saved} qiimo ayaa la diray` });
-    } catch (e: any) {
-      toast({ title: 'Khalad', description: e?.message ?? 'Lama dirin', variant: 'destructive' });
-    } finally {
-      setSyncing(false);
-    }
-  };
+
+
 
   const save = async (row: Row) => {
     const value = Number(drafts[row.id]);
