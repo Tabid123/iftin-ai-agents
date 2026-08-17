@@ -61,6 +61,29 @@ export default function IftinPricing() {
     return out;
   }, [rows]);
 
+  const pushPrices = async (prices: Array<{ package_id: string; price: number }>) => {
+    const tenantId = await resolveTenantId();
+    if (!tenantId) throw new Error('Reseller-ka lama garanayo');
+    const res = await setIftinPrices({ data: { tenantId, prices } });
+    if (!res.ok) throw new Error(res.message);
+    return res.data;
+  };
+
+  const syncAll = async () => {
+    setSyncing(true);
+    try {
+      const prices = rows
+        .map((r) => ({ package_id: r.id, price: Number(drafts[r.id] ?? r.sell_price) }))
+        .filter((p) => p.price > 0);
+      const out = await pushPrices(prices);
+      toast({ title: 'Iftin la keydiyay', description: `${out.saved} qiimo ayaa la diray` });
+    } catch (e: any) {
+      toast({ title: 'Khalad', description: e?.message ?? 'Lama dirin', variant: 'destructive' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const save = async (row: Row) => {
     const value = Number(drafts[row.id]);
     if (!isSellPriceValid(value, row.base_price)) {
@@ -73,6 +96,8 @@ export default function IftinPricing() {
     }
     setSaving(row.id);
     try {
+      // Iftin's partner_pricing list is the source of truth for matching payments.
+      await pushPrices([{ package_id: row.id, price: value }]);
       await saveSellPrice(row.id, value, row.base_price);
       setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, sell_price: value } : r)));
       toast({ title: 'La keydiyay', description: `${row.package_name}: $${value}` });
