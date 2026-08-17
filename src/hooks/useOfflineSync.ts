@@ -37,6 +37,12 @@ export const useOfflineSync = () => {
     }
   }, [isReallyOnline]); // Removed queuedOrders.length to prevent multiple syncs
 
+  // Retry offline registrations that never reached the Iftin API.
+  useEffect(() => {
+    if (!isReallyOnline) return;
+    void flushOfflineRegistrationQueue().catch(() => undefined);
+  }, [isReallyOnline]);
+
   const queueOrder = (orderData: any) => {
     const queuedOrder: QueuedOrder = {
       id: crypto.randomUUID(),
