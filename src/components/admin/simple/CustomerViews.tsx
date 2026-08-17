@@ -10,7 +10,7 @@ import {
 } from './shared';
 import { formatTimeAgo } from './shared';
 import { Edit } from 'lucide-react';
-import { registerOfflineCustomer } from '@/lib/iftinOfflineApi';
+import { registerOfflineCustomer, listOfflineCustomers, updateOfflineCustomer, deleteOfflineCustomer } from '@/lib/iftinOfflineApi';
 import { EditDeviceDialog } from '../EditDeviceDialog';
 import { DeleteDeviceDialog } from '../DeleteDeviceDialog';
 
@@ -147,13 +147,15 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
 
   const loadRegs = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from('offline_registrations').select('*').order('created_at', { ascending: false });
-    setRegs(data || []);
+    const res = await listOfflineCustomers();
+    const list = (res.ok ? (res.data?.registrations ?? res.data) : []) as any[];
+    setRegs(Array.isArray(list) ? list : []);
+    if (!res.ok) toast.error(res.message ?? (isSo ? 'Liiska lama soo dejin' : 'Failed to load'));
     setLoading(false);
-  }, []);
+  }, [isSo]);
 
   useEffect(() => { loadRegs(); }, [loadRegs]);
-  useRealtimeRefresh(['offline_registrations'], loadRegs, 800, { notify: true, lang: isSo ? 'so' : 'en' });
+
 
   const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
   const activeRegs = regs.filter(r => r.is_active).length;
@@ -169,15 +171,24 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
     return filtered;
   };
 
-  const toggleStatus = async (id: string, currentStatus: boolean) => {
-    await supabase.from('offline_registrations').update({ is_active: !currentStatus }).eq('id', id);
-    setRegs(prev => prev.map(r => r.id === id ? { ...r, is_active: !r.is_active } : r));
+  const toggleStatus = async (id: string, _currentStatus: boolean) => {
+    const row = regs.find((r) => r.id === id);
+    if (!row) return;
+    const res = await updateOfflineCustomer({
+      id,
+      senderPhone: row.sender_phone,
+      receiverPhone: row.receiver_phone,
+      providerName: row.provider_name ?? null,
+    });
+    if (!res.ok) { toast.error(res.message ?? 'Khalad'); return; }
+    await loadRegs();
     toast.success(isSo ? 'Waa la cusboonaysiiyay' : 'Status updated');
   };
 
   const deleteReg = async (id: string) => {
     if (!confirm(isSo ? 'Ma hubtaa inaad tirtirto?' : 'Delete this registration?')) return;
-    await supabase.from('offline_registrations').delete().eq('id', id);
+    const res = await deleteOfflineCustomer({ id });
+    if (!res.ok) { toast.error(res.message ?? 'Khalad'); return; }
     setRegs(prev => prev.filter(r => r.id !== id));
     toast.success(isSo ? 'Waa la tirtiray' : 'Deleted');
   };
