@@ -59,6 +59,8 @@ type Tab = 'all' | 'active' | 'inactive' | 'today';
 
 const IftinOfflineCustomers: React.FC = () => {
   const [rows, setRows] = useState<Row[]>([]);
+  const pushedRef = useRef<Set<string>>(new Set());
+
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
