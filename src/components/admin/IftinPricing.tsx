@@ -3,8 +3,9 @@ import { ChevronDown, Loader2, Lock, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { fetchIftinCatalog, hasCatalog, mapPackages, mapProviders } from '@/lib/iftinCatalog';
+import { fetchIftinCatalog, hasCatalog, mapPackages, mapProviders, resolveTenantId } from '@/lib/iftinCatalog';
 import { isSellPriceValid, loadResellerOverrides, marginOf, saveSellPrice } from '@/lib/resellerOverrides';
+import { setIftinPrices } from '@/lib/iftinPricing.functions';
 
 type Row = {
   id: string;
