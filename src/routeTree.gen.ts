@@ -29,6 +29,7 @@ import { Route as PaymentProviderRouteImport } from './routes/payment.$provider'
 import { Route as AdminResellersIndexRouteImport } from './routes/admin.resellers.index'
 import { Route as AdminResellersIdRouteImport } from './routes/admin.resellers.$id'
 import { Route as AdminResellersNewRouteImport } from './routes/admin.resellers.new'
+import { Route as ApiPublicOfflineRegisterRouteImport } from './routes/api/public/offline-register'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugHistoryRouteImport } from './routes/t.$slug.history'
 import { Route as TSlugNotificationsRouteImport } from './routes/t.$slug.notifications'
@@ -144,6 +145,12 @@ const AdminResellersNewRoute = AdminResellersNewRouteImport.update({
   path: '/resellers/new',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicOfflineRegisterRoute =
+  ApiPublicOfflineRegisterRouteImport.update({
+    id: '/api/public/offline-register',
+    path: '/api/public/offline-register',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const TSlugIndexRoute = TSlugIndexRouteImport.update({
   id: '/t/$slug/',
   path: '/t/$slug/',
@@ -235,6 +242,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/': typeof DashboardIndexRoute
   '/admin/resellers/$id': typeof AdminResellersIdRoute
   '/admin/resellers/new': typeof AdminResellersNewRoute
+  '/api/public/offline-register': typeof ApiPublicOfflineRegisterRoute
   '/t/$slug/history': typeof TSlugHistoryRoute
   '/t/$slug/notifications': typeof TSlugNotificationsRoute
   '/t/$slug/offline-mode': typeof TSlugOfflineModeRoute
@@ -270,6 +278,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardIndexRoute
   '/admin/resellers/$id': typeof AdminResellersIdRoute
   '/admin/resellers/new': typeof AdminResellersNewRoute
+  '/api/public/offline-register': typeof ApiPublicOfflineRegisterRoute
   '/t/$slug/history': typeof TSlugHistoryRoute
   '/t/$slug/notifications': typeof TSlugNotificationsRoute
   '/t/$slug/offline-mode': typeof TSlugOfflineModeRoute
@@ -307,6 +316,7 @@ export interface FileRoutesById {
   '/dashboard/': typeof DashboardIndexRoute
   '/admin/resellers/$id': typeof AdminResellersIdRoute
   '/admin/resellers/new': typeof AdminResellersNewRoute
+  '/api/public/offline-register': typeof ApiPublicOfflineRegisterRoute
   '/t/$slug/history': typeof TSlugHistoryRoute
   '/t/$slug/notifications': typeof TSlugNotificationsRoute
   '/t/$slug/offline-mode': typeof TSlugOfflineModeRoute
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/admin/resellers/$id'
     | '/admin/resellers/new'
+    | '/api/public/offline-register'
     | '/t/$slug/history'
     | '/t/$slug/notifications'
     | '/t/$slug/offline-mode'
@@ -380,6 +391,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/resellers/$id'
     | '/admin/resellers/new'
+    | '/api/public/offline-register'
     | '/t/$slug/history'
     | '/t/$slug/notifications'
     | '/t/$slug/offline-mode'
@@ -416,6 +428,7 @@ export interface FileRouteTypes {
     | '/dashboard/'
     | '/admin/resellers/$id'
     | '/admin/resellers/new'
+    | '/api/public/offline-register'
     | '/t/$slug/history'
     | '/t/$slug/notifications'
     | '/t/$slug/offline-mode'
@@ -449,6 +462,7 @@ export interface RootRouteChildren {
   PackagesProviderRoute: typeof PackagesProviderRoute
   PaymentProviderRoute: typeof PaymentProviderRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  ApiPublicOfflineRegisterRoute: typeof ApiPublicOfflineRegisterRoute
   TSlugHistoryRoute: typeof TSlugHistoryRoute
   TSlugNotificationsRoute: typeof TSlugNotificationsRoute
   TSlugOfflineModeRoute: typeof TSlugOfflineModeRoute
@@ -607,6 +621,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminResellersNewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/offline-register': {
+      id: '/api/public/offline-register'
+      path: '/api/public/offline-register'
+      fullPath: '/api/public/offline-register'
+      preLoaderRoute: typeof ApiPublicOfflineRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/t/$slug/': {
       id: '/t/$slug/'
       path: '/t/$slug'
@@ -742,6 +763,7 @@ const rootRouteChildren: RootRouteChildren = {
   PackagesProviderRoute: PackagesProviderRoute,
   PaymentProviderRoute: PaymentProviderRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  ApiPublicOfflineRegisterRoute: ApiPublicOfflineRegisterRoute,
   TSlugHistoryRoute: TSlugHistoryRoute,
   TSlugNotificationsRoute: TSlugNotificationsRoute,
   TSlugOfflineModeRoute: TSlugOfflineModeRoute,

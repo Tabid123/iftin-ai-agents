@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getTenantId } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
+import { registerOfflineCustomer } from '@/lib/iftinOfflineApi';
 
 interface OfflinePhoneInputSheetProps {
   open: boolean;
@@ -95,6 +96,24 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
     const provider = isADSL ? { id: 'adsl', name: 'ADSL' } : detectProvider(receiverPhone);
     
     if (provider) {
+      // Iftin Partner API first (mobile packages only; ADSL stays local).
+      if (!isADSL) {
+        const apiRes = await registerOfflineCustomer({
+          senderPhone,
+          receiverPhone,
+          providerName: provider.name,
+        });
+        if (!apiRes.ok) {
+          toast({
+            variant: apiRes.queued ? "default" : "destructive",
+            title: apiRes.queued ? "Waa la safeeyay" : "Lama diiwaan gelin",
+            description: `${apiRes.message ?? 'Khalad'}${apiRes.error ? ` (${apiRes.error})` : ''}`,
+            duration: 4000,
+          });
+          if (!apiRes.queued) return;
+        }
+      }
+
       // Save phone numbers to localStorage
       localStorage.setItem('offlineSenderPhone', senderPhone);
       localStorage.setItem('offlineReceiverPhone', receiverPhone);

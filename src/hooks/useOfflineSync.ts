@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
+import { flushOfflineRegistrationQueue } from '@/lib/iftinOfflineApi';
 
 interface QueuedOrder {
   id: string;
@@ -36,6 +37,12 @@ export const useOfflineSync = () => {
       syncQueuedOrders();
     }
   }, [isReallyOnline]); // Removed queuedOrders.length to prevent multiple syncs
+
+  // Retry offline registrations that never reached the Iftin API.
+  useEffect(() => {
+    if (!isReallyOnline) return;
+    void flushOfflineRegistrationQueue().catch(() => undefined);
+  }, [isReallyOnline]);
 
   const queueOrder = (orderData: any) => {
     const queuedOrder: QueuedOrder = {
