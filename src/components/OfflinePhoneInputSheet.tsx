@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getTenantId } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
+import { registerOfflineCustomer } from '@/lib/iftinOfflineApi';
 
 interface OfflinePhoneInputSheetProps {
   open: boolean;
