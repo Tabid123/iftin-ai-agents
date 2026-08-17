@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getTenantId } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
+import { registerOfflineCustomer } from '@/lib/iftinOfflineApi';
 import { useTenant } from '@/contexts/TenantContext';
 import somaliaFlag from '@/assets/somalia-flag-hq.png';
 import hormuudLogo from '@/assets/providers/hormuud-logo.jpeg';
