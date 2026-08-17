@@ -10,6 +10,7 @@ import {
 } from './shared';
 import { formatTimeAgo } from './shared';
 import { Edit } from 'lucide-react';
+import { registerOfflineCustomer } from '@/lib/iftinOfflineApi';
 import { EditDeviceDialog } from '../EditDeviceDialog';
 import { DeleteDeviceDialog } from '../DeleteDeviceDialog';
 
