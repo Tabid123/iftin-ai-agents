@@ -171,15 +171,24 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
     return filtered;
   };
 
-  const toggleStatus = async (id: string, currentStatus: boolean) => {
-    await supabase.from('offline_registrations').update({ is_active: !currentStatus }).eq('id', id);
-    setRegs(prev => prev.map(r => r.id === id ? { ...r, is_active: !r.is_active } : r));
+  const toggleStatus = async (id: string, _currentStatus: boolean) => {
+    const row = regs.find((r) => r.id === id);
+    if (!row) return;
+    const res = await updateOfflineCustomer({
+      id,
+      senderPhone: row.sender_phone,
+      receiverPhone: row.receiver_phone,
+      providerName: row.provider_name ?? null,
+    });
+    if (!res.ok) { toast.error(res.message ?? 'Khalad'); return; }
+    await loadRegs();
     toast.success(isSo ? 'Waa la cusboonaysiiyay' : 'Status updated');
   };
 
   const deleteReg = async (id: string) => {
     if (!confirm(isSo ? 'Ma hubtaa inaad tirtirto?' : 'Delete this registration?')) return;
-    await supabase.from('offline_registrations').delete().eq('id', id);
+    const res = await deleteOfflineCustomer({ id });
+    if (!res.ok) { toast.error(res.message ?? 'Khalad'); return; }
     setRegs(prev => prev.filter(r => r.id !== id));
     toast.success(isSo ? 'Waa la tirtiray' : 'Deleted');
   };
