@@ -3,8 +3,9 @@ import { ChevronDown, Loader2, Lock, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { fetchIftinCatalog, hasCatalog, mapPackages, mapProviders } from '@/lib/iftinCatalog';
+import { fetchIftinCatalog, hasCatalog, mapPackages, mapProviders, resolveTenantId } from '@/lib/iftinCatalog';
 import { isSellPriceValid, loadResellerOverrides, marginOf, saveSellPrice } from '@/lib/resellerOverrides';
+import { setIftinPrices } from '@/lib/iftinPricing.functions';
 
 type Row = {
   id: string;
@@ -26,6 +27,7 @@ export default function IftinPricing() {
   const [providers, setProviders] = useState<Record<string, string>>({});
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,6 +63,29 @@ export default function IftinPricing() {
     return out;
   }, [rows]);
 
+  const pushPrices = async (prices: Array<{ package_id: string; price: number }>) => {
+    const tenantId = await resolveTenantId();
+    if (!tenantId) throw new Error('Reseller-ka lama garanayo');
+    const res = await setIftinPrices({ data: { tenantId, prices } });
+    if (!res.ok) throw new Error(res.message);
+    return res.data;
+  };
+
+  const syncAll = async () => {
+    setSyncing(true);
+    try {
+      const prices = rows
+        .map((r) => ({ package_id: r.id, price: Number(drafts[r.id] ?? r.sell_price) }))
+        .filter((p) => p.price > 0);
+      const out = await pushPrices(prices);
+      toast({ title: 'Iftin la keydiyay', description: `${out.saved} qiimo ayaa la diray` });
+    } catch (e: any) {
+      toast({ title: 'Khalad', description: e?.message ?? 'Lama dirin', variant: 'destructive' });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const save = async (row: Row) => {
     const value = Number(drafts[row.id]);
     if (!isSellPriceValid(value, row.base_price)) {
@@ -73,6 +98,8 @@ export default function IftinPricing() {
     }
     setSaving(row.id);
     try {
+      // Iftin's partner_pricing list is the source of truth for matching payments.
+      await pushPrices([{ package_id: row.id, price: value }]);
       await saveSellPrice(row.id, value, row.base_price);
       setRows((prev) => prev.map((r) => (r.id === row.id ? { ...r, sell_price: value } : r)));
       toast({ title: 'La keydiyay', description: `${row.package_name}: $${value}` });
@@ -101,11 +128,18 @@ export default function IftinPricing() {
 
   return (
     <div className="space-y-6 p-3 sm:p-4">
-      <p className="text-sm text-muted-foreground">
-        Packages-ka wuxuu ka yimaadaa Iftin (read-only). Adigu waxaad beddeli kartaa
-        <span className="font-semibold"> sell price </span>oo kaliya. Iftin wuxuu kaa qaadanayaa base price;
-        faa'iidadaadu waa sell price − base price.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <p className="text-sm text-muted-foreground">
+          Packages-ka wuxuu ka yimaadaa Iftin (read-only). Adigu waxaad beddeli kartaa
+          <span className="font-semibold"> sell price </span>oo kaliya. Iftin wuxuu kaa qaadanayaa base price;
+          faa'iidadaadu waa sell price − base price. Qiimo kastoo la keydiyo waxaa toos loogu dirayaa
+          liiska Iftin (partner pricing) si lacagta macmiilku u match noqoto.
+        </p>
+        <Button onClick={syncAll} disabled={syncing} variant="outline" className="shrink-0">
+          {syncing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+          Dhammaan u dir Iftin
+        </Button>
+      </div>
 
       {Object.entries(grouped).map(([providerId, list]) => (
         <div key={providerId} className="rounded-xl border bg-card overflow-hidden">
