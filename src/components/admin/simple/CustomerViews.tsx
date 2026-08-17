@@ -188,7 +188,7 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
       toast.error(isSo ? 'Diraha iyo qaataha waa inay kala duwanaadaan' : 'Sender and receiver must differ');
       return;
     }
-    // Iftin Partner API first — only persist locally after a 2xx.
+    // Iftin Partner API only — nothing is stored locally.
     const apiRes = await registerOfflineCustomer({
       senderPhone: newReg.sender_phone,
       receiverPhone: newReg.receiver_phone,
@@ -196,15 +196,11 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
     });
     if (!apiRes.ok) {
       toast.error(`${apiRes.message ?? 'Khalad'}${apiRes.error ? ` (${apiRes.error})` : ''}`);
-      if (!apiRes.queued) return;
+      return;
     }
-    const { data, error } = await supabase.from('offline_registrations').insert({
-      sender_phone: newReg.sender_phone, receiver_phone: newReg.receiver_phone, provider_name: newReg.provider_name || null,
-    }).select().single();
-    if (error) { toast.error('Error: ' + error.message); return; }
-    setRegs(prev => [data, ...prev]);
     setNewReg({ sender_phone: '', receiver_phone: '', provider_name: '' });
     setShowAdd(false);
+    await loadRegs();
     toast.success(isSo ? 'Waa lagu daray' : 'Added');
   };
 
