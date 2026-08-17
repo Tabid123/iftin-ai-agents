@@ -68,13 +68,33 @@ const enqueue = (input: OfflineRegisterInput) => {
   writeQueue(q);
 };
 
+/**
+ * In the native (Capacitor) app the web bundle is served from a local
+ * scheme, so a relative "/api/..." URL never reaches our server. Use the
+ * published origin there.
+ */
+const PUBLISHED_ORIGIN =
+  (import.meta as any).env?.VITE_PUBLIC_APP_URL || 'https://iftin-agent-friend.lovable.app';
+
+export function apiBase(): string {
+  if (typeof window === 'undefined') return '';
+  const cap = (window as any).Capacitor;
+  const native = Boolean(cap?.isNativePlatform?.());
+  const origin = window.location.origin || '';
+  if (native || origin.startsWith('file:') || /^https?:\/\/localhost/.test(origin)) {
+    return PUBLISHED_ORIGIN.replace(/\/$/, '');
+  }
+  return '';
+}
+
 async function postOffline(body: Record<string, unknown>): Promise<OfflineApiResult> {
   try {
-    const res = await fetch('/api/public/offline-register', {
+    const res = await fetch(`${apiBase()}/api/public/offline-register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
+
     let json: any = null;
     try {
       json = await res.json();

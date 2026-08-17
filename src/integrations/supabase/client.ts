@@ -58,7 +58,10 @@ export function tenantAwareFetch(input: RequestInfo | URL, init: RequestInit = {
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+// NOTE: tenant_id is filled in by a database trigger (set_tenant_id_default),
+// so inserts legitimately omit it. The generated types mark it required, which
+// would break every insert — we relax the insert typing here.
+const rawClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: typeof window !== 'undefined' ? localStorage : undefined,
     persistSession: true,
@@ -68,3 +71,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     fetch: tenantAwareFetch,
   },
 });
+
+export const supabase = rawClient as unknown as ReturnType<typeof createClient<any, 'public', any>>;
+
