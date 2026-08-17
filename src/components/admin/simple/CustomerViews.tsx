@@ -183,6 +183,20 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
 
   const addReg = async () => {
     if (!newReg.sender_phone || !newReg.receiver_phone) { toast.error(isSo ? 'Buuxi meelaha' : 'Fill required fields'); return; }
+    if (normalizePhone(newReg.sender_phone) === normalizePhone(newReg.receiver_phone)) {
+      toast.error(isSo ? 'Diraha iyo qaataha waa inay kala duwanaadaan' : 'Sender and receiver must differ');
+      return;
+    }
+    // Iftin Partner API first — only persist locally after a 2xx.
+    const apiRes = await registerOfflineCustomer({
+      senderPhone: newReg.sender_phone,
+      receiverPhone: newReg.receiver_phone,
+      providerName: newReg.provider_name || null,
+    });
+    if (!apiRes.ok) {
+      toast.error(`${apiRes.message ?? 'Khalad'}${apiRes.error ? ` (${apiRes.error})` : ''}`);
+      if (!apiRes.queued) return;
+    }
     const { data, error } = await supabase.from('offline_registrations').insert({
       sender_phone: newReg.sender_phone, receiver_phone: newReg.receiver_phone, provider_name: newReg.provider_name || null,
     }).select().single();
