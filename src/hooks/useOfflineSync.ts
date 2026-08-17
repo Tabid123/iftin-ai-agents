@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
+import { flushOfflineRegistrationQueue } from '@/lib/iftinOfflineApi';
 
 interface QueuedOrder {
   id: string;
