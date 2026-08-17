@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Loader2, Pencil, Power, RefreshCw, Search, Trash2, UserPlus, WifiOff, X, Info } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ import {
   deleteOfflineRegistration, listOfflineRegistrations, saveOfflineRegistration,
   type OfflineRegistration,
 } from '@/lib/iftinOffline.functions';
+import { registerOfflineCustomer } from '@/lib/iftinOfflineApi';
+
 
 const digits = (p?: string | null) => String(p ?? '').replace(/\D/g, '').slice(-9);
 const pretty = (p?: string | null) => (p ? `+252${digits(p)}` : '—');
@@ -57,6 +59,8 @@ type Tab = 'all' | 'active' | 'inactive' | 'today';
 
 const IftinOfflineCustomers: React.FC = () => {
   const [rows, setRows] = useState<Row[]>([]);
+  const pushedRef = useRef<Set<string>>(new Set());
+
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -115,10 +119,48 @@ const IftinOfflineCustomers: React.FC = () => {
       }));
 
       const seen = new Set(iftinRows.map((r) => digits(r.sender_phone)));
-      const merged = [...iftinRows, ...localRows.filter((r) => !seen.has(digits(r.sender_phone)))];
+      const localOnly = localRows.filter((r) => !seen.has(digits(r.sender_phone)));
+      const merged = [...iftinRows, ...localOnly];
 
       setRows(merged);
       if (!iftinRes.ok && merged.length === 0) throw new Error(iftinRes.message);
+
+      // Auto-push registrations that exist locally but not yet at Iftin.
+      if (iftinRes.ok && localOnly.length > 0) {
+        const toPush = localOnly.filter((r) => {
+          const s = digits(r.sender_phone);
+          const rc = digits(r.receiver_phone);
+          if (s.length !== 9 || rc.length !== 9 || s === rc) return false;
+          if (!r.provider_name && !r.provider_id) return false;
+          return !pushedRef.current.has(s);
+        });
+        if (toPush.length > 0) {
+          let sent = 0;
+          for (const r of toPush) {
+            pushedRef.current.add(digits(r.sender_phone));
+            const res = await registerOfflineCustomer(
+              {
+                senderPhone: digits(r.sender_phone),
+                receiverPhone: digits(r.receiver_phone),
+                providerName: r.provider_name ?? null,
+                tenantId,
+              },
+              { queueOnFailure: false },
+            );
+            if (res.ok || res.status === 409) sent += 1;
+            else pushedRef.current.delete(digits(r.sender_phone));
+          }
+          if (sent > 0) {
+            toast({ title: 'Iftin waa loo diray', description: `${sent} diiwaan ayaa la sync gareeyay` });
+            const again = await listOfflineRegistrations({ data: { tenantId } }).catch(() => null);
+            if (again?.ok) {
+              const rows2 = again.data as OfflineRegistration[];
+              const seen2 = new Set(rows2.map((r) => digits(r.sender_phone)));
+              setRows([...rows2, ...localRows.filter((r) => !seen2.has(digits(r.sender_phone)))]);
+            }
+          }
+        }
+      }
     } catch (e: any) {
       setError(e?.message ?? 'Liiska lama soo dejin');
     } finally {
@@ -129,6 +171,7 @@ const IftinOfflineCustomers: React.FC = () => {
   useEffect(() => { void load(); }, [load]);
   useEffect(() => { void fetchIftinCatalog().then(setCatalog); }, []);
   useRealtimeRefresh(['offline_registrations'], () => { void load(true); }, 800);
+
 
   const providers = useMemo(() => (catalog ? mapProviders(catalog) : []), [catalog]);
   const providerName = useMemo(
