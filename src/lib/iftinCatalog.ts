@@ -326,3 +326,58 @@ export function isOrderingBlocked(): boolean {
   const catalog = memo?.catalog ?? readCachedCatalog();
   return catalogLimits(catalog).blocked;
 }
+
+/* ---------- popular packages ---------- */
+
+export type PopularPackageDTO = {
+  package_id: string;
+  package_name: string;
+  data_amount: string;
+  selling_price: number;
+  provider_id: string;
+  provider_name: string;
+  provider_logo: string | null;
+  connection_type_label: string;
+};
+
+/**
+ * Iftin may return popular packages either globally (`popular_packages` /
+ * `popularPackages`) or per provider (`provider.popular_packages`).
+ * Field names also vary (name/price/data/id), so every shape is normalised here.
+ */
+export function mapPopularPackages(catalog: IftinCatalog | null | undefined): PopularPackageDTO[] {
+  if (!catalog) return [];
+  const anyCatalog = catalog as any;
+  const providers: any[] = catalog.providers ?? [];
+
+  const providerById = new Map<string, any>();
+  for (const p of providers) providerById.set(String(p.provider_id ?? p.id), p);
+
+  let raw: any[] = anyCatalog.popular_packages ?? anyCatalog.popularPackages ?? [];
+  if (!Array.isArray(raw) || raw.length === 0) {
+    raw = [];
+    for (const p of providers) {
+      const list = p.popular_packages ?? p.popularPackages ?? [];
+      for (const pkg of list) raw.push({ ...pkg, provider_id: pkg.provider_id ?? p.provider_id ?? p.id });
+    }
+  }
+
+  return raw
+    .map((pkg: any) => {
+      const providerId = String(pkg.provider_id ?? pkg.providerId ?? '');
+      const provider = providerById.get(providerId);
+      const packageId = String(pkg.package_id ?? pkg.id ?? '');
+      const basePrice = Number(pkg.selling_price ?? pkg.price ?? pkg.base_price ?? 0);
+      return {
+        package_id: packageId,
+        package_name: String(pkg.package_name ?? pkg.name ?? ''),
+        data_amount: String(pkg.data_amount ?? pkg.data ?? ''),
+        selling_price: sellPriceFor(packageId, basePrice),
+        provider_id: providerId,
+        provider_name: String(pkg.provider_name ?? provider?.provider_name ?? ''),
+        provider_logo: pkg.provider_logo ?? provider?.provider_logo ?? null,
+        connection_type_label: String(pkg.connection_type_label ?? pkg.type ?? ''),
+      };
+    })
+    .filter((p) => p.package_id && (p.data_amount || p.package_name));
+}
