@@ -193,8 +193,10 @@ const PhoneVerification = ({ isOpen, onClose, onSuccess, paymentProvider, packag
                   <span className="text-xs font-bold text-foreground">+252</span>
                 </div>
                 <input
-                  type="tel"
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="tel-national"
                   placeholder="61 xxx xxxx"
                   value={phoneNumber}
                   onChange={handlePhoneNumberChange}
