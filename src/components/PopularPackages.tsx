@@ -124,11 +124,18 @@ const PopularPackages = () => {
           >
             <div className="flex items-center justify-between gap-3 overflow-hidden">
               <div className="flex items-center gap-3 flex-1 min-w-0">
-                {pkg.provider_logo && (
-                  <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
-                    <CachedImage src={pkg.provider_logo} alt={pkg.provider_name} className="w-9 h-9 object-contain" />
-                  </div>
-                )}
+                <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
+                  <CachedImage
+                    src={pkg.provider_logo}
+                    alt={pkg.provider_name}
+                    className="w-9 h-9 object-contain"
+                    fallback={
+                      <span className="flex h-full w-full items-center justify-center bg-primary text-sm font-black text-primary-foreground">
+                        {(pkg.provider_name || '?').trim().charAt(0).toUpperCase()}
+                      </span>
+                    }
+                  />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <Wifi className="w-4 h-4 text-primary flex-shrink-0" />

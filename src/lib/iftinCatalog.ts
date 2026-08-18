@@ -9,6 +9,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getTenantId, setTenantHeader } from '@/integrations/supabase/client';
 import { ensureResellerOverrides, loadResellerOverrides, paymentNumberFor, sellPriceFor } from '@/lib/resellerOverrides';
+import { cacheImages } from '@/lib/imageCache';
 
 export type IftinCatalog = {
   partner?: string;
@@ -306,10 +307,17 @@ export function buildPaymentUssd(
 function cacheLegacyShapes(catalog: IftinCatalog) {
   if (!hasCatalog(catalog)) return;
   try {
-    localStorage.setItem('offline_providers', JSON.stringify(mapProviders(catalog)));
+    const providers = mapProviders(catalog);
+    const paymentProviders = mapPaymentProviders(catalog);
+    localStorage.setItem('offline_providers', JSON.stringify(providers));
     localStorage.setItem('offline_categories', JSON.stringify(mapCategories(catalog)));
     localStorage.setItem('offline_packages', JSON.stringify(mapPackages(catalog)));
-    localStorage.setItem('offline_payment_providers', JSON.stringify(mapPaymentProviders(catalog)));
+    localStorage.setItem('offline_payment_providers', JSON.stringify(paymentProviders));
+    // Persist logos as data URLs right away so they show instantly & offline.
+    cacheImages([
+      ...providers.map((p: any) => p.provider_logo),
+      ...paymentProviders.map((p: any) => p.provider_logo),
+    ]);
   } catch { /* quota */ }
 }
 
