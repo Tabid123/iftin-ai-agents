@@ -87,7 +87,7 @@ export const ProvidersCustomView = ({ isSo }: { isSo: boolean }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl border p-3 space-y-2 animate-in slide-in-from-top-2">
           <div className="text-xs font-bold text-gray-600 dark:text-gray-300">{editingId ? (isSo ? '✏️ Wax ka Beddel' : '✏️ Edit Provider') : (isSo ? '➕ Provider Cusub' : '➕ New Provider')}</div>
           <input value={newProv.provider_name} onChange={e => setNewProv(p => ({...p, provider_name: e.target.value}))} placeholder={isSo ? 'Magaca Provider' : 'Provider Name'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
-          <input value={newProv.evoucher_rate} onChange={e => setNewProv(p => ({...p, evoucher_rate: e.target.value}))} placeholder="E-Voucher Rate %" type="number" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+          <input value={newProv.evoucher_rate} onChange={e => setNewProv(p => ({...p, evoucher_rate: e.target.value}))} placeholder="E-Voucher Rate %" type="number" inputMode="decimal" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <ImageUploader value={newProv.provider_logo} onChange={url => setNewProv(p => ({...p, provider_logo: url}))} bucket="provider-logos" label={isSo ? 'Logo-ga Shirkadda' : 'Provider Logo'} />
           <input value={newProv.promotional_text} onChange={e => setNewProv(p => ({...p, promotional_text: e.target.value}))} placeholder="Promo Text (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="flex gap-2">
@@ -334,8 +334,8 @@ export const PackagesCustomView = ({ isSo }: { isSo: boolean }) => {
             <input value={newPkg.validity_days} onChange={e => setNewPkg(p => ({...p, validity_days: e.target.value}))} placeholder="Days" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <input value={newPkg.selling_price} onChange={e => setNewPkg(p => ({...p, selling_price: e.target.value}))} placeholder="Sell Price *" type="number" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
-            <input value={newPkg.cost_price} onChange={e => setNewPkg(p => ({...p, cost_price: e.target.value}))} placeholder="Cost Price" type="number" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+            <input value={newPkg.selling_price} onChange={e => setNewPkg(p => ({...p, selling_price: e.target.value}))} placeholder="Sell Price *" type="number" inputMode="decimal" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+            <input value={newPkg.cost_price} onChange={e => setNewPkg(p => ({...p, cost_price: e.target.value}))} placeholder="Cost Price" type="number" inputMode="decimal" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           </div>
           <input value={newPkg.ussd_code} onChange={e => setNewPkg(p => ({...p, ussd_code: e.target.value}))} placeholder="USSD Code (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none font-mono" />
           <div className="flex gap-2">
@@ -864,7 +864,7 @@ export const PaymentSettingsCustomView = ({ isSo }: { isSo: boolean }) => {
           <input value={newPay.provider_name} onChange={e => setNewPay(p => ({...p, provider_name: e.target.value}))} placeholder="Provider Name *" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <input value={newPay.payment_number} onChange={e => setNewPay(p => ({...p, payment_number: e.target.value}))} placeholder="Payment Number" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="grid grid-cols-2 gap-2">
-            <input value={newPay.commission_rate} onChange={e => setNewPay(p => ({...p, commission_rate: e.target.value}))} placeholder="Commission %" type="number" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+            <input value={newPay.commission_rate} onChange={e => setNewPay(p => ({...p, commission_rate: e.target.value}))} placeholder="Commission %" type="number" inputMode="decimal" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
             <input value={newPay.prefix_code} onChange={e => setNewPay(p => ({...p, prefix_code: e.target.value}))} inputMode="numeric" placeholder="Prefix Code" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           </div>
           <input value={newPay.ussd_code_template} onChange={e => setNewPay(p => ({...p, ussd_code_template: e.target.value}))} placeholder="USSD Template" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
