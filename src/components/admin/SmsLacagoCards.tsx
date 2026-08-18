@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
+import CachedImage from '@/components/CachedImage';
 
 interface PaymentReceipt {
   id: string;
@@ -412,7 +413,7 @@ export function SmsLacagoCards() {
                     <div>
                       <span className="text-[9px] text-gray-400">{isSo ? 'Shirkad' : 'Provider'}</span>
                       <div className="font-semibold text-[11px] text-gray-800 dark:text-gray-100 flex items-center gap-1.5">
-                        {r.order?.provider?.provider_logo && <img src={r.order.provider.provider_logo} alt="" className="w-5 h-5 rounded-full object-contain border border-gray-200 dark:border-gray-600" />}
+                         <CachedImage src={r.order?.provider?.provider_logo} alt={r.order?.provider?.provider_name || 'Provider'} bundledName={r.order?.provider?.provider_name} className="w-5 h-5 rounded-full object-contain border border-gray-200 dark:border-gray-600" />
                         {r.order?.provider?.provider_name || '-'}
                       </div>
                     </div>

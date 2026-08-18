@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from "@/lib/router-compat";
-import { Phone, MessageCircle, Wifi, ArrowLeft, Edit, Sun, CalendarDays, CalendarRange, Infinity } from 'lucide-react';
+import { Phone, MessageCircle, ArrowLeft, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import RotatingBanner from '@/components/RotatingBanner';
 import CachedImage from '@/components/CachedImage';
-import { cacheImages } from '@/lib/imageCache';
+import { localizeImage } from '@/lib/localImages';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
@@ -211,11 +211,14 @@ const CategorySelection = () => {
   // icons paint instantly next time — online or fully offline.
   useEffect(() => {
     if (!categories.length) return;
-    cacheImages(categories.map((c: any) => c.category_image));
+    const localized = categories.map((category) => ({
+      ...category,
+      category_image: localizeImage('category', category.category_image, category.category_name, providerName),
+    }));
     try {
       const existing = JSON.parse(localStorage.getItem('offline_categories') || '[]');
       const merged = Array.from(
-        new Map([...existing, ...categories].map((c: any) => [c.id, c])).values()
+        new Map([...existing, ...localized].map((c: any) => [c.id, c])).values()
       );
       localStorage.setItem('offline_categories', JSON.stringify(merged));
     } catch { /* ignore */ }
@@ -266,27 +269,6 @@ const CategorySelection = () => {
 
   const handleChangeOfflineNumbers = () => {
     navigate('/offline-mode');
-  };
-
-  // Get category icon based on category name
-  const getCategoryIcon = (categoryName: string, colorClass: string) => {
-    const lowerName = categoryName.toLowerCase();
-    const iconClass = `w-8 h-8 ${colorClass} animate-pulse-glow`;
-    
-    if (lowerName.includes('maalinle')) {
-      return <Sun className={iconClass} />;
-    }
-    if (lowerName.includes('isbuucle')) {
-      return <CalendarDays className={iconClass} />;
-    }
-    if (lowerName.includes('bille')) {
-      return <CalendarRange className={iconClass} />;
-    }
-    if (lowerName.includes('no expire') || lowerName.includes('expire')) {
-      return <Infinity className={iconClass} />;
-    }
-    // Default fallback
-    return <Wifi className={iconClass} />;
   };
 
   // Get saved offline numbers from localStorage
@@ -350,18 +332,16 @@ const CategorySelection = () => {
                     className="w-12 h-12 flex-shrink-0 flex items-center justify-center animate-bounce-in opacity-0"
                     style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
                   >
-                    {category.category_image ? (
-                      <CachedImage
-                        src={category.category_image}
-                        alt={category.category_name}
-                        className="w-12 h-12 object-contain"
-                        loading="eager"
-                        decoding="async"
-                        fallback={getCategoryIcon(category.category_name, getBrandBorderClass(providerName).replace('border-', 'text-'))}
-                      />
-                    ) : (
-                      getCategoryIcon(category.category_name, getBrandBorderClass(providerName).replace('border-', 'text-'))
-                    )}
+                    <CachedImage
+                      src={category.category_image}
+                      alt={category.category_name}
+                      kind="category"
+                      bundledName={category.category_name}
+                      providerName={providerName}
+                      className="w-12 h-12 object-contain"
+                      loading="eager"
+                      decoding="sync"
+                    />
                   </div>
                   <span className="text-foreground text-center px-2 text-[10px] font-semibold line-clamp-2 leading-tight max-w-full">
                     {category.category_name}

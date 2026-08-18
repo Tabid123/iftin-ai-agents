@@ -28,6 +28,8 @@ import {
 } from '@/lib/iftinIntent';
 import { Capacitor } from '@capacitor/core';
 import { getAllowedPrefixes, matchesAllowedPrefix, formatPrefixes } from '@/lib/phonePrefixes';
+import CachedImage from '@/components/CachedImage';
+import { localizeImage } from '@/lib/localImages';
 interface PaymentProvider {
   id: string;
   provider_name: string;
@@ -41,6 +43,10 @@ interface PaymentProvider {
   payment_number: string | null;
 }
 const PaymentProviders = () => {
+  const localizePayments = (items: PaymentProvider[]) => items.map((payment) => ({
+    ...payment,
+    provider_logo: localizeImage('payment', payment.provider_logo, payment.provider_name),
+  }));
   const navigate = useNavigate();
   const { isReallyOnline } = useConnectivity();
   const { queueOrder } = useOfflineSync();
@@ -70,14 +76,14 @@ const PaymentProviders = () => {
       // Try cache first if offline
       if (!isReallyOnline) {
         const cached = localStorage.getItem('offline_payment_providers');
-        return cached ? JSON.parse(cached) : [];
+        return cached ? localizePayments(JSON.parse(cached)) : [];
       }
       
       const readCache = () => {
         try {
           const cached = localStorage.getItem('offline_payment_providers');
           const parsed = cached ? JSON.parse(cached) : [];
-          return Array.isArray(parsed) ? parsed : [];
+          return Array.isArray(parsed) ? localizePayments(parsed) : [];
         } catch {
           return [];
         }
@@ -109,8 +115,9 @@ const PaymentProviders = () => {
 
       // An empty local table must NOT wipe the Iftin list we already have.
       if (Array.isArray(data) && data.length) {
-        localStorage.setItem('offline_payment_providers', JSON.stringify(data));
-        return data;
+        const localized = localizePayments(data);
+        localStorage.setItem('offline_payment_providers', JSON.stringify(localized));
+        return localized;
       }
 
       return readCache();
@@ -123,7 +130,7 @@ const PaymentProviders = () => {
     initialData: () => {
       try {
         const cached = localStorage.getItem('offline_payment_providers');
-        return cached ? JSON.parse(cached) : undefined;
+        return cached ? localizePayments(JSON.parse(cached)) : undefined;
       } catch (e) {
         return undefined;
       }
@@ -766,7 +773,7 @@ return <div className="min-h-screen bg-[#efefef] pb-24">
       }}>
               <div className="flex items-center">
                 <div className="w-16 h-12 mr-4 flex items-center justify-center bg-gray-50 rounded-lg">
-                  {payment.provider_logo && <img src={payment.provider_logo} alt={payment.provider_name} className="w-full h-full object-contain" loading="eager" decoding="async" />}
+                  <CachedImage src={payment.provider_logo} alt={payment.provider_name} bundledName={payment.provider_name} kind="payment" className="w-full h-full object-contain" loading="eager" decoding="sync" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800">{payment.provider_name}</h3>

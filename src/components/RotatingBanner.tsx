@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import CachedImage from '@/components/CachedImage';
+import { getLocalImage, localizeImage } from '@/lib/localImages';
 
 interface Banner {
   id: string;
@@ -11,16 +13,29 @@ interface Banner {
   rotation_interval?: number | null;
 }
 
+const LOCAL_BANNERS: Banner[] = [1, 2, 3, 4].map((number) => ({
+  id: `local-banner-${number}`,
+  banner_image: getLocalImage('banner', `banner${number}`) ?? '',
+  alt_text: `Promotional banner ${number}`,
+  display_order: number,
+  media_type: 'image',
+}));
+
+const localizeBanners = (items: Banner[]) => items.map((banner, index) => ({
+  ...banner,
+  banner_image: localizeImage('banner', banner.banner_image, `banner${index + 1}`) ?? '',
+}));
+
 const RotatingBanner = () => {
   // Initialize banners directly from cache for instant display
   const [banners, setBanners] = useState<Banner[]>(() => {
     try {
       const cached = localStorage.getItem('offline_banners');
       if (cached) {
-        return JSON.parse(cached);
+        return localizeBanners(JSON.parse(cached));
       }
     } catch (e) {}
-    return [];
+    return LOCAL_BANNERS;
   });
   const [currentBanner, setCurrentBanner] = useState(() => {
     try {
@@ -159,7 +174,7 @@ const RotatingBanner = () => {
 
         if (error) throw error;
 
-        const freshBanners = (data ?? []) as Banner[];
+        const freshBanners = localizeBanners((data ?? []) as Banner[]);
         setBanners(freshBanners);
         localStorage.setItem('offline_banners', JSON.stringify(freshBanners));
 
@@ -248,10 +263,12 @@ const RotatingBanner = () => {
             aria-label={currentMedia.alt_text || 'Promotional video'}
           />
         ) : (
-          <img
+          <CachedImage
             key={currentMedia.banner_image}
             src={currentMedia.banner_image}
             alt={currentMedia.alt_text || 'Promotional banner'}
+            kind="banner"
+            bundledName={`banner${currentBanner + 1}`}
             className="w-full h-full object-cover animate-fade-in"
             width={1200}
             height={400}

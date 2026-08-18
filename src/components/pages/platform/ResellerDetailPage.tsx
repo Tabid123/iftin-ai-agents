@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast'
 import { ArrowLeft, Loader2, Upload, X, KeyRound, Copy, Check, UserCog } from 'lucide-react'
 import ThemePreview from '@/components/platform/ThemePreview'
 import PartnerApiTab from '@/components/platform/PartnerApiTab'
+import CachedImage from '@/components/CachedImage'
 
 
 export default function ResellerDetailPage() {
@@ -221,7 +222,7 @@ export default function ResellerDetailPage() {
               <div className="flex items-center gap-3 mt-1">
                 <div className="h-14 w-14 rounded-lg border bg-white grid place-items-center overflow-hidden">
                   {logoUrl ? (
-                    <img src={logoUrl} alt="logo" className="h-full w-full object-contain" />
+                    <CachedImage src={logoUrl} alt={`${name || 'Reseller'} logo`} className="h-full w-full object-contain" />
                   ) : (
                     <span className="text-xs text-muted-foreground">none</span>
                   )}

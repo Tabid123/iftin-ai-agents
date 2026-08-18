@@ -1,6 +1,7 @@
 import React from 'react';
 import najaxLogo from '@/assets/najax-logo.jpeg';
 import { useTenant } from '@/contexts/TenantContext';
+import CachedImage from '@/components/CachedImage';
 
 const HeroSection = () => {
   const t = useTenant();
@@ -11,7 +12,7 @@ const HeroSection = () => {
   return (
     <div className="text-center space-y-5 pt-4">
       <div className="w-36 h-36 mx-auto rounded-[2rem] overflow-hidden shadow-xl shadow-primary/20 bg-card">
-        <img src={logo} alt={name} className="w-full h-full object-cover" />
+        <CachedImage src={logo} alt={name} kind="provider" className="w-full h-full object-cover" fallback={<img src={najaxLogo} alt={name} className="w-full h-full object-cover" />} />
       </div>
 
       <div className="space-y-1">

@@ -14,6 +14,7 @@ import { downloadBlobInBrowser } from '@/utils/downloadFile';
 import { fetchIftinCatalog, hasCatalog, mapProviders } from '@/lib/iftinCatalog';
 import { sellPriceFor } from '@/lib/resellerOverrides';
 import { fetchIftinIntentStatus, isIntentPending } from '@/lib/iftinIntent';
+import CachedImage from '@/components/CachedImage';
 
 // Helper function to get invoice image - uses cached URL if available, otherwise generates on-demand
 const getInvoiceBlob = async (order: any): Promise<Blob> => {
@@ -272,9 +273,7 @@ const OrderHistory = () => {
                 {/* Left side - Logo and Details */}
                 <div className="flex items-start gap-3">
                   <div className="w-14 h-14 rounded-full border-2 border-green-500 flex items-center justify-center p-2 flex-shrink-0">
-                    {item.logo ? <img src={item.logo} alt={item.provider} className="w-full h-full object-contain" /> : <div className="w-full h-full bg-primary/20 rounded-full flex items-center justify-center">
-                        <span className="text-lg font-bold text-primary">{item.provider.charAt(0)}</span>
-                      </div>}
+                    <CachedImage src={item.logo} alt={item.provider} bundledName={item.provider} kind="provider" className="w-full h-full object-contain" loading="eager" decoding="sync" />
                   </div>
                   <div className="flex flex-col gap-1">
                     <div className="font-semibold text-foreground text-base">
@@ -336,9 +335,7 @@ const OrderHistory = () => {
             {/* Provider Logo */}
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-primary/40 flex items-center justify-center p-4 bg-primary/5">
-                {selectedOrder.logo ? <img src={selectedOrder.logo} alt={selectedOrder.provider} className="w-full h-full object-contain" /> : <div className="w-full h-full bg-primary/20 rounded-full flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">{selectedOrder.provider.charAt(0)}</span>
-                  </div>}
+                <CachedImage src={selectedOrder.logo} alt={selectedOrder.provider} bundledName={selectedOrder.provider} kind="provider" className="w-full h-full object-contain" loading="eager" decoding="sync" />
               </div>
             </div>
 

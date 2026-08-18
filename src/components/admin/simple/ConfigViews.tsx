@@ -11,6 +11,7 @@ import {
 } from './shared';
 import { FileText } from 'lucide-react';
 import { validateUssdTemplate } from '@/lib/ussdValidator';
+import CachedImage from '@/components/CachedImage';
 
 // ========== PROVIDERS ==========
 export const ProvidersCustomView = ({ isSo }: { isSo: boolean }) => {
@@ -105,7 +106,7 @@ export const ProvidersCustomView = ({ isSo }: { isSo: boolean }) => {
             return (
               <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-purple-100/50 dark:border-purple-900/20 overflow-hidden">
                 <button onClick={() => setExpandedId(isExpanded ? null : item.id)} className="w-full px-3 py-2.5 flex items-center gap-3 text-left active:bg-purple-50/50">
-                  {item.provider_logo && <img src={item.provider_logo} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />}
+                  <CachedImage src={item.provider_logo} alt={item.provider_name} bundledName={item.provider_name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
                   <div className="flex-1 min-w-0"><div className="font-bold text-sm text-gray-800 dark:text-white">{item.provider_name}</div></div>
                   <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{item.is_active ? 'Active' : 'Off'}</span>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -271,7 +272,7 @@ export const PackagesCustomView = ({ isSo }: { isSo: boolean }) => {
       return (
         <div key={prov.id} className="space-y-2">
           <div className="flex items-center gap-2 px-1 pt-1">
-            {prov.provider_logo && <img src={prov.provider_logo} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-purple-200" />}
+             <CachedImage src={prov.provider_logo} alt={prov.provider_name} bundledName={prov.provider_name} className="w-7 h-7 rounded-full object-cover border-2 border-purple-200" />
             <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{prov.provider_name}</span>
             <span className="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-0.5 rounded-full font-bold">{provPkgs.length}</span>
             <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
@@ -282,7 +283,7 @@ export const PackagesCustomView = ({ isSo }: { isSo: boolean }) => {
             return (
               <div key={cat.id} className="ml-2">
                 <div className="flex items-center gap-2 mb-1.5 px-1">
-                  {cat.category_image ? <img src={cat.category_image} alt="" className="w-6 h-6 rounded-lg object-cover shrink-0" /> : prov.provider_logo ? <img src={prov.provider_logo} alt="" className="w-5 h-5 rounded-full object-cover shrink-0 opacity-60" /> : null}
+                  <CachedImage src={cat.category_image} alt={cat.category_name} kind="category" bundledName={cat.category_name} providerName={prov.provider_name} className="w-6 h-6 rounded-lg object-cover shrink-0" />
                   <span className="font-semibold text-xs text-gray-600 dark:text-gray-300">{cat.category_name}</span>
                   <span className="text-[9px] bg-gray-100 dark:bg-gray-700 text-gray-500 px-1.5 py-0.5 rounded-full">{catPkgs.length}</span>
                 </div>
@@ -439,8 +440,7 @@ export const CategoriesCustomView = ({ isSo }: { isSo: boolean }) => {
     return (
       <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-purple-100/50 dark:border-purple-900/20 overflow-hidden">
         <button onClick={() => setExpandedId(isExpanded ? null : item.id)} className="w-full px-3 py-2.5 flex items-center gap-3 text-left active:bg-purple-50/50">
-          {item.category_image && <img src={item.category_image} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />}
-          {!item.category_image && getProviderLogo(item.provider_id) && <img src={getProviderLogo(item.provider_id)} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />}
+          <CachedImage src={item.category_image} alt={item.category_name} kind="category" bundledName={item.category_name} providerName={getProviderName(item.provider_id)} className="w-10 h-10 rounded-lg object-cover shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="font-bold text-sm text-gray-800 dark:text-white">{item.category_name}</div>
             <div className="text-[11px] text-gray-400">{getProviderName(item.provider_id)} · {catPkgs.length} pkgs</div>
@@ -507,7 +507,7 @@ export const CategoriesCustomView = ({ isSo }: { isSo: boolean }) => {
                 return (
                   <div key={prov.id}>
                     <div className="flex items-center gap-2 mb-2 px-1">
-                      {prov.provider_logo && <img src={prov.provider_logo} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-emerald-200" />}
+                       <CachedImage src={prov.provider_logo} alt={prov.provider_name} bundledName={prov.provider_name} className="w-7 h-7 rounded-full object-cover border-2 border-emerald-200" />
                       <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{prov.provider_name}</span>
                       <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">{provCats.length}</span>
                       <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
@@ -653,7 +653,7 @@ export const FeaturedCustomView = ({ isSo }: { isSo: boolean }) => {
             return (
               <div key={prov.id}>
                 <div className="flex items-center gap-2 mb-2 px-1">
-                  {prov.provider_logo && <img src={prov.provider_logo} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-amber-200" />}
+                  <CachedImage src={prov.provider_logo} alt={prov.provider_name} bundledName={prov.provider_name} className="w-7 h-7 rounded-full object-cover border-2 border-amber-200" />
                   <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{prov.provider_name}</span>
                   <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold">{provFeat.length}</span>
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
@@ -763,7 +763,7 @@ export const BannersCustomView = ({ isSo }: { isSo: boolean }) => {
                 {isExpanded && (
                   <div className="border-t border-purple-200/50 dark:border-purple-900/30 bg-gradient-to-b from-purple-50/80 to-white dark:from-purple-950/20 dark:to-gray-800 animate-in slide-in-from-top-1 duration-150">
                     <div className="px-3 py-3 space-y-2">
-                      {item.banner_image && <img src={item.banner_image} alt="" className="w-full h-28 object-cover rounded-lg" />}
+                      <CachedImage src={item.banner_image} alt={item.alt_text || 'Banner'} kind="banner" className="w-full h-28 object-cover rounded-lg" />
                       <InvoiceRow icon={Hash} label="Order" value={`${item.display_order}`} color="text-blue-500" />
                       <InvoiceRow icon={Image} label="Type" value={item.media_type || 'image'} color="text-gray-500" />
                       <InvoiceRow icon={Calendar} label="Created" value={formatDate(item.created_at)} color="text-teal-500" />
@@ -882,7 +882,7 @@ export const PaymentSettingsCustomView = ({ isSo }: { isSo: boolean }) => {
             return (
               <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-purple-100/50 dark:border-purple-900/20 overflow-hidden">
                 <button onClick={() => setExpandedId(isExpanded ? null : item.id)} className="w-full px-3 py-2.5 flex items-center gap-3 text-left active:bg-purple-50/50">
-                  {item.provider_logo && <img src={item.provider_logo} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />}
+                  <CachedImage src={item.provider_logo} alt={item.provider_name} bundledName={item.provider_name} kind="payment" className="w-10 h-10 rounded-lg object-cover shrink-0" />
                   <div className="flex-1 min-w-0"><div className="font-bold text-sm text-gray-800 dark:text-white">{item.provider_name}</div></div>
                   <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{item.is_active ? 'Active' : 'Off'}</span>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform shrink-0 ${isExpanded ? 'rotate-180' : ''}`} />
@@ -1028,7 +1028,7 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
             return (
               <div key={prov.id}>
                 <div className="flex items-center gap-2 mb-2 px-1">
-                  {prov.provider_logo && <img src={prov.provider_logo} alt="" className="w-7 h-7 rounded-full object-cover" />}
+                  <CachedImage src={prov.provider_logo} alt={prov.provider_name} bundledName={prov.provider_name} className="w-7 h-7 rounded-full object-cover" />
                   <span className="font-bold text-sm text-gray-700 dark:text-gray-200">{prov.provider_name}</span>
                   <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold">{provCodes.length}</span>
                   <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />

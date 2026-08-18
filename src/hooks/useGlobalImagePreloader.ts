@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { cacheImages } from '@/lib/imageCache';
+import { bundledStaticImages, getLocalImage } from '@/lib/localImages';
 
 export const useGlobalImagePreloader = () => {
   useEffect(() => {
@@ -12,7 +13,7 @@ export const useGlobalImagePreloader = () => {
         const paymentProviders = JSON.parse(localStorage.getItem('offline_payment_providers') || '[]');
         
         // Collect ALL image URLs
-        const allImageUrls: string[] = [
+        const cachedImageUrls: string[] = [
           ...providers.map((p: any) => p.provider_logo).filter(Boolean),
           ...categories.map((c: any) => c.category_image).filter(Boolean),
           ...banners.map((b: any) => b.banner_image).filter(Boolean),
@@ -20,7 +21,7 @@ export const useGlobalImagePreloader = () => {
         ];
         
         // Remove duplicates
-        const uniqueUrls = [...new Set(allImageUrls)];
+        const uniqueUrls = [...new Set([...bundledStaticImages, ...cachedImageUrls])];
         
         // Preload ALL images into browser memory immediately
         uniqueUrls.forEach(url => {
@@ -28,8 +29,16 @@ export const useGlobalImagePreloader = () => {
           img.src = url;
         });
 
-        // Persist them as data URLs so they render offline too.
-        cacheImages(uniqueUrls);
+        // Known static images are already in the bundle. Cache only custom
+        // remote uploads; known provider/category/banner images never need I/O.
+        const customRemoteUrls = cachedImageUrls.filter((url) =>
+          /^https?:/i.test(url) &&
+          !getLocalImage('provider', null, url) &&
+          !getLocalImage('payment', null, url) &&
+          !getLocalImage('category', null, url) &&
+          !getLocalImage('banner', null, url),
+        );
+        cacheImages(customRemoteUrls);
         
         console.log(`[ImagePreloader] Preloaded ${uniqueUrls.length} images into memory`);
       } catch (error) {

@@ -8,6 +8,7 @@ import { useOfflineCache } from '@/hooks/useOfflineCache';
 import najaxLogoSplash from '@/assets/najax-logo.jpeg';
 import { useTenant } from '@/contexts/TenantContext';
 import { hideNativeSplash } from '@/lib/nativeSplash';
+import CachedImage from '@/components/CachedImage';
 
 
  // Validate Somali phone format: 9 digits starting with 61, 77, 62, or 68
@@ -202,7 +203,7 @@ const SplashScreen = ({ extendedSplashReached, connectivityChecking, forceExit }
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-primary">
-      <img src={logo} alt={name} className="w-36 h-36 rounded-2xl animate-pulse object-cover" />
+      <CachedImage src={logo} alt={name} className="w-36 h-36 rounded-2xl animate-pulse object-cover" fallback={<img src={najaxLogoSplash} alt={name} className="w-36 h-36 rounded-2xl animate-pulse object-cover" />} />
       <div className="w-10 h-10 mt-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
 
       {extendedSplashReached && connectivityChecking && !forceExit && (

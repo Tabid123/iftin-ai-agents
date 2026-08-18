@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { ImageOff } from 'lucide-react';
 import { cacheImage, getCachedImage } from '@/lib/imageCache';
-import { getBundledLogo } from '@/lib/bundledLogos';
+import { getLocalImage, type LocalImageKind } from '@/lib/localImages';
 
 type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
   src: string | null | undefined;
   /** Provider / payment name used to pick a logo shipped inside the app build. */
   bundledName?: string | null;
+  kind?: LocalImageKind;
+  providerName?: string | null;
   /** Last resort when there is no cached, remote or bundled image. */
   fallback?: React.ReactNode;
 };
@@ -14,8 +17,9 @@ type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
  * <img> that prefers a locally cached data URL, then the network image, then a
  * logo bundled in the build — so logos render 100% of the time, online or offline.
  */
-const CachedImage = ({ src, alt, bundledName, fallback, ...rest }: Props) => {
-  const bundled = getBundledLogo(bundledName ?? (typeof alt === 'string' ? alt : null));
+const CachedImage = ({ src, alt, bundledName, kind = 'provider', providerName, fallback, ...rest }: Props) => {
+  const imageName = bundledName ?? (typeof alt === 'string' ? alt : null);
+  const bundled = getLocalImage(kind, imageName, src, providerName);
   // Bundled asset first: it ships inside the build, so it paints instantly and
   // works with zero network. Cached data URL next, remote URL last.
   const pick = (s: string | null | undefined) => bundled ?? getCachedImage(s) ?? s ?? null;
@@ -44,7 +48,9 @@ const CachedImage = ({ src, alt, bundledName, fallback, ...rest }: Props) => {
     return <img src={bundled} alt={alt} {...rest} />;
   }
 
-  if (!resolved || failed) return <>{fallback ?? null}</>;
+  if (!resolved || failed) {
+    return <>{fallback ?? <span className="flex size-full items-center justify-center rounded bg-muted text-muted-foreground" aria-hidden="true"><ImageOff className="size-5" /></span>}</>;
+  }
 
 
   return (
