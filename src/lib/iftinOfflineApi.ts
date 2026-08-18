@@ -87,12 +87,18 @@ export function apiBase(): string {
   return '';
 }
 
+/** Requests never hang: abort after this many ms so the UI can recover. */
+const REQUEST_TIMEOUT_MS = 20000;
+
 async function postOffline(body: Record<string, unknown>): Promise<OfflineApiResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   try {
     const res = await fetch(`${apiBase()}/api/public/offline-register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
 
     let json: any = null;
@@ -109,7 +115,15 @@ async function postOffline(body: Record<string, unknown>): Promise<OfflineApiRes
       data: json?.data ?? null,
     };
   } catch (e: any) {
-    return { ok: false, status: 0, error: 'network_error', message: e?.message ?? 'Internet ma jiro' };
+    const timedOut = e?.name === 'AbortError';
+    return {
+      ok: false,
+      status: 0,
+      error: timedOut ? 'timeout' : 'network_error',
+      message: timedOut ? 'Server-ka ma jawaabin — isku day mar kale' : (e?.message ?? 'Internet ma jiro'),
+    };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -125,7 +139,8 @@ const somaliMessage = (r: OfflineApiResult): string => {
   if (code === 'missing_tenant') return 'Tenant-ka lama aqoonsan';
   if (r.status === 401) return 'API key-ga waa qaldan yahay (401)';
   if (r.status === 429) return 'Dalabyo aad u badan — sug wax yar';
-  if (r.status === 0 || code === 'network_error') return 'Internet ma jiro — waa la safeeyay (retry)';
+  if (code === 'timeout') return 'Server-ka ma jawaabin — isku day mar kale';
+  if (r.status === 0 || code === 'network_error') return 'Internet ma jiro — isku day mar kale';
   if (r.status >= 500) return 'Iftin server-ka ma jawaabin — isku day mar kale';
   return r.message || (code ? `Khalad: ${code}` : `Khalad (${r.status})`);
 };
@@ -145,7 +160,12 @@ export async function registerOfflineCustomer(
     return { ok: false, status: 400, error: 'invalid_receiver_phone', message: 'Lambarka xirmada loo dirayo sax ma aha' };
   }
 
-  const tenantId = input.tenantId ?? (await resolveTenantId());
+  const tenantId =
+    input.tenantId ??
+    (await Promise.race([
+      resolveTenantId(),
+      new Promise<null>((r) => setTimeout(() => r(null), 8000)),
+    ]));
   if (!tenantId) {
     return { ok: false, status: 400, error: 'missing_tenant', message: 'Tenant-ka lama aqoonsan' };
   }
