@@ -160,7 +160,12 @@ export async function registerOfflineCustomer(
     return { ok: false, status: 400, error: 'invalid_receiver_phone', message: 'Lambarka xirmada loo dirayo sax ma aha' };
   }
 
-  const tenantId = input.tenantId ?? (await resolveTenantId());
+  const tenantId =
+    input.tenantId ??
+    (await Promise.race([
+      resolveTenantId(),
+      new Promise<null>((r) => setTimeout(() => r(null), 8000)),
+    ]));
   if (!tenantId) {
     return { ok: false, status: 400, error: 'missing_tenant', message: 'Tenant-ka lama aqoonsan' };
   }
