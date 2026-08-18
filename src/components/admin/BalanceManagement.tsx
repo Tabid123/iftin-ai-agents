@@ -356,6 +356,8 @@ export const BalanceManagement = () => {
                 <Label>{language === 'so' ? 'Lambarka (qofka loo diraayo)' : 'Phone Number (recipient)'}</Label>
                 <Input
                   type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={sendPhone}
                   onChange={(e) => setSendPhone(e.target.value)}
                   placeholder="61XXXXXXX"

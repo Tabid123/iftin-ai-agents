@@ -798,6 +798,8 @@ return <div className="min-h-screen bg-[#efefef] pb-24">
                 <Input 
                   id="payment-number" 
                   type="tel" 
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder={paymentProviderPrefix ? `${paymentProviderPrefix}XXXXXXX` : 'XXXXXXXXX'}
                   value={paymentNumber} 
                   onChange={handlePaymentNumberChange} 
@@ -822,6 +824,8 @@ return <div className="min-h-screen bg-[#efefef] pb-24">
                 <Input 
                   id="receiver-number" 
                   type="tel" 
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder={isADSL ? '1XXXXXX' : (receiverProviderPrefix ? `${receiverProviderPrefix}XXXXXXX` : 'XXXXXXXXX')}
                   value={receiverNumber} 
                   onChange={handleReceiverNumberChange} 

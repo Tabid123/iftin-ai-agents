@@ -220,6 +220,8 @@ const OfflineMode = () => {
               )}
               <input
                 type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder={savedSenderPhone || "61 xxx xxxx"}
                 value={senderPhone}
                 onChange={e => {
@@ -253,6 +255,8 @@ const OfflineMode = () => {
               )}
               <input
                 type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder={savedReceiverPhone || "61 xxx xxxx"}
                 value={receiverPhone}
                 onChange={e => {

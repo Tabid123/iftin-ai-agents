@@ -197,6 +197,8 @@ const PhoneInput = () => {
               <Input
                 id="phone"
                 type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="61 xxx xxxx"
                 value={phoneNumber}
                 onChange={handlePhoneNumberChange}
