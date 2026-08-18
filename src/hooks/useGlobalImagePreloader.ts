@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { cacheImages } from '@/lib/imageCache';
 
 export const useGlobalImagePreloader = () => {
   useEffect(() => {
