@@ -128,6 +128,7 @@ const PopularPackages = () => {
                   <CachedImage
                     src={pkg.provider_logo}
                     alt={pkg.provider_name}
+                    bundledName={pkg.provider_name}
                     className="w-9 h-9 object-contain"
                     fallback={
                       <span className="flex h-full w-full items-center justify-center bg-primary text-sm font-black text-primary-foreground">

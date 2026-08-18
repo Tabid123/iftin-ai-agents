@@ -46,6 +46,7 @@ const ProviderCard = ({ name, logo, onClick, disabled = false }: ProviderCardPro
         <CachedImage
           src={logo}
           alt={`${name} logo`}
+          bundledName={name}
           className="h-full w-full object-contain"
           loading="eager"
           decoding="async"
