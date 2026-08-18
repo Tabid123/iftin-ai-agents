@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { DownloadAppCard } from "@/components/admin/DownloadAppCard";
+
 import { useNavigate } from "@/lib/router-compat";
 import { supabase } from '@/integrations/supabase/client';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -464,9 +464,6 @@ const SimpleAdminDashboard = () => {
                 </div>
               </div>
             )}
-
-            {/* Download my app */}
-            <DownloadAppCard />
 
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-2 gap-3">
