@@ -4,6 +4,7 @@ import { Phone, MessageCircle, Wifi, ArrowLeft, Edit, Sun, CalendarDays, Calenda
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import RotatingBanner from '@/components/RotatingBanner';
+import CachedImage from '@/components/CachedImage';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
