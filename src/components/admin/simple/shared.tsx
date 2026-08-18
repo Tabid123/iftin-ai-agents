@@ -6,6 +6,7 @@ import {
   Plus, Image, Star, CreditCard, Settings, Code, ChevronDown, User, Send,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import CachedImage from '@/components/CachedImage';
 
 // Re-export icons for child views
 export {
@@ -171,7 +172,7 @@ export const ImageUploader = ({ value, onChange, bucket, label }: { value: strin
     <div className="space-y-1.5">
       <div className="text-[11px] text-gray-500 font-medium">{label}</div>
       <div className="flex items-center gap-2">
-        {value && <img src={value} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0 border" />}
+        {value && <CachedImage src={value} alt={label} kind="category" className="w-12 h-12 rounded-lg object-cover shrink-0 border" />}
         <label className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg border-2 border-dashed cursor-pointer transition-all ${uploading ? 'border-gray-300 bg-gray-50' : 'border-purple-300 bg-purple-50/50 hover:bg-purple-100/50 dark:border-purple-700 dark:bg-purple-950/20'}`}>
           {uploading ? <Loader2 className="w-4 h-4 animate-spin text-gray-400" /> : <Upload className="w-4 h-4 text-purple-500" />}
           <span className="text-xs font-medium text-purple-600 dark:text-purple-400">{uploading ? 'Uploading...' : (value ? 'Change' : 'Upload from Gallery')}</span>
@@ -231,7 +232,7 @@ export const ProviderFilterRow = ({ providers, activeId, onSelect, activeColor =
       return (
         <button key={prov.id} onClick={() => onSelect(prov.id)}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 transition-all ${activeId === prov.id ? `${activeColor} text-white shadow-md` : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border'}`}>
-          {prov.provider_logo && <img src={prov.provider_logo} alt="" className="w-5 h-5 rounded-full object-cover" />}
+          <CachedImage src={prov.provider_logo} alt={prov.provider_name} bundledName={prov.provider_name} className="w-5 h-5 rounded-full object-cover" />
           {prov.provider_name} <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${activeId === prov.id ? 'bg-white/25' : 'bg-gray-100 dark:bg-gray-700'}`}>{count}</span>
         </button>
       );

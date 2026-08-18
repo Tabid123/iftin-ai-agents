@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 import { fetchIftinCatalog, hasCatalog, mapPaymentProviders } from '@/lib/iftinCatalog';
 import { loadResellerOverrides, savePaymentNumber } from '@/lib/resellerOverrides';
+import CachedImage from '@/components/CachedImage';
 
 type Row = {
   id: string;
@@ -99,9 +100,7 @@ export default function IftinPaymentNumbers() {
               <tr key={row.id} className="border-b last:border-0">
                 <td className="px-4 py-2">
                   <div className="flex items-center gap-2">
-                    {row.provider_logo && (
-                      <img src={row.provider_logo} alt={row.provider_name} className="h-7 w-7 rounded object-contain" />
-                    )}
+                    <CachedImage src={row.provider_logo} alt={row.provider_name} bundledName={row.provider_name} kind="payment" className="h-7 w-7 rounded object-contain" />
                     <span className="font-medium">{row.provider_name}</span>
                   </div>
                 </td>

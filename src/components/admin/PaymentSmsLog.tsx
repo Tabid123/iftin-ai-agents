@@ -15,6 +15,7 @@ import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { PaymentAnalyticsCharts } from './PaymentAnalyticsCharts';
 import { DeliveryTracker } from './DeliveryTracker';
 import { EVoucherTransactions } from './EVoucherTransactions';
+import CachedImage from '@/components/CachedImage';
 
 interface PaymentReceipt {
   id: string;
@@ -543,7 +544,7 @@ export function PaymentSmsLog() {
                       <TableCell>
                         {receipt.order?.provider ? (
                           <div className="flex items-center gap-2">
-                            {receipt.order.provider.provider_logo && <img src={receipt.order.provider.provider_logo} alt="" className="h-4 w-4 object-contain" />}
+                            <CachedImage src={receipt.order.provider.provider_logo} alt={receipt.order.provider.provider_name} bundledName={receipt.order.provider.provider_name} className="h-4 w-4 object-contain" />
                             <span className="text-sm">{receipt.order.provider.provider_name}</span>
                           </div>
                         ) : <span className="text-muted-foreground">-</span>}

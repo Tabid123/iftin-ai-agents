@@ -10,6 +10,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Loader2, RefreshCw, Truck, CheckCircle2, XCircle, Clock, Phone, Zap, Radio, CheckCheck, Ban, RotateCcw, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { format, formatDistanceToNow, subDays, startOfDay, endOfDay } from 'date-fns';
+import CachedImage from '@/components/CachedImage';
 
 interface DeliveryItem {
   id: string;
@@ -334,9 +335,7 @@ export function DeliveryTracker() {
                 {/* Provider + Logo + Status */}
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-2.5">
-                    {(d.order as any)?.provider?.provider_logo && (
-                      <img src={(d.order as any).provider.provider_logo} alt="" className="w-8 h-8 rounded-full object-contain border border-gray-200 dark:border-gray-600" />
-                    )}
+                    <CachedImage src={(d.order as any)?.provider?.provider_logo} alt={d.provider_name} bundledName={d.provider_name} className="w-8 h-8 rounded-full object-contain border border-gray-200 dark:border-gray-600" />
                     <div>
                       <span className="text-[9px] uppercase tracking-wider text-purple-500 dark:text-purple-400 font-semibold">{isSo ? 'Shirkad' : 'Provider'}</span>
                       <div className="font-bold text-[14px] text-gray-800 dark:text-gray-100">{d.provider_name}</div>
