@@ -232,7 +232,7 @@ const OfflineMode = () => {
                 <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               )}
               <input
-                type="text"
+                type="tel"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoComplete="tel-national"
@@ -269,7 +269,7 @@ const OfflineMode = () => {
                 <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               )}
               <input
-                type="text"
+                type="tel"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoComplete="tel-national"

@@ -238,7 +238,7 @@ export const AutoTopUpSettings = () => {
           <div className="flex gap-2 items-end flex-wrap">
             <div className="flex-1 min-w-[150px]">
               <Label>{language === 'so' ? 'Lambarka' : 'Phone Number'}</Label>
-              <Input value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="617195659" />
+              <Input type="tel" inputMode="numeric" value={newPhone} onChange={(e) => setNewPhone(e.target.value)} placeholder="617195659" />
             </div>
             <div className="flex-1 min-w-[150px]">
               <Label>{language === 'so' ? 'Sharax' : 'Label'}</Label>

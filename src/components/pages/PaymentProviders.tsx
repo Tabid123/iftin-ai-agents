@@ -797,7 +797,7 @@ return <div className="min-h-screen bg-[#efefef] pb-24">
                 </div>
                 <Input 
                   id="payment-number" 
-                  type="text" 
+                  type="tel" 
                   inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="tel-national"
@@ -824,7 +824,7 @@ return <div className="min-h-screen bg-[#efefef] pb-24">
                 </div>
                 <Input 
                   id="receiver-number" 
-                  type="text" 
+                  type="tel" 
                   inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="tel-national"

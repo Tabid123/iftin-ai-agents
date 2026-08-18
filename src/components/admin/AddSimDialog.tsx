@@ -142,6 +142,8 @@ export const AddSimDialog = ({ open, onOpenChange, onSuccess }: AddSimDialogProp
       <div className="space-y-2">
         <Label>{language === 'so' ? 'Lambarka SIM' : 'SIM Number'} *</Label>
         <Input
+          type="tel"
+          inputMode="numeric"
           placeholder="252612345678"
           value={formData[simKey].sim_number}
           onChange={(e) => setFormData({ 

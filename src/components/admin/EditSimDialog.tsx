@@ -96,6 +96,8 @@ export const EditSimDialog = ({ sim, open, onOpenChange, onSuccess }: EditSimDia
               id="sim-number"
               value={simNumber}
               onChange={(e) => setSimNumber(e.target.value)}
+              type="tel"
+              inputMode="numeric"
               placeholder="e.g., +252612345678"
             />
           </div>

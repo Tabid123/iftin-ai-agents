@@ -96,7 +96,7 @@ const AddPackageForm = ({ isSo, numberId, onAdded }: { isSo: boolean; numberId: 
       <input value={name} onChange={e => setName(e.target.value)} placeholder={isSo ? 'Magaca xirmada (tusaale: 24 Saac)' : 'Package name (e.g. 24 Hours)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
       <input value={data} onChange={e => setData(e.target.value)} placeholder={isSo ? 'Data (tusaale: 2GB)' : 'Data (e.g. 2GB)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
       <input value={ussd} onChange={e => setUssd(e.target.value)} placeholder={isSo ? 'USSD Code (ikhtiyaari)' : 'USSD Code (optional)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
-      <input type="number" step="0.01" value={costPrice} onChange={e => setCostPrice(e.target.value)} placeholder={isSo ? 'Cost Price $ (tusaale: 0.50)' : 'Cost Price $ (e.g. 0.50)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
+      <input type="number" inputMode="decimal" step="0.01" value={costPrice} onChange={e => setCostPrice(e.target.value)} placeholder={isSo ? 'Cost Price $ (tusaale: 0.50)' : 'Cost Price $ (e.g. 0.50)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
       <input value={simPassword} onChange={e => setSimPassword(e.target.value)} placeholder={isSo ? 'SIM Password (tusaale: 5516)' : 'SIM Password (e.g. 5516)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
       <input value={prices} onChange={e => setPrices(e.target.value)} placeholder={isSo ? 'Qiimayaasha (tusaale: 0.72, 0.73, 0.74, 0.75)' : 'Prices (e.g. 0.72, 0.73, 0.74, 0.75)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
       <div className="text-[9px] text-gray-400">{isSo ? 'Qiime kasta wuxuu noqdaa package gaar ah' : 'Each price becomes a separate package entry'}</div>
@@ -275,8 +275,8 @@ const NumberCard = ({ num, isSo, onRefresh }: { num: any; isSo: boolean; onRefre
                           <div className="text-[10px] font-bold text-blue-600">{isSo ? 'Package Beddel' : 'Edit Package'}</div>
                           <input value={editPkgData.package_name || ''} onChange={e => setEditPkgData({...editPkgData, package_name: e.target.value})} placeholder={isSo ? 'Magaca' : 'Name'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
                           <div className="grid grid-cols-2 gap-1.5">
-                            <input type="number" step="0.01" value={editPkgData.selling_price || ''} onChange={e => setEditPkgData({...editPkgData, selling_price: e.target.value})} placeholder="Selling $" className="px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
-                            <input type="number" step="0.01" value={editPkgData.cost_price || ''} onChange={e => setEditPkgData({...editPkgData, cost_price: e.target.value})} placeholder="Cost $" className="px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
+                            <input type="number" inputMode="decimal" step="0.01" value={editPkgData.selling_price || ''} onChange={e => setEditPkgData({...editPkgData, selling_price: e.target.value})} placeholder="Selling $" className="px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
+                            <input type="number" inputMode="decimal" step="0.01" value={editPkgData.cost_price || ''} onChange={e => setEditPkgData({...editPkgData, cost_price: e.target.value})} placeholder="Cost $" className="px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
                           </div>
                           <input value={editPkgData.data_amount || ''} onChange={e => setEditPkgData({...editPkgData, data_amount: e.target.value})} placeholder="Data (e.g. 2GB)" className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
                           <input value={editPkgData.ussd_code || ''} onChange={e => setEditPkgData({...editPkgData, ussd_code: e.target.value})} placeholder="USSD Code" className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
@@ -450,11 +450,11 @@ const DeliveryRulesSection = ({ isSo }: { isSo: boolean }) => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[9px] text-gray-500">{isSo ? 'Inta jeer' : 'Count'}</label>
-                  <input type="number" value={count} onChange={e => setCount(e.target.value)} min="1" className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
+                  <input type="number" inputMode="decimal" value={count} onChange={e => setCount(e.target.value)} min="1" className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
                 </div>
                 <div>
                   <label className="text-[9px] text-gray-500">{isSo ? 'Sugitaan (daq.)' : 'Delay (min)'}</label>
-                  <input type="number" value={delay} onChange={e => setDelay(e.target.value)} min="0" className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
+                  <input type="number" inputMode="decimal" value={delay} onChange={e => setDelay(e.target.value)} min="0" className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
                 </div>
               </div>
               <div className="flex gap-2">

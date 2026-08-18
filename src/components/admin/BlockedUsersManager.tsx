@@ -195,6 +195,8 @@ export function BlockedUsersManager() {
             <div>
               <Label>{language === 'so' ? 'Lambarka Taleefanka' : 'Phone Number'}</Label>
               <Input
+                type="tel"
+                inputMode="numeric"
                 placeholder="e.g. 615123456"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
