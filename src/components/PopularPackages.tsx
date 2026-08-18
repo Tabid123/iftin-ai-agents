@@ -5,14 +5,33 @@ import { Card } from './ui/card';
 import { useNavigate } from "@/lib/router-compat";
 import { formatPrice } from '@/lib/utils';
 import { fetchIftinCatalog, mapPopularPackages, type PopularPackageDTO } from '@/lib/iftinCatalog';
+import { cacheImages } from '@/lib/imageCache';
+import CachedImage from '@/components/CachedImage';
 
 /** Bumped key: the old `popularPackages` cache held pre-Iftin data. */
 const QUERY_KEY = ['popularPackages', 'v2-iftin'] as const;
+const OFFLINE_KEY = 'offline_popular_packages_v2';
 
 // One-time cleanup of the legacy cache so stale rows never render again.
 try {
   localStorage.removeItem('offline_featured_packages');
 } catch { /* ignore */ }
+
+function readOffline(): PopularPackageDTO[] {
+  try {
+    const raw = localStorage.getItem(OFFLINE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeOffline(list: PopularPackageDTO[]) {
+  try {
+    localStorage.setItem(OFFLINE_KEY, JSON.stringify(list));
+  } catch { /* quota */ }
+}
 
 const SectionShell = ({ children }: { children: React.ReactNode }) => (
   <div className="space-y-3">
