@@ -9,7 +9,6 @@ const CACHE_KEYS = {
   packages: 'offline_packages',
   paymentProviders: 'offline_payment_providers',
   deliveryInstructions: 'offline_delivery_instructions',
-  banners: 'offline_banners',
   appSettings: 'offline_app_settings',
 };
 
@@ -94,13 +93,6 @@ export const useOfflineCache = () => {
         localStorage.setItem('offline_featured_packages', JSON.stringify(featuredPackages));
         queryClient.setQueryData(['featuredPackages'], featuredPackages);
       }
-
-      // Cache banners (via security-definer RPC for anon)
-      const { data: banners } = await (supabase as any).rpc('get_tenant_banners');
-      if (Array.isArray(banners) && banners.length) {
-        localStorage.setItem(CACHE_KEYS.banners, JSON.stringify(banners));
-      }
-
 
       // Cache app settings (via security-definer RPC for anon)
       const { data: appSettings } = await (supabase as any).rpc('get_tenant_app_settings');

@@ -76,6 +76,10 @@ jobs:
           APP_ID: ${{ inputs.app_id }}
           SPLASH_COLOR: ${{ inputs.splash_color }}
 
+      - name: Stamp Android web bundle
+        run: |
+          printf '{"commit":"%s","tenant":"%s"}\n' "${GITHUB_SHA}" "${TENANT_SLUG}" > public/apk-build.json
+
       - name: Build web bundle
         run: bun run build
         env:
@@ -120,19 +124,11 @@ jobs:
         run: |
           set -e
           test -f android/app/src/main/assets/public/index.html
-          if grep -Rqs "offline_banners:${TENANT_SLUG}" android/app/src/main/assets/public; then
-            echo "Tenant-scoped banner cache marker found"
-          else
-            # The tenant id is resolved at runtime, so verify the source marker
-            # rather than allowing an old Android web bundle to be released.
-            grep -Rqs "offline_banners:" android/app/src/main/assets/public
-          fi
-          if grep -Rqs 'type:\"tel\"' android/app/src/main/assets/public || grep -Rqs 'type:"tel"' android/app/src/main/assets/public; then
-            echo "Numeric keyboard marker found"
-          else
-            echo "Fresh numeric-input marker missing from packaged bundle"
-            exit 1
-          fi
+          test -f android/app/src/main/assets/public/apk-build.json
+          grep -Fq "${GITHUB_SHA}" android/app/src/main/assets/public/apk-build.json
+          grep -Rqs "offline_banners:" android/app/src/main/assets/public
+          grep -Rqs 'type:"tel"' android/app/src/main/assets/public
+          echo "Fresh tenant banner and numeric-input code verified in Android bundle"
 
       - name: Apply app id, label and splash color
         env:
