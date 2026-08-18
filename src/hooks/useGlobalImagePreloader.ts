@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { cacheImages } from '@/lib/imageCache';
 
 export const useGlobalImagePreloader = () => {
   useEffect(() => {
@@ -26,6 +27,9 @@ export const useGlobalImagePreloader = () => {
           const img = new Image();
           img.src = url;
         });
+
+        // Persist them as data URLs so they render offline too.
+        cacheImages(uniqueUrls);
         
         console.log(`[ImagePreloader] Preloaded ${uniqueUrls.length} images into memory`);
       } catch (error) {

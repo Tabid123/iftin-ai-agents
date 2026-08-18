@@ -1,4 +1,5 @@
 import React from 'react';
+import CachedImage from '@/components/CachedImage';
 
 interface ProviderCardProps {
   name: string;
@@ -42,7 +43,7 @@ const ProviderCard = ({ name, logo, onClick, disabled = false }: ProviderCardPro
       }`}
     >
       <div className="relative flex h-14 w-14 items-center justify-center">
-        <img
+        <CachedImage
           src={logo}
           alt={`${name} logo`}
           className="h-full w-full object-contain"

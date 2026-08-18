@@ -5,14 +5,33 @@ import { Card } from './ui/card';
 import { useNavigate } from "@/lib/router-compat";
 import { formatPrice } from '@/lib/utils';
 import { fetchIftinCatalog, mapPopularPackages, type PopularPackageDTO } from '@/lib/iftinCatalog';
+import { cacheImages } from '@/lib/imageCache';
+import CachedImage from '@/components/CachedImage';
 
 /** Bumped key: the old `popularPackages` cache held pre-Iftin data. */
 const QUERY_KEY = ['popularPackages', 'v2-iftin'] as const;
+const OFFLINE_KEY = 'offline_popular_packages_v2';
 
 // One-time cleanup of the legacy cache so stale rows never render again.
 try {
   localStorage.removeItem('offline_featured_packages');
 } catch { /* ignore */ }
+
+function readOffline(): PopularPackageDTO[] {
+  try {
+    const raw = localStorage.getItem(OFFLINE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeOffline(list: PopularPackageDTO[]) {
+  try {
+    localStorage.setItem(OFFLINE_KEY, JSON.stringify(list));
+  } catch { /* quota */ }
+}
 
 const SectionShell = ({ children }: { children: React.ReactNode }) => (
   <div className="space-y-3">
@@ -26,25 +45,29 @@ const SectionShell = ({ children }: { children: React.ReactNode }) => (
 
 const PopularPackages = () => {
   const navigate = useNavigate();
+  const [offline] = React.useState<PopularPackageDTO[]>(() => readOffline());
 
-  const { data: packages = [], isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: async (): Promise<PopularPackageDTO[]> => {
       const catalog = await fetchIftinCatalog({ force: true });
-      if (import.meta.env.DEV) {
-        const anyCatalog = catalog as any;
-        console.log('[popular-packages] raw response keys:', catalog ? Object.keys(catalog) : null);
-        console.log('[popular-packages] popular_packages:', anyCatalog?.popular_packages ?? anyCatalog?.popularPackages ?? null);
+      const mapped = mapPopularPackages(catalog);
+      if (mapped.length > 0) {
+        writeOffline(mapped);
+        cacheImages(mapped.map((p) => p.provider_logo));
       }
-      return mapPopularPackages(catalog);
+      return mapped;
     },
-    // Always refresh when the page opens.
+    // Show the last known list instantly, then refresh in the background.
+    initialData: offline.length > 0 ? offline : undefined,
     refetchOnMount: 'always',
     staleTime: 0,
     retry: 1,
   });
 
-  if (isLoading) {
+  const packages = data && data.length > 0 ? data : offline;
+
+  if (isLoading && packages.length === 0) {
     return (
       <SectionShell>
         <div className="space-y-2">
@@ -65,7 +88,7 @@ const PopularPackages = () => {
     );
   }
 
-  if (isError) {
+  if (isError && packages.length === 0) {
     return (
       <SectionShell>
         <Card className="p-4 flex items-center gap-2">
@@ -103,7 +126,7 @@ const PopularPackages = () => {
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {pkg.provider_logo && (
                   <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
-                    <img src={pkg.provider_logo} alt={pkg.provider_name} className="w-9 h-9 object-contain" />
+                    <CachedImage src={pkg.provider_logo} alt={pkg.provider_name} className="w-9 h-9 object-contain" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
