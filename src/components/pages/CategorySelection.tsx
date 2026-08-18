@@ -333,13 +333,13 @@ const CategorySelection = () => {
                     style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
                   >
                     {category.category_image ? (
-                      <img 
-                        src={category.category_image} 
-                        alt={category.category_name} 
-                        className="w-12 h-12 object-contain" 
-                        loading="eager" 
-                        decoding="sync"
-                        fetchPriority="high"
+                      <CachedImage
+                        src={category.category_image}
+                        alt={category.category_name}
+                        className="w-12 h-12 object-contain"
+                        loading="eager"
+                        decoding="async"
+                        fallback={getCategoryIcon(category.category_name, getBrandBorderClass(providerName).replace('border-', 'text-'))}
                       />
                     ) : (
                       getCategoryIcon(category.category_name, getBrandBorderClass(providerName).replace('border-', 'text-'))
