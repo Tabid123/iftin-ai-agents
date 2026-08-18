@@ -88,7 +88,7 @@ const PopularPackages = () => {
     );
   }
 
-  if (isError) {
+  if (isError && packages.length === 0) {
     return (
       <SectionShell>
         <Card className="p-4 flex items-center gap-2">
@@ -126,7 +126,7 @@ const PopularPackages = () => {
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 {pkg.provider_logo && (
                   <div className="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 bg-white flex items-center justify-center">
-                    <img src={pkg.provider_logo} alt={pkg.provider_name} className="w-9 h-9 object-contain" />
+                    <CachedImage src={pkg.provider_logo} alt={pkg.provider_name} className="w-9 h-9 object-contain" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
