@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import CachedImage from '@/components/CachedImage';
-import { getLocalImage, localizeImage } from '@/lib/localImages';
 
 interface Banner {
   id: string;
@@ -159,7 +158,7 @@ const RotatingBanner = () => {
 
         if (error) throw error;
 
-        const freshBanners = localizeBanners((data ?? []) as Banner[]);
+        const freshBanners = ((data ?? []) as Banner[]);
         setBanners(freshBanners);
         localStorage.setItem('offline_banners', JSON.stringify(freshBanners));
 
