@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import CachedImage from '@/components/CachedImage';
-import { getLocalImage, localizeImage } from '@/lib/localImages';
 
 interface Banner {
   id: string;
@@ -13,29 +12,14 @@ interface Banner {
   rotation_interval?: number | null;
 }
 
-const LOCAL_BANNERS: Banner[] = [1, 2, 3, 4].map((number) => ({
-  id: `local-banner-${number}`,
-  banner_image: getLocalImage('banner', `banner${number}`) ?? '',
-  alt_text: `Promotional banner ${number}`,
-  display_order: number,
-  media_type: 'image',
-}));
-
-const localizeBanners = (items: Banner[]) => items.map((banner, index) => ({
-  ...banner,
-  banner_image: localizeImage('banner', banner.banner_image, `banner${index + 1}`) ?? '',
-}));
-
 const RotatingBanner = () => {
-  // Initialize banners directly from cache for instant display
+  // Show only banners uploaded by the tenant admin (cached copy for offline)
   const [banners, setBanners] = useState<Banner[]>(() => {
     try {
       const cached = localStorage.getItem('offline_banners');
-      if (cached) {
-        return localizeBanners(JSON.parse(cached));
-      }
+      if (cached) return JSON.parse(cached) as Banner[];
     } catch (e) {}
-    return LOCAL_BANNERS;
+    return [];
   });
   const [currentBanner, setCurrentBanner] = useState(() => {
     try {
@@ -174,7 +158,7 @@ const RotatingBanner = () => {
 
         if (error) throw error;
 
-        const freshBanners = localizeBanners((data ?? []) as Banner[]);
+        const freshBanners = ((data ?? []) as Banner[]);
         setBanners(freshBanners);
         localStorage.setItem('offline_banners', JSON.stringify(freshBanners));
 
