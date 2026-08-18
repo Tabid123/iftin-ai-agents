@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 const InputOTP = React.forwardRef<
   React.ElementRef<typeof OTPInput>,
   React.ComponentPropsWithoutRef<typeof OTPInput>
->(({ className, containerClassName, inputMode = "numeric", pattern = "[0-9]*", ...props }, ref) => (
+>(({ className, containerClassName, inputMode = "numeric", pattern = "[0-9]*", type = "tel", ...props }, ref) => (
   <OTPInput
     ref={ref}
+    type={type}
     inputMode={inputMode}
     pattern={pattern}
     containerClassName={cn(

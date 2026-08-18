@@ -266,7 +266,7 @@ const PhoneInput = () => {
                   ref={(element) => {
                     codeInputRefs.current[index] = element;
                   }}
-                  type="text"
+                  type="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={1}

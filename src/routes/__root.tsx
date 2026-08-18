@@ -233,6 +233,19 @@ function AppContent() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  // Android builds carry their Git commit as a build version. Send it to any
+  // previously installed service worker so an APK update cannot keep serving
+  // the prior app shell or JavaScript bundle.
+  useEffect(() => {
+    const buildVersion = import.meta.env.VITE_BUILD_VERSION;
+    if (!buildVersion || !("serviceWorker" in navigator)) return;
+
+    void navigator.serviceWorker.ready.then((registration) => {
+      const worker = registration.active ?? registration.waiting ?? registration.installing;
+      worker?.postMessage({ type: "SET_VERSION", version: buildVersion });
+    });
+  }, []);
+
   // Bogagga kale ayaa la soo dejiyaa marka app-ku nasanayo, si taabashadu
   // u noqoto mid isla markiiba furta.
   useEffect(() => {

@@ -76,12 +76,17 @@ jobs:
           APP_ID: ${{ inputs.app_id }}
           SPLASH_COLOR: ${{ inputs.splash_color }}
 
+      - name: Stamp Android web bundle
+        run: |
+          printf '{"commit":"%s","tenant":"%s","bannerCache":"tenant-scoped","numericKeyboard":"tel"}\n' "${GITHUB_SHA}" "${TENANT_SLUG}" > public/apk-build.json
+
       - name: Build web bundle
         run: bun run build
         env:
           CAPACITOR_BUILD: "true"
           VITE_TENANT_SLUG: ${{ inputs.tenant_slug }}
           VITE_SPLASH_COLOR: ${{ inputs.splash_color }}
+          VITE_BUILD_VERSION: ${{ github.sha }}
 
 
       - name: Prepare web assets for Capacitor
@@ -112,8 +117,22 @@ jobs:
           fi
 
       - name: Sync Capacitor
+        run: |
+          # Never allow files from an earlier APK build to survive the copy.
+          rm -rf android/app/src/main/assets/public
+          npx cap sync android
 
-        run: npx cap sync android
+      - name: Verify fresh web bundle was packaged
+        run: |
+          set -e
+          test -f android/app/src/main/assets/public/index.html
+          test -f android/app/src/main/assets/public/apk-build.json
+          grep -Fq "${GITHUB_SHA}" android/app/src/main/assets/public/apk-build.json
+          grep -Fq '"bannerCache":"tenant-scoped"' android/app/src/main/assets/public/apk-build.json
+          grep -Fq '"numericKeyboard":"tel"' android/app/src/main/assets/public/apk-build.json
+          grep -Rqs "offline_banners:" android/app/src/main/assets/public
+          grep -Rqs "SET_VERSION" android/app/src/main/assets/public
+          echo "Fresh tenant banner and numeric-input code verified in Android bundle"
 
       - name: Apply app id, label and splash color
         env:
