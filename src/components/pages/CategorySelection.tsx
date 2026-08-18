@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import RotatingBanner from '@/components/RotatingBanner';
 import CachedImage from '@/components/CachedImage';
+import { cacheImages } from '@/lib/imageCache';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
@@ -205,6 +206,22 @@ const CategorySelection = () => {
     staleTime: 5 * 60 * 1000,
     retry: false
   });
+
+  // Persist category artwork as data URLs the moment we know about it, so the
+  // icons paint instantly next time — online or fully offline.
+  useEffect(() => {
+    if (!categories.length) return;
+    cacheImages(categories.map((c: any) => c.category_image));
+    try {
+      const existing = JSON.parse(localStorage.getItem('offline_categories') || '[]');
+      const merged = Array.from(
+        new Map([...existing, ...categories].map((c: any) => [c.id, c])).values()
+      );
+      localStorage.setItem('offline_categories', JSON.stringify(merged));
+    } catch { /* ignore */ }
+  }, [categories]);
+
+
 
   const getBrandBorderClass = (providerName: string) => {
     const providerLower = providerName?.toLowerCase() || '';
