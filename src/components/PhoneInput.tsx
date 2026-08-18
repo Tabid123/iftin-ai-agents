@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,7 @@ const PhoneInput = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isReturningUser, setIsReturningUser] = useState(false);
   const [generatedCode, setGeneratedCode] = useState('');
+  const codeInputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -262,7 +263,10 @@ const PhoneInput = () => {
               {[0, 1, 2, 3].map((index) => (
                 <Input
                   key={index}
-                  type="tel"
+                  ref={(element) => {
+                    codeInputRefs.current[index] = element;
+                  }}
+                  type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={1}
@@ -272,45 +276,40 @@ const PhoneInput = () => {
                     const value = e.target.value.replace(/\D/g, '');
                     if (value.length > 1) {
                       const digits = value.slice(0, 4).split('');
-                      setVerificationCode(digits.join('').padEnd(4, ''));
+                      setVerificationCode(digits.join(''));
                       const lastIndex = Math.min(digits.length - 1, 3);
-                      setTimeout(() => {
-                        const lastInput = document.querySelectorAll('input[type="text"]')[lastIndex] as HTMLInputElement;
-                        lastInput?.focus();
-                      }, 0);
+                      codeInputRefs.current[lastIndex]?.focus();
                     } else if (value) {
-                      const newCode = verificationCode.split('');
+                      const newCode = verificationCode.padEnd(4, ' ').split('');
                       newCode[index] = value;
-                      setVerificationCode(newCode.join(''));
+                      setVerificationCode(newCode.join('').trimEnd());
                       if (index < 3) {
-                        const nextInput = document.querySelectorAll('input[type="text"]')[index + 1] as HTMLInputElement;
-                        nextInput?.focus();
+                        codeInputRefs.current[index + 1]?.focus();
                       }
                     } else {
-                      const newCode = verificationCode.split('');
-                      newCode[index] = '';
-                      setVerificationCode(newCode.join(''));
+                      const newCode = verificationCode.padEnd(4, ' ').split('');
+                      newCode[index] = ' ';
+                      setVerificationCode(newCode.join('').trimEnd());
                     }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Backspace') {
                       if (verificationCode[index]) {
-                        const newCode = verificationCode.split('');
-                        newCode[index] = '';
-                        setVerificationCode(newCode.join(''));
+                        const newCode = verificationCode.padEnd(4, ' ').split('');
+                        newCode[index] = ' ';
+                        setVerificationCode(newCode.join('').trimEnd());
                         e.preventDefault();
                       } else if (index > 0) {
-                        const prevInput = document.querySelectorAll('input[type="text"]')[index - 1] as HTMLInputElement;
-                        const newCode = verificationCode.split('');
-                        newCode[index - 1] = '';
-                        setVerificationCode(newCode.join(''));
-                        prevInput?.focus();
+                        const newCode = verificationCode.padEnd(4, ' ').split('');
+                        newCode[index - 1] = ' ';
+                        setVerificationCode(newCode.join('').trimEnd());
+                        codeInputRefs.current[index - 1]?.focus();
                         e.preventDefault();
                       }
                     } else if (e.key === 'Delete') {
-                      const newCode = verificationCode.split('');
-                      newCode[index] = '';
-                      setVerificationCode(newCode.join(''));
+                      const newCode = verificationCode.padEnd(4, ' ').split('');
+                      newCode[index] = ' ';
+                      setVerificationCode(newCode.join('').trimEnd());
                       e.preventDefault();
                     }
                   }}
