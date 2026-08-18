@@ -195,10 +195,6 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
 
   const addReg = async () => {
     if (!newReg.sender_phone || !newReg.receiver_phone) { toast.error(isSo ? 'Buuxi meelaha' : 'Fill required fields'); return; }
-    if (normalizePhone(newReg.sender_phone) === normalizePhone(newReg.receiver_phone)) {
-      toast.error(isSo ? 'Diraha iyo qaataha waa inay kala duwanaadaan' : 'Sender and receiver must differ');
-      return;
-    }
     // Iftin Partner API only — nothing is stored locally.
     const apiRes = await registerOfflineCustomer({
       senderPhone: newReg.sender_phone,

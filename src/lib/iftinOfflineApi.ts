@@ -162,9 +162,6 @@ export async function registerOfflineCustomer(
   if (!isValidOfflinePhone(receiver_phone)) {
     return { ok: false, status: 400, error: 'invalid_receiver_phone', message: 'Lambarka xirmada loo dirayo sax ma aha' };
   }
-  if (sender_phone === receiver_phone) {
-    return { ok: false, status: 400, error: 'same_phone', message: 'Labada lambar waa inay kala duwanaadaan' };
-  }
 
   const tenantId =
     input.tenantId ??
