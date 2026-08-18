@@ -48,7 +48,12 @@ export async function cacheImage(url: string | null | undefined): Promise<string
   if (inflight.has(url)) return null;
   inflight.add(url);
   try {
-    const res = await fetch(url, { mode: 'cors' });
+    let res: Response;
+    try {
+      res = await fetch(url, { mode: 'cors', cache: 'force-cache' });
+    } catch {
+      res = await fetch(url, { mode: 'cors' });
+    }
     if (!res.ok) return null;
     const blob = await res.blob();
     if (blob.size > MAX_BYTES) return null;
