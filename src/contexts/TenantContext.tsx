@@ -203,6 +203,27 @@ function applyBranding(tenant: Tenant | null) {
 }
 
 
+const TENANT_CACHE_PREFIX = "najax.tenant_cache.";
+
+function readCachedTenant(slug: string): Tenant | null {
+  try {
+    const raw = localStorage.getItem(TENANT_CACHE_PREFIX + slug);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Tenant;
+    return parsed && parsed.id ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedTenant(slug: string, tenant: Tenant) {
+  try {
+    localStorage.setItem(TENANT_CACHE_PREFIX + slug, JSON.stringify(tenant));
+  } catch {
+    /* ignore storage restrictions */
+  }
+}
+
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
