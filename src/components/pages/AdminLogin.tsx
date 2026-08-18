@@ -243,6 +243,8 @@ const AdminLogin = () => {
                   <Input
                     id="emergency-pin"
                     type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="PIN gali"
                     value={emergencyPin}
                     onChange={(e) => setEmergencyPin(e.target.value)}

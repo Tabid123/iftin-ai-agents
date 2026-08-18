@@ -865,7 +865,7 @@ export const PaymentSettingsCustomView = ({ isSo }: { isSo: boolean }) => {
           <input value={newPay.payment_number} onChange={e => setNewPay(p => ({...p, payment_number: e.target.value}))} placeholder="Payment Number" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="grid grid-cols-2 gap-2">
             <input value={newPay.commission_rate} onChange={e => setNewPay(p => ({...p, commission_rate: e.target.value}))} placeholder="Commission %" type="number" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
-            <input value={newPay.prefix_code} onChange={e => setNewPay(p => ({...p, prefix_code: e.target.value}))} placeholder="Prefix Code" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+            <input value={newPay.prefix_code} onChange={e => setNewPay(p => ({...p, prefix_code: e.target.value}))} inputMode="numeric" placeholder="Prefix Code" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           </div>
           <input value={newPay.ussd_code_template} onChange={e => setNewPay(p => ({...p, ussd_code_template: e.target.value}))} placeholder="USSD Template" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <ImageUploader value={newPay.provider_logo} onChange={url => setNewPay(p => ({...p, provider_logo: url}))} bucket="provider-logos" label="Logo" />

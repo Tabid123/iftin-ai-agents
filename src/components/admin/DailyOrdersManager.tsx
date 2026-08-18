@@ -645,6 +645,8 @@ export const DailyOrdersManager = () => {
                 <Input
                   value={resendPhone}
                   onChange={(e) => setResendPhone(e.target.value)}
+                  type="tel"
+                  inputMode="numeric"
                   placeholder="e.g. 61XXXXXXX"
                 />
               </div>
