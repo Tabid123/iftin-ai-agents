@@ -82,6 +82,7 @@ jobs:
           CAPACITOR_BUILD: "true"
           VITE_TENANT_SLUG: ${{ inputs.tenant_slug }}
           VITE_SPLASH_COLOR: ${{ inputs.splash_color }}
+          VITE_BUILD_VERSION: ${{ github.sha }}
 
 
       - name: Prepare web assets for Capacitor
@@ -114,6 +115,24 @@ jobs:
       - name: Sync Capacitor
 
         run: npx cap sync android
+
+      - name: Verify fresh web bundle was packaged
+        run: |
+          set -e
+          test -f android/app/src/main/assets/public/index.html
+          if grep -Rqs "offline_banners:${TENANT_SLUG}" android/app/src/main/assets/public; then
+            echo "Tenant-scoped banner cache marker found"
+          else
+            # The tenant id is resolved at runtime, so verify the source marker
+            # rather than allowing an old Android web bundle to be released.
+            grep -Rqs "offline_banners:" android/app/src/main/assets/public
+          fi
+          if grep -Rqs 'type:\"tel\"' android/app/src/main/assets/public || grep -Rqs 'type:"tel"' android/app/src/main/assets/public; then
+            echo "Numeric keyboard marker found"
+          else
+            echo "Fresh numeric-input marker missing from packaged bundle"
+            exit 1
+          fi
 
       - name: Apply app id, label and splash color
         env:

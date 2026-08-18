@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import CachedImage from '@/components/CachedImage';
+import { useTenant } from '@/contexts/TenantContext';
 
 interface Banner {
   id: string;
@@ -13,10 +14,18 @@ interface Banner {
 }
 
 const RotatingBanner = () => {
+  const tenantState = useTenant();
+  const tenant = tenantState.status === 'ready' || tenantState.status === 'suspended'
+    ? tenantState.tenant
+    : null;
+  const bannerCacheKey = tenant ? `offline_banners:${tenant.id}` : null;
+
   // Show only banners uploaded by the tenant admin (cached copy for offline)
   const [banners, setBanners] = useState<Banner[]>(() => {
     try {
-      const cached = localStorage.getItem('offline_banners');
+      const tenantId = tenant?.id;
+      if (!tenantId) return [];
+      const cached = localStorage.getItem(`offline_banners:${tenantId}`);
       if (cached) return JSON.parse(cached) as Banner[];
     } catch (e) {}
     return [];
@@ -152,6 +161,12 @@ const RotatingBanner = () => {
 
   // Fetch fresh data in background
   useEffect(() => {
+    // The old unscoped key could contain a different reseller's banner after
+    // an APK update. Never use it, and remove it permanently.
+    try {
+      localStorage.removeItem('offline_banners');
+    } catch {}
+
     const loadBanners = async () => {
       try {
         const { data, error } = await (supabase as any).rpc('get_tenant_banners');
@@ -160,7 +175,13 @@ const RotatingBanner = () => {
 
         const freshBanners = ((data ?? []) as Banner[]);
         setBanners(freshBanners);
-        localStorage.setItem('offline_banners', JSON.stringify(freshBanners));
+        if (bannerCacheKey) {
+          if (freshBanners.length > 0) {
+            localStorage.setItem(bannerCacheKey, JSON.stringify(freshBanners));
+          } else {
+            localStorage.removeItem(bannerCacheKey);
+          }
+        }
 
         if (freshBanners.length === 0) {
           setCurrentBanner(0);
@@ -176,7 +197,7 @@ const RotatingBanner = () => {
     };
 
     loadBanners();
-  }, []);
+  }, [bannerCacheKey]);
 
   // Auto-rotate for images only - videos use onEnded event
   useEffect(() => {
