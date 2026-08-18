@@ -332,7 +332,7 @@ export const PackagesCustomView = ({ isSo }: { isSo: boolean }) => {
           <input value={newPkg.package_name} onChange={e => setNewPkg(p => ({...p, package_name: e.target.value}))} placeholder="Package Name *" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="grid grid-cols-2 gap-2">
             <input value={newPkg.data_amount} onChange={e => setNewPkg(p => ({...p, data_amount: e.target.value}))} placeholder="Data Amount" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
-            <input value={newPkg.validity_days} onChange={e => setNewPkg(p => ({...p, validity_days: e.target.value}))} placeholder="Days" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+            <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newPkg.validity_days} onChange={e => setNewPkg(p => ({...p, validity_days: e.target.value}))} placeholder="Days" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <input value={newPkg.selling_price} onChange={e => setNewPkg(p => ({...p, selling_price: e.target.value}))} placeholder="Sell Price *" type="number" inputMode="decimal" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
@@ -862,7 +862,7 @@ export const PaymentSettingsCustomView = ({ isSo }: { isSo: boolean }) => {
         <div className="bg-white dark:bg-gray-800 rounded-xl border p-3 space-y-2 animate-in slide-in-from-top-2">
           <div className="text-xs font-bold text-gray-600 dark:text-gray-300">{editingId ? '✏️ Edit' : '➕ New'}</div>
           <input value={newPay.provider_name} onChange={e => setNewPay(p => ({...p, provider_name: e.target.value}))} placeholder="Provider Name *" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
-          <input value={newPay.payment_number} onChange={e => setNewPay(p => ({...p, payment_number: e.target.value}))} placeholder="Payment Number" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newPay.payment_number} onChange={e => setNewPay(p => ({...p, payment_number: e.target.value}))} placeholder="Payment Number" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="grid grid-cols-2 gap-2">
             <input value={newPay.commission_rate} onChange={e => setNewPay(p => ({...p, commission_rate: e.target.value}))} placeholder="Commission %" type="number" inputMode="decimal" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
             <input value={newPay.prefix_code} onChange={e => setNewPay(p => ({...p, prefix_code: e.target.value}))} inputMode="numeric" placeholder="Prefix Code" className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />

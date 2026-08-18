@@ -35,7 +35,7 @@ const AddNumberForm = ({ isSo, onAdded }: { isSo: boolean; onAdded: () => void }
 
   return (
     <div className="bg-purple-50 dark:bg-purple-950/30 rounded-xl p-3 space-y-2 border border-purple-200 dark:border-purple-800">
-      <input value={phone} onChange={e => setPhone(e.target.value)} placeholder={isSo ? 'Lambar (tusaale: 615123456)' : 'Phone (e.g. 615123456)'} className="w-full px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-800 dark:border-gray-700 outline-none focus:ring-2 focus:ring-purple-400" />
+      <input type="tel" inputMode="numeric" pattern="[0-9]*" value={phone} onChange={e => setPhone(e.target.value)} placeholder={isSo ? 'Lambar (tusaale: 615123456)' : 'Phone (e.g. 615123456)'} className="w-full px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-800 dark:border-gray-700 outline-none focus:ring-2 focus:ring-purple-400" />
       <input value={label} onChange={e => setLabel(e.target.value)} placeholder={isSo ? 'Magac (ikhtiyaari)' : 'Label (optional)'} className="w-full px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-800 dark:border-gray-700 outline-none focus:ring-2 focus:ring-purple-400" />
       <div className="flex gap-2">
         <button onClick={handleAdd} disabled={saving} className="flex-1 py-2 rounded-lg bg-purple-600 text-white text-sm font-semibold disabled:opacity-50">{saving ? '...' : isSo ? 'Kaydi' : 'Save'}</button>
@@ -97,7 +97,7 @@ const AddPackageForm = ({ isSo, numberId, onAdded }: { isSo: boolean; numberId: 
       <input value={data} onChange={e => setData(e.target.value)} placeholder={isSo ? 'Data (tusaale: 2GB)' : 'Data (e.g. 2GB)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
       <input value={ussd} onChange={e => setUssd(e.target.value)} placeholder={isSo ? 'USSD Code (ikhtiyaari)' : 'USSD Code (optional)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
       <input type="number" inputMode="decimal" step="0.01" value={costPrice} onChange={e => setCostPrice(e.target.value)} placeholder={isSo ? 'Cost Price $ (tusaale: 0.50)' : 'Cost Price $ (e.g. 0.50)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
-      <input value={simPassword} onChange={e => setSimPassword(e.target.value)} placeholder={isSo ? 'SIM Password (tusaale: 5516)' : 'SIM Password (e.g. 5516)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
+      <input type="tel" inputMode="numeric" pattern="[0-9]*" value={simPassword} onChange={e => setSimPassword(e.target.value)} placeholder={isSo ? 'SIM Password (tusaale: 5516)' : 'SIM Password (e.g. 5516)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
       <input value={prices} onChange={e => setPrices(e.target.value)} placeholder={isSo ? 'Qiimayaasha (tusaale: 0.72, 0.73, 0.74, 0.75)' : 'Prices (e.g. 0.72, 0.73, 0.74, 0.75)'} className="w-full px-2.5 py-1.5 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none font-mono" />
       <div className="text-[9px] text-gray-400">{isSo ? 'Qiime kasta wuxuu noqdaa package gaar ah' : 'Each price becomes a separate package entry'}</div>
       <div className="flex gap-1.5">
@@ -221,7 +221,7 @@ const NumberCard = ({ num, isSo, onRefresh }: { num: any; isSo: boolean; onRefre
 
       {editing && (
         <div className="px-3 pb-2 space-y-1.5 border-t border-gray-100 dark:border-gray-700 pt-2">
-          <input value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder={isSo ? 'Lambar' : 'Phone'} className="w-full px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-blue-400" />
+          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder={isSo ? 'Lambar' : 'Phone'} className="w-full px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-blue-400" />
           <input value={editLabel} onChange={e => setEditLabel(e.target.value)} placeholder={isSo ? 'Magac (ikhtiyaari)' : 'Label (optional)'} className="w-full px-3 py-2 rounded-lg border text-sm bg-white dark:bg-gray-900 dark:border-gray-700 outline-none focus:ring-2 focus:ring-blue-400" />
           <div className="flex gap-2">
             <button onClick={saveEdit} disabled={editSaving} className="flex-1 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-50">{editSaving ? '...' : isSo ? 'Kaydi' : 'Save'}</button>
@@ -686,7 +686,7 @@ const PhoneMappingSection = ({ isSo }: { isSo: boolean }) => {
           ) : (
             <div className="bg-orange-50 dark:bg-orange-950/30 rounded-xl p-3 space-y-2 border border-orange-200 dark:border-orange-800">
               <div className="text-[10px] font-bold text-orange-600">{isSo ? 'Mapping Cusub' : 'New Mapping'}</div>
-              <input value={phone} onChange={e => setPhone(e.target.value)} placeholder={isSo ? 'Lambarka macmiilka (tusaale: 617195659)' : 'Customer phone (e.g. 617195659)'} className="w-full px-2.5 py-2 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
+              <input type="tel" inputMode="numeric" pattern="[0-9]*" value={phone} onChange={e => setPhone(e.target.value)} placeholder={isSo ? 'Lambarka macmiilka (tusaale: 617195659)' : 'Customer phone (e.g. 617195659)'} className="w-full px-2.5 py-2 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none" />
               <select value={numId} onChange={e => { setNumId(e.target.value); setSelectedPkgIds([]); }} className="w-full px-2.5 py-2 rounded-lg border text-xs bg-white dark:bg-gray-800 dark:border-gray-700 outline-none">
                 <option value="">{isSo ? '-- Lambarka Auto Top-Up --' : '-- Auto Top-Up Number --'}</option>
                 {allNums.map((n: any) => <option key={n.id} value={n.id}>{formatPhone(n.phone_number)} {n.label ? `(${n.label})` : ''}</option>)}
