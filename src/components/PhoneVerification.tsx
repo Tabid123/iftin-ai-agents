@@ -267,8 +267,11 @@ const PhoneVerification = ({ isOpen, onClose, onSuccess, paymentProvider, packag
               <p className="text-[11px] font-semibold text-foreground">Koodka Xaqiijinta</p>
               <InputOTP
                 maxLength={4}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
                 value={verificationCode}
-                onChange={(value) => setVerificationCode(value)}
+                onChange={(value) => setVerificationCode(value.replace(/\D/g, '').slice(0, 4))}
               >
                 <InputOTPGroup className="gap-1.5 w-full justify-center">
                   {[0, 1, 2, 3].map((index) => (
