@@ -149,7 +149,7 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
             <Label htmlFor="sender-phone">Lambarka laga dirayo</Label>
             <Input
               id="sender-phone"
-              type="text"
+              type="tel"
               inputMode="numeric"
               pattern="[0-9]*"
               autoComplete="tel-national"
@@ -163,7 +163,7 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
             <Label htmlFor="receiver-phone">Lambarka loo dirayo ama xirmada loo rabo</Label>
             <Input
               id="receiver-phone"
-              type="text"
+              type="tel"
               inputMode="numeric"
               pattern="[0-9]*"
               autoComplete="tel-national"

@@ -196,7 +196,7 @@ const PhoneInput = () => {
               </div>
               <Input
                 id="phone"
-                type="text"
+                type="tel"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 autoComplete="tel-national"
@@ -262,7 +262,7 @@ const PhoneInput = () => {
               {[0, 1, 2, 3].map((index) => (
                 <Input
                   key={index}
-                  type="text"
+                  type="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={1}

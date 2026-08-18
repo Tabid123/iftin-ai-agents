@@ -193,7 +193,7 @@ const PhoneVerification = ({ isOpen, onClose, onSuccess, paymentProvider, packag
                   <span className="text-xs font-bold text-foreground">+252</span>
                 </div>
                 <input
-                  type="text"
+                  type="tel"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   autoComplete="tel-national"
