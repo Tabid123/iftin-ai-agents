@@ -3,7 +3,7 @@
  * device is offline / in airplane mode.
  */
 const KEY = 'img_cache_v1';
-const MAX_BYTES = 200 * 1024; // per image
+const MAX_BYTES = 2 * 1024 * 1024; // per image
 
 type CacheMap = Record<string, string>;
 
