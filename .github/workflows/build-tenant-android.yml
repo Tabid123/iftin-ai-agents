@@ -117,8 +117,10 @@ jobs:
           fi
 
       - name: Sync Capacitor
-
-        run: npx cap sync android
+        run: |
+          # Never allow files from an earlier APK build to survive the copy.
+          rm -rf android/app/src/main/assets/public
+          npx cap sync android
 
       - name: Verify fresh web bundle was packaged
         run: |
@@ -129,6 +131,7 @@ jobs:
           grep -Fq '"bannerCache":"tenant-scoped"' android/app/src/main/assets/public/apk-build.json
           grep -Fq '"numericKeyboard":"tel"' android/app/src/main/assets/public/apk-build.json
           grep -Rqs "offline_banners:" android/app/src/main/assets/public
+          grep -Rqs "SET_VERSION" android/app/src/main/assets/public
           echo "Fresh tenant banner and numeric-input code verified in Android bundle"
 
       - name: Apply app id, label and splash color

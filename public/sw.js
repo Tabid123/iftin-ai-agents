@@ -180,12 +180,12 @@ self.addEventListener('message', (event) => {
   }
   if (event.data && event.data.type === 'SET_VERSION') {
     const newVersion = event.data.version;
-    if (CACHE_VERSION && CACHE_VERSION !== newVersion) {
-      console.log('[SW] New build version detected:', newVersion);
-      CACHE_VERSION = newVersion;
-      clearOldCaches().then(() => notifyClientsOfUpdate());
-    } else {
-      CACHE_VERSION = newVersion;
+    if (!newVersion) return;
+    const versionChanged = CACHE_VERSION !== newVersion;
+    CACHE_VERSION = newVersion;
+    if (versionChanged) {
+      console.log('[SW] Build version activated:', newVersion);
+      event.waitUntil(clearOldCaches().then(() => notifyClientsOfUpdate()));
     }
   }
 });
