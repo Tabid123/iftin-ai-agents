@@ -149,9 +149,10 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
             <Label htmlFor="sender-phone">Lambarka laga dirayo</Label>
             <Input
               id="sender-phone"
-              type="tel"
+              type="text"
               inputMode="numeric"
               pattern="[0-9]*"
+              autoComplete="tel-national"
               placeholder={savedSenderPhone || "tusaale 61xxxxxxx"}
               value={senderPhone}
               onChange={(e) => setSenderPhone(e.target.value)}
@@ -162,9 +163,10 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
             <Label htmlFor="receiver-phone">Lambarka loo dirayo ama xirmada loo rabo</Label>
             <Input
               id="receiver-phone"
-              type="tel"
+              type="text"
               inputMode="numeric"
               pattern="[0-9]*"
+              autoComplete="tel-national"
               placeholder={savedReceiverPhone || "Mobile: 61xxxxxxx | ADSL: 1xxxxxx"}
               value={receiverPhone}
               onChange={(e) => setReceiverPhone(e.target.value)}

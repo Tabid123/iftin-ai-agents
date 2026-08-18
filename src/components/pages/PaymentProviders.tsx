@@ -797,9 +797,10 @@ return <div className="min-h-screen bg-[#efefef] pb-24">
                 </div>
                 <Input 
                   id="payment-number" 
-                  type="tel" 
+                  type="text" 
                   inputMode="numeric"
                   pattern="[0-9]*"
+                  autoComplete="tel-national"
                   placeholder={paymentProviderPrefix ? `${paymentProviderPrefix}XXXXXXX` : 'XXXXXXXXX'}
                   value={paymentNumber} 
                   onChange={handlePaymentNumberChange} 
@@ -823,9 +824,10 @@ return <div className="min-h-screen bg-[#efefef] pb-24">
                 </div>
                 <Input 
                   id="receiver-number" 
-                  type="tel" 
+                  type="text" 
                   inputMode="numeric"
                   pattern="[0-9]*"
+                  autoComplete="tel-national"
                   placeholder={isADSL ? '1XXXXXX' : (receiverProviderPrefix ? `${receiverProviderPrefix}XXXXXXX` : 'XXXXXXXXX')}
                   value={receiverNumber} 
                   onChange={handleReceiverNumberChange} 

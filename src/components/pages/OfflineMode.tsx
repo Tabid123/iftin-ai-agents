@@ -96,6 +96,19 @@ const OfflineMode = () => {
       setReceiverError(true);
       return;
     }
+    if (!detectedSenderProvider) {
+      setSenderError(true);
+      return;
+    }
+    if (senderPhone === receiverPhone) {
+      toast({
+        title: "Lambaradu waa isku mid",
+        description: "Lambarka lacagta laga dirayo iyo kan internet-ka loo rabo waa inay kala duwanaadaan",
+        variant: "destructive",
+        duration: 4000,
+      });
+      return;
+    }
     setIsRegistering(true);
     
     if (!navigator.onLine) {
@@ -219,9 +232,11 @@ const OfflineMode = () => {
                 <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               )}
               <input
-                type="tel"
+                type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
+                autoComplete="tel-national"
+                enterKeyHint="next"
                 placeholder={savedSenderPhone || "61 xxx xxxx"}
                 value={senderPhone}
                 onChange={e => {
@@ -254,9 +269,11 @@ const OfflineMode = () => {
                 <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               )}
               <input
-                type="tel"
+                type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
+                autoComplete="tel-national"
+                enterKeyHint="done"
                 placeholder={savedReceiverPhone || "61 xxx xxxx"}
                 value={receiverPhone}
                 onChange={e => {

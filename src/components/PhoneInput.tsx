@@ -196,9 +196,10 @@ const PhoneInput = () => {
               </div>
               <Input
                 id="phone"
-                type="tel"
+                type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
+                autoComplete="tel-national"
                 placeholder="61 xxx xxxx"
                 value={phoneNumber}
                 onChange={handlePhoneNumberChange}
