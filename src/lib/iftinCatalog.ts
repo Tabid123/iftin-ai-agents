@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getTenantId, setTenantHeader } from '@/integrations/supabase/client';
 import { ensureResellerOverrides, loadResellerOverrides, paymentNumberFor, sellPriceFor } from '@/lib/resellerOverrides';
 import { cacheImages } from '@/lib/imageCache';
+import { localizeImage } from '@/lib/localImages';
 
 export type IftinCatalog = {
   partner?: string;
@@ -23,7 +24,7 @@ export type IftinCatalog = {
   error?: string | null;
 };
 
-const CACHE_KEY = 'iftin_catalog';
+const CACHE_KEY = 'iftin_catalog_v3_local_images';
 const TTL_MS = 5 * 60 * 1000;
 
 let inflight: Promise<IftinCatalog | null> | null = null;
@@ -217,7 +218,7 @@ export function mapProviders(catalog: IftinCatalog) {
     .map((p) => ({
       id: p.provider_id,
       provider_name: p.provider_name,
-      provider_logo: p.provider_logo ?? null,
+      provider_logo: localizeImage('provider', p.provider_logo, p.provider_name),
       promotional_text: p.promotional_text ?? null,
       display_order: p.display_order ?? 0,
       is_active: true,
@@ -235,7 +236,7 @@ export function mapCategories(catalog: IftinCatalog, providerId?: string | null)
       out.push({
         id: catalogCategoryId(p.provider_id, c.category_id),
         category_name: c.category_id ? c.category_name : (c.category_name || 'Guud'),
-        category_image: c.category_image ?? null,
+        category_image: localizeImage('category', c.category_image, c.category_name, p.provider_name),
         display_order: c.display_order ?? 0,
         provider_id: p.provider_id,
         is_active: true,
@@ -284,7 +285,7 @@ export function mapPaymentProviders(catalog: IftinCatalog) {
   return (catalog.payment_providers ?? []).map((pp) => ({
     id: pp.id,
     provider_name: pp.name,
-    provider_logo: pp.logo ?? null,
+    provider_logo: localizeImage('payment', pp.logo, pp.name),
     payment_number: paymentNumberFor(pp.id, pp.payment_number ?? null),
     base_payment_number: pp.payment_number ?? null,
     prefix_code: pp.prefix_code ?? pp.ussd_prefix ?? null,
@@ -398,7 +399,11 @@ export function mapPopularPackages(catalog: IftinCatalog | null | undefined): Po
         selling_price: sellPriceFor(packageId, basePrice),
         provider_id: providerId,
         provider_name: String(pkg.provider_name ?? provider?.provider_name ?? ''),
-        provider_logo: pkg.provider_logo ?? provider?.provider_logo ?? null,
+        provider_logo: localizeImage(
+          'provider',
+          pkg.provider_logo ?? provider?.provider_logo,
+          pkg.provider_name ?? provider?.provider_name,
+        ),
         connection_type_label: String(pkg.connection_type_label ?? pkg.type ?? ''),
       };
     })

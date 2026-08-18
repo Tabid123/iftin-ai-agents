@@ -50,14 +50,6 @@ const ProviderCard = ({ name, logo, onClick, disabled = false }: ProviderCardPro
           className="h-full w-full object-contain"
           loading="eager"
           decoding="async"
-          fallback={
-            <div
-              className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-black text-white"
-              style={{ background: `hsl(${providerColor})` }}
-            >
-              {name.trim().charAt(0).toUpperCase()}
-            </div>
-          }
         />
       </div>
 
