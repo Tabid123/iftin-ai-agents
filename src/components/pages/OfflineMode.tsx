@@ -101,15 +101,6 @@ const OfflineMode = () => {
       setSenderError(true);
       return;
     }
-    if (senderPhone === receiverPhone) {
-      toast({
-        title: "Lambaradu waa isku mid",
-        description: "Lambarka lacagta laga dirayo iyo kan internet-ka loo rabo waa inay kala duwanaadaan",
-        variant: "destructive",
-        duration: 4000,
-      });
-      return;
-    }
     setIsRegistering(true);
     
     if (!navigator.onLine) {
