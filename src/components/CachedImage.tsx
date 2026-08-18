@@ -16,18 +16,20 @@ type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
  */
 const CachedImage = ({ src, alt, bundledName, fallback, ...rest }: Props) => {
   const bundled = getBundledLogo(bundledName ?? (typeof alt === 'string' ? alt : null));
-  const pick = (s: string | null | undefined) => getCachedImage(s) ?? s ?? bundled ?? null;
+  // Bundled asset first: it ships inside the build, so it paints instantly and
+  // works with zero network. Cached data URL next, remote URL last.
+  const pick = (s: string | null | undefined) => bundled ?? getCachedImage(s) ?? s ?? null;
 
   const [resolved, setResolved] = useState<string | null>(() => pick(src));
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let alive = true;
-    const cached = getCachedImage(src);
     setFailed(false);
-    setResolved(cached ?? src ?? bundled ?? null);
+    setResolved(pick(src));
 
-    if (!cached && src) {
+    // Keep warming the cache in the background for images we don't bundle.
+    if (!bundled && src && !getCachedImage(src)) {
       cacheImage(src).then((dataUrl) => {
         if (alive && dataUrl) {
           setResolved(dataUrl);
@@ -38,12 +40,12 @@ const CachedImage = ({ src, alt, bundledName, fallback, ...rest }: Props) => {
     return () => { alive = false; };
   }, [src, bundled]);
 
-  if (failed && resolved !== bundled && bundled) {
-    // Remote copy unavailable (offline) — fall back to the bundled asset.
+  if (failed && bundled && resolved !== bundled) {
     return <img src={bundled} alt={alt} {...rest} />;
   }
 
   if (!resolved || failed) return <>{fallback ?? null}</>;
+
 
   return (
     <img
