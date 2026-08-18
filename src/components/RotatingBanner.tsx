@@ -21,15 +21,7 @@ const RotatingBanner = () => {
   const bannerCacheKey = tenant ? `offline_banners:${tenant.id}` : null;
 
   // Show only banners uploaded by the tenant admin (cached copy for offline)
-  const [banners, setBanners] = useState<Banner[]>(() => {
-    try {
-      const tenantId = tenant?.id;
-      if (!tenantId) return [];
-      const cached = localStorage.getItem(`offline_banners:${tenantId}`);
-      if (cached) return JSON.parse(cached) as Banner[];
-    } catch (e) {}
-    return [];
-  });
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [currentBanner, setCurrentBanner] = useState(() => {
     try {
       // Check if this is a fresh app launch or navigation within session
@@ -166,6 +158,22 @@ const RotatingBanner = () => {
     try {
       localStorage.removeItem('offline_banners');
     } catch {}
+
+    if (!bannerCacheKey) {
+      setBanners([]);
+      setIsLoading(false);
+      return;
+    }
+
+    // Restore only this tenant's banners. Switching tenant or updating the APK
+    // can never display a banner that belongs to another reseller.
+    try {
+      const cached = localStorage.getItem(bannerCacheKey);
+      setBanners(cached ? JSON.parse(cached) as Banner[] : []);
+    } catch {
+      setBanners([]);
+    }
+    setIsLoading(true);
 
     const loadBanners = async () => {
       try {
