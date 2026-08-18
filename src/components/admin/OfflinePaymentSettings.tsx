@@ -134,6 +134,8 @@ const OfflinePaymentSettings = () => {
                 className="flex-1"
                 placeholder="617195659"
                 type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
               />
               <Button
                 size="icon"

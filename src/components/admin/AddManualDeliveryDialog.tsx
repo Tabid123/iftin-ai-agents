@@ -610,13 +610,13 @@ export const AddManualDeliveryDialog: React.FC<AddManualDeliveryDialogProps> = (
           {/* Receiver Phone */}
           <div className="space-y-2">
             <Label>{language === 'so' ? 'Numberka Qaataha' : 'Receiver Phone'}</Label>
-            <Input type="tel" placeholder="61XXXXXXX" value={receiverPhone} onChange={(e) => setReceiverPhone(e.target.value)} maxLength={9} />
+            <Input type="tel" inputMode="numeric" pattern="[0-9]*" placeholder="61XXXXXXX" value={receiverPhone} onChange={(e) => setReceiverPhone(e.target.value)} maxLength={9} />
           </div>
 
           {/* Sender Phone (Optional) */}
           <div className="space-y-2">
             <Label>{language === 'so' ? 'Numberka Macmiilka (ikhtiyaari)' : 'Customer Phone (optional)'}</Label>
-            <Input type="tel" placeholder="61XXXXXXX" value={senderPhone} onChange={(e) => setSenderPhone(e.target.value)} maxLength={9} />
+            <Input type="tel" inputMode="numeric" pattern="[0-9]*" placeholder="61XXXXXXX" value={senderPhone} onChange={(e) => setSenderPhone(e.target.value)} maxLength={9} />
           </div>
 
           {/* Delivery Date — Record Only mode only */}

@@ -150,6 +150,8 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
             <Input
               id="sender-phone"
               type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder={savedSenderPhone || "tusaale 61xxxxxxx"}
               value={senderPhone}
               onChange={(e) => setSenderPhone(e.target.value)}
@@ -161,6 +163,8 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
             <Input
               id="receiver-phone"
               type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder={savedReceiverPhone || "Mobile: 61xxxxxxx | ADSL: 1xxxxxx"}
               value={receiverPhone}
               onChange={(e) => setReceiverPhone(e.target.value)}
