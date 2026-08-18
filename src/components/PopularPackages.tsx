@@ -45,25 +45,29 @@ const SectionShell = ({ children }: { children: React.ReactNode }) => (
 
 const PopularPackages = () => {
   const navigate = useNavigate();
+  const [offline] = React.useState<PopularPackageDTO[]>(() => readOffline());
 
-  const { data: packages = [], isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: async (): Promise<PopularPackageDTO[]> => {
       const catalog = await fetchIftinCatalog({ force: true });
-      if (import.meta.env.DEV) {
-        const anyCatalog = catalog as any;
-        console.log('[popular-packages] raw response keys:', catalog ? Object.keys(catalog) : null);
-        console.log('[popular-packages] popular_packages:', anyCatalog?.popular_packages ?? anyCatalog?.popularPackages ?? null);
+      const mapped = mapPopularPackages(catalog);
+      if (mapped.length > 0) {
+        writeOffline(mapped);
+        cacheImages(mapped.map((p) => p.provider_logo));
       }
-      return mapPopularPackages(catalog);
+      return mapped;
     },
-    // Always refresh when the page opens.
+    // Show the last known list instantly, then refresh in the background.
+    initialData: offline.length > 0 ? offline : undefined,
     refetchOnMount: 'always',
     staleTime: 0,
     retry: 1,
   });
 
-  if (isLoading) {
+  const packages = data && data.length > 0 ? data : offline;
+
+  if (isLoading && packages.length === 0) {
     return (
       <SectionShell>
         <div className="space-y-2">
