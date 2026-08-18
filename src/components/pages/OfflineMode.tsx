@@ -15,6 +15,7 @@ import somnetLogo from '@/assets/providers/somnet-logo.png';
 import somtelLogo from '@/assets/providers/somtel-logo.jpg';
 import amtelLogo from '@/assets/providers/amtel-logo.png';
 import somlinkLogo from '@/assets/providers/somlink-logo.png';
+import CachedImage from '@/components/CachedImage';
 
 // Full provider map for receiver phone (all providers supported)
 const allProviderMap: {
@@ -194,7 +195,7 @@ const OfflineMode = () => {
 
       {/* Logo */}
       <div className="mb-6 mt-2">
-        <img alt={brandName} className="w-28 h-28 object-cover rounded-2xl" src={brandLogo} />
+        <CachedImage alt={brandName} className="w-28 h-28 object-cover rounded-2xl" src={brandLogo} fallback={<img src={najaxLogo} alt={brandName} className="w-28 h-28 object-cover rounded-2xl" />} />
       </div>
 
       {/* Tagline */}
@@ -227,7 +228,7 @@ const OfflineMode = () => {
             </div>
             <div className="flex items-center flex-1 px-3 gap-[8px]">
               {detectedSenderProvider ? (
-                <img src={detectedSenderProvider.logo} alt={detectedSenderProvider.name} className="w-6 h-6 rounded-full flex-shrink-0 object-scale-down" />
+                <CachedImage src={detectedSenderProvider.logo} alt={detectedSenderProvider.name} bundledName={detectedSenderProvider.name} className="w-6 h-6 rounded-full flex-shrink-0 object-scale-down" />
               ) : (
                 <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               )}
@@ -264,7 +265,7 @@ const OfflineMode = () => {
             </div>
             <div className="flex items-center flex-1 px-3 gap-[8px]">
               {detectedProvider ? (
-                <img src={detectedProvider.logo} alt={detectedProvider.name} className="w-6 h-6 rounded-full flex-shrink-0 object-scale-down" />
+                <CachedImage src={detectedProvider.logo} alt={detectedProvider.name} bundledName={detectedProvider.name} className="w-6 h-6 rounded-full flex-shrink-0 object-scale-down" />
               ) : (
                 <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
               )}
