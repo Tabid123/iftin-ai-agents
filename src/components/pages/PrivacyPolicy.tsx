@@ -2,9 +2,14 @@ import React from "react";
 import { ArrowLeft, Shield, Lock, Eye, Database, Bell, UserCheck } from "lucide-react";
 import { useNavigate, useLocation } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
+import { useTenant } from "@/contexts/TenantContext";
 const PrivacyPolicy = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const tenantState = useTenant();
+  const tenant = tenantState.status === "ready" || tenantState.status === "suspended" ? tenantState.tenant : null;
+  const brandName = tenant?.name || "Najax Data";
+  const contactEmail = tenant ? `info@${tenant.slug}.com` : "info@najaxdata.com";
   const previousPage = (location.state as { from?: string })?.from || '/providers';
   const sections = [{
     icon: Database,
@@ -51,12 +56,12 @@ const PrivacyPolicy = () => {
               <Shield className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h2 className="font-semibold text-foreground">Najax Data</h2>
+              <h2 className="font-semibold text-foreground">{brandName}</h2>
               <p className="text-sm text-muted-foreground">Your data is secure</p>
             </div>
           </div>
           <p className="text-muted-foreground leading-relaxed">
-            Najax Data is committed to protecting your privacy and personal data. 
+            {brandName} is committed to protecting your privacy and personal data. 
             This policy explains how we collect, use, and protect your data 
             when you use our app.
           </p>
@@ -84,7 +89,7 @@ const PrivacyPolicy = () => {
           <p className="text-muted-foreground text-sm mb-2">
             If you have questions about this privacy policy
           </p>
-          <p className="text-foreground font-medium">Contact: info@najaxdata.com</p>
+          <p className="text-foreground font-medium">Contact: {contactEmail}</p>
         </div>
 
         {/* Last Updated */}
