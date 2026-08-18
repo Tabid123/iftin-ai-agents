@@ -78,7 +78,7 @@ jobs:
 
       - name: Stamp Android web bundle
         run: |
-          printf '{"commit":"%s","tenant":"%s"}\n' "${GITHUB_SHA}" "${TENANT_SLUG}" > public/apk-build.json
+          printf '{"commit":"%s","tenant":"%s","bannerCache":"tenant-scoped","numericKeyboard":"tel"}\n' "${GITHUB_SHA}" "${TENANT_SLUG}" > public/apk-build.json
 
       - name: Build web bundle
         run: bun run build
@@ -126,8 +126,9 @@ jobs:
           test -f android/app/src/main/assets/public/index.html
           test -f android/app/src/main/assets/public/apk-build.json
           grep -Fq "${GITHUB_SHA}" android/app/src/main/assets/public/apk-build.json
+          grep -Fq '"bannerCache":"tenant-scoped"' android/app/src/main/assets/public/apk-build.json
+          grep -Fq '"numericKeyboard":"tel"' android/app/src/main/assets/public/apk-build.json
           grep -Rqs "offline_banners:" android/app/src/main/assets/public
-          grep -Rqs 'type:"tel"' android/app/src/main/assets/public
           echo "Fresh tenant banner and numeric-input code verified in Android bundle"
 
       - name: Apply app id, label and splash color
