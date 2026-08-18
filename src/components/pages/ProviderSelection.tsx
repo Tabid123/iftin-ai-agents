@@ -15,6 +15,7 @@ import najaxLogo from '@/assets/najax-logo.jpeg';
 import { useTenant } from '@/contexts/TenantContext';
 import { fetchIftinCatalog, hasCatalog, mapProviders, mapCategories, mapPackages, mapPaymentProviders } from '@/lib/iftinCatalog';
 import { Button } from '@/components/ui/button';
+import { localizeImage } from '@/lib/localImages';
 
 
 interface Provider {
@@ -70,7 +71,11 @@ const ProviderSelection = () => {
   const getCachedProviders = () => {
     try {
       const cached = localStorage.getItem('offline_providers');
-      return cached ? JSON.parse(cached) : [];
+      const items = cached ? JSON.parse(cached) : [];
+      return items.map((provider: Provider) => ({
+        ...provider,
+        provider_logo: localizeImage('provider', provider.provider_logo, provider.provider_name),
+      }));
     } catch {
       return [];
     }
@@ -93,7 +98,10 @@ const ProviderSelection = () => {
       const { data, error } = await (supabase as any).rpc('get_active_providers');
       if (error) throw error;
 
-      const freshProviders = data || [];
+      const freshProviders = (data || []).map((provider: Provider) => ({
+        ...provider,
+        provider_logo: localizeImage('provider', provider.provider_logo, provider.provider_name),
+      }));
       localStorage.setItem('offline_providers', JSON.stringify(freshProviders));
       return freshProviders;
     },
