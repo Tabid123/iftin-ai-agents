@@ -71,9 +71,19 @@ export function iftinErrorMessage(code?: string | null): string | null {
  * On the reseller dashboard there is no `/t/:slug` prefix, so the tenant header
  * is not set yet. Fall back to the tenant of the signed-in member.
  */
+const TENANT_CACHE_KEY = 'iftin_tenant_id_v1';
+
 export async function resolveTenantId(): Promise<string | null> {
   const fromHeader = getTenantId();
   if (fromHeader) return fromHeader;
+  // Cached id makes registration instant instead of waiting on auth + a query.
+  try {
+    const cached = localStorage.getItem(TENANT_CACHE_KEY);
+    if (cached) {
+      setTenantHeader(cached);
+      return cached;
+    }
+  } catch { /* ignore */ }
   if (tenantPromise) return tenantPromise;
   tenantPromise = (async () => {
     try {
@@ -86,7 +96,10 @@ export async function resolveTenantId(): Promise<string | null> {
         .limit(1)
         .maybeSingle();
       const memberTenantId = (data as any)?.tenant_id ?? null;
-      if (memberTenantId) setTenantHeader(memberTenantId);
+      if (memberTenantId) {
+        setTenantHeader(memberTenantId);
+        try { localStorage.setItem(TENANT_CACHE_KEY, memberTenantId); } catch { /* ignore */ }
+      }
       return memberTenantId;
     } catch {
       return null;
