@@ -322,14 +322,16 @@ function cacheLegacyShapes(catalog: IftinCatalog) {
   try {
     const providers = mapProviders(catalog);
     const paymentProviders = mapPaymentProviders(catalog);
+    const categories = mapCategories(catalog);
     localStorage.setItem('offline_providers', JSON.stringify(providers));
-    localStorage.setItem('offline_categories', JSON.stringify(mapCategories(catalog)));
+    localStorage.setItem('offline_categories', JSON.stringify(categories));
     localStorage.setItem('offline_packages', JSON.stringify(mapPackages(catalog)));
     localStorage.setItem('offline_payment_providers', JSON.stringify(paymentProviders));
     // Persist logos as data URLs right away so they show instantly & offline.
     cacheImages([
       ...providers.map((p: any) => p.provider_logo),
       ...paymentProviders.map((p: any) => p.provider_logo),
+      ...categories.map((c: any) => c.category_image),
     ]);
   } catch { /* quota */ }
 }

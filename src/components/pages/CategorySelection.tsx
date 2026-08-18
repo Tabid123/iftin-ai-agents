@@ -4,6 +4,7 @@ import { Phone, MessageCircle, Wifi, ArrowLeft, Edit, Sun, CalendarDays, Calenda
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import RotatingBanner from '@/components/RotatingBanner';
+import CachedImage from '@/components/CachedImage';
 import { Button } from '@/components/ui/button';
 import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
@@ -333,13 +334,13 @@ const CategorySelection = () => {
                     style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
                   >
                     {category.category_image ? (
-                      <img 
-                        src={category.category_image} 
-                        alt={category.category_name} 
-                        className="w-12 h-12 object-contain" 
-                        loading="eager" 
-                        decoding="sync"
-                        fetchPriority="high"
+                      <CachedImage
+                        src={category.category_image}
+                        alt={category.category_name}
+                        className="w-12 h-12 object-contain"
+                        loading="eager"
+                        decoding="async"
+                        fallback={getCategoryIcon(category.category_name, getBrandBorderClass(providerName).replace('border-', 'text-'))}
                       />
                     ) : (
                       getCategoryIcon(category.category_name, getBrandBorderClass(providerName).replace('border-', 'text-'))
