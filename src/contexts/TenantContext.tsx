@@ -246,13 +246,33 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
       // itself isn't filtered by a wrong tenant.
       setTenantHeader(null);
 
-      const { data: rpcData, error } = await supabase.rpc(
-        "get_tenant_by_slug",
-        { p_slug: slug }
-      );
+      const cached = readCachedTenant(slug);
+      // Offline-first: show the last known tenant immediately so the app keeps
+      // working with no network (airplane mode).
+      if (cached) {
+        setTenantHeader(cached.id);
+        applyBranding(cached);
+        setState(
+          cached.status === "suspended" || cached.status === "cancelled"
+            ? { status: "suspended", tenant: cached, isPlatform: false }
+            : { status: "ready", tenant: cached, isPlatform: false },
+        );
+      }
+
+      let rpcData: unknown = null;
+      let error: unknown = null;
+      try {
+        const res = await supabase.rpc("get_tenant_by_slug", { p_slug: slug });
+        rpcData = res.data;
+        error = res.error;
+      } catch (e) {
+        error = e;
+      }
       const data = Array.isArray(rpcData) ? rpcData[0] : rpcData;
 
       if (error || !data) {
+        // Keep the cached tenant when the lookup failed (offline / server down).
+        if (cached) return;
         setState({
           status: "not_found",
           tenant: null,
@@ -266,6 +286,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
       // Activate tenant scoping for ALL subsequent supabase queries
       setTenantHeader(tenant.id);
       applyBranding(tenant);
+      writeCachedTenant(slug, tenant);
 
       if (tenant.status === "suspended" || tenant.status === "cancelled") {
         setState({ status: "suspended", tenant, isPlatform: false });
@@ -274,6 +295,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setState({ status: "ready", tenant, isPlatform: false });
     })();
+
   }, []);
 
 
