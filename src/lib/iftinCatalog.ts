@@ -9,6 +9,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { getTenantId, setTenantHeader } from '@/integrations/supabase/client';
 import { ensureResellerOverrides, loadResellerOverrides, paymentNumberFor, sellPriceFor } from '@/lib/resellerOverrides';
+import { cacheImages } from '@/lib/imageCache';
 
 export type IftinCatalog = {
   partner?: string;
