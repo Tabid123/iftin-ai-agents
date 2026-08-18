@@ -79,9 +79,6 @@ export function buildOfflinePayload(
     if (!isValidPhone(receiver_phone)) {
       return { ok: false, error: 'invalid_receiver_phone', message: 'Lambarka xirmada loo dirayo sax ma aha' };
     }
-    if (sender_phone === receiver_phone) {
-      return { ok: false, error: 'same_phone', message: 'Labada lambar waa inay kala duwanaadaan' };
-    }
     const providerId = isUuid(input?.provider_id) ? String(input.provider_id) : null;
     const providerName = input?.provider_name ? String(input.provider_name) : null;
     if (!providerId && !providerName) {
