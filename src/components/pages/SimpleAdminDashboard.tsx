@@ -18,6 +18,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useTenantCapabilities } from '@/hooks/useTenantCapabilities';
 import { prefetchAdminViews } from '@/lib/prefetchAdminViews';
 import { fetchIftinWallet, type IftinWalletData } from '@/lib/iftinWallet';
+import CachedImage from '@/components/CachedImage';
 
 interface DashboardStats {
   todayOrderCount: number;
@@ -356,7 +357,7 @@ const SimpleAdminDashboard = () => {
             {/* Top row: brand/logo centered */}
             <div className="flex items-center justify-center px-4 py-3">
               <div className="flex items-center gap-2">
-                <img src={tenant?.logo_url || najaxLogo} alt="Logo" className="w-8 h-8 rounded-lg object-contain bg-white" onError={(e) => { (e.currentTarget as HTMLImageElement).src = najaxLogo }} />
+                <CachedImage src={tenant?.logo_url || najaxLogo} alt={`${tenant?.name || 'Najax Data'} logo`} className="w-8 h-8 rounded-lg object-contain bg-white" fallback={<img src={najaxLogo} alt="Logo" className="w-8 h-8 rounded-lg object-contain bg-white" />} />
                 <h1 className="text-lg font-bold">{tenant?.name || 'Najax Data'}</h1>
                 {/* LIVE indicator */}
                 <span className="flex items-center gap-1 bg-white/15 border border-white/25 px-2 py-0.5 rounded-full ml-1">
@@ -556,9 +557,7 @@ const SimpleAdminDashboard = () => {
                               {/* SIM colored header bar */}
                               <div className={`${colors.bg} px-2 py-1 flex items-center justify-between`}>
                                 <div className="flex items-center gap-1 min-w-0">
-                                  {sim.provider_logo && (
-                                    <img src={sim.provider_logo} alt="" className="w-4 h-4 rounded-full object-contain bg-white flex-shrink-0" />
-                                  )}
+                                  <CachedImage src={sim.provider_logo} alt={sim.provider_name} bundledName={sim.provider_name} className="w-4 h-4 rounded-full object-contain bg-white flex-shrink-0" />
                                   <span className="font-semibold text-[10px] text-white truncate">
                                     SIM{sim.sim_slot}: {sim.provider_name}
                                   </span>

@@ -1,4 +1,5 @@
 import { Smartphone, LayoutDashboard, ShoppingBag } from 'lucide-react'
+import CachedImage from '@/components/CachedImage'
 
 interface Props {
   name: string
@@ -42,7 +43,7 @@ export default function ThemePreview({ name, logoUrl, primary, accent }: Props) 
 
   const Logo = () =>
     logoUrl ? (
-      <img src={logoUrl} alt="logo" className="h-8 w-8 rounded object-contain bg-white p-0.5" />
+      <CachedImage src={logoUrl} alt={`${displayName} logo`} className="h-8 w-8 rounded object-contain bg-white p-0.5" />
     ) : (
       <div
         className="h-8 w-8 rounded grid place-items-center font-bold text-xs"
@@ -64,7 +65,7 @@ export default function ThemePreview({ name, logoUrl, primary, accent }: Props) 
           style={{ background: p, color: onP }}
         >
           {logoUrl ? (
-            <img src={logoUrl} alt="logo" className="h-20 w-20 rounded-2xl object-contain bg-white p-1" />
+            <CachedImage src={logoUrl} alt={`${displayName} logo`} className="h-20 w-20 rounded-2xl object-contain bg-white p-1" />
           ) : (
             <div className="h-20 w-20 rounded-2xl grid place-items-center font-bold text-2xl"
               style={{ background: a, color: onA }}>
