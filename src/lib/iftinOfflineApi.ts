@@ -73,8 +73,11 @@ const enqueue = (input: OfflineRegisterInput) => {
  * scheme, so a relative "/api/..." URL never reaches our server. Use the
  * published origin there.
  */
+// NOTE: iftin-agent-friend.lovable.app 307-redirects to the custom domain,
+// which costs an extra cross-origin hop (and a second CORS preflight) on every
+// request from the APK. Point straight at the final origin.
 const PUBLISHED_ORIGIN =
-  (import.meta as any).env?.VITE_PUBLIC_APP_URL || 'https://iftin-agent-friend.lovable.app';
+  (import.meta as any).env?.VITE_PUBLIC_APP_URL || 'https://iftinagents.com';
 
 export function apiBase(): string {
   if (typeof window === 'undefined') return '';
