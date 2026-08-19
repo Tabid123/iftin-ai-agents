@@ -16,7 +16,29 @@
         <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:statusBarColor">@color/status_bar_background</item>
         <item name="android:navigationBarColor">@color/navigation_bar_background</item>
+        <!-- Text selection popup (Cut / Copy / Paste / Select all): use a light
+             surface instead of inheriting colorPrimaryDark. -->
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeStyle">@style/AppActionMode</item>
+        <item name="actionModeBackground">@color/action_mode_background</item>
+        <item name="actionModeCloseButtonStyle">@style/AppActionModeCloseButton</item>
+        <item name="actionMenuTextColor">@color/action_mode_text</item>
     </style>
+
+    <style name="AppActionMode" parent="Widget.AppCompat.ActionMode">
+        <item name="background">@color/action_mode_background</item>
+        <item name="backgroundSplit">@color/action_mode_background</item>
+        <item name="titleTextStyle">@style/AppActionModeTitle</item>
+    </style>
+
+    <style name="AppActionModeTitle" parent="TextAppearance.AppCompat.Widget.ActionMode.Title">
+        <item name="android:textColor">@color/action_mode_text</item>
+    </style>
+
+    <style name="AppActionModeCloseButton" parent="Widget.AppCompat.ActionButton.CloseMode">
+        <item name="android:tint">@color/action_mode_text</item>
+    </style>
+
 
 
     <!-- Launch theme: same background color as the web splash so there is no
