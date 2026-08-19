@@ -58,6 +58,7 @@ const IftinPaymentNumbers = lazy(() => import('@/components/admin/IftinPaymentNu
 const IftinWallet = lazy(() => import('@/components/admin/IftinWallet'));
 const IftinPayments = lazy(() => import('@/components/admin/IftinPayments'));
 const IftinOfflineCustomers = lazy(() => import('@/components/admin/IftinOfflineCustomers'));
+const IftinDailyOrders = lazy(() => import('@/components/admin/IftinDailyOrders'));
 const BankTransactions = lazy(() => import('@/components/admin/BankTransactions').then(m => ({ default: m.BankTransactions })));
 
 interface DetailConfig {
@@ -163,7 +164,7 @@ const SimpleAdminDetail = () => {
     }
     switch (type) {
       // Custom views (lazy-loaded)
-      case 'daily-orders': return <DailyOrdersCustomView isSo={isSo} />;
+      case 'daily-orders': return isPartner ? <IftinDailyOrders isSo={isSo} /> : <DailyOrdersCustomView isSo={isSo} />;
       case 'customers': return <CustomersCustomView isSo={isSo} />;
       case 'offline-registrations':
         return isPartner ? <IftinOfflineCustomers /> : <OfflineRegistrationsCustomView isSo={isSo} />;
