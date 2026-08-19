@@ -7,7 +7,6 @@ import RotatingBanner from '@/components/RotatingBanner';
 import CachedImage from '@/components/CachedImage';
 import { localizeImage } from '@/lib/localImages';
 import { Button } from '@/components/ui/button';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
 import { useTenant } from '@/contexts/TenantContext';
@@ -368,7 +367,6 @@ const CategorySelection = () => {
       )}
 
       {/* Bottom Navigation - Fixed */}
-      <BottomNavigation />
     </div>;
 };
 export default CategorySelection;

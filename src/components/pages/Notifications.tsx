@@ -4,7 +4,6 @@ import { ArrowLeft, Bell, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { useNotifications } from '@/hooks/useNotifications';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
 
 const Notifications = () => {
@@ -81,7 +80,6 @@ const Notifications = () => {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNavigation />
     </div>
   );
 };

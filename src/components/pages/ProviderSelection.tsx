@@ -7,7 +7,6 @@ import { Phone, MessageCircle, WifiOff, X, RefreshCw, Headphones, Bot } from 'lu
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient, useQuery, QueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
 import { logScreenView } from '@/services/firebase';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
@@ -410,7 +409,6 @@ const ProviderSelection = () => {
         </div>
       )}
 
-      <BottomNavigation />
     </div>
   );
 };

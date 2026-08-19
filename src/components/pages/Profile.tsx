@@ -3,7 +3,6 @@ import { useNavigate } from "@/lib/router-compat";
 import { ArrowLeft, MessageCircle, Phone, ChevronRight, LogOut, Star, Share2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
 import {
   AlertDialog,
@@ -96,7 +95,7 @@ const Profile = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-24">
       <div 
         style={{ 
           backgroundColor: 'hsl(var(--primary))',
@@ -195,7 +194,6 @@ const Profile = () => {
         </AlertDialog>
       </div>
 
-      <BottomNavigation />
     </div>
   );
 };

@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Capacitor } from '@capacitor/core';
-import { BottomNavigation } from '@/components/BottomNavigation';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
 import { generateInvoiceImage } from '@/utils/invoiceGenerator';
 import { downloadBlobInBrowser } from '@/utils/downloadFile';
@@ -559,7 +558,6 @@ const OrderHistory = () => {
         </div>}
 
       {/* Bottom Navigation */}
-      <BottomNavigation />
     </div>;
 };
 export default OrderHistory;

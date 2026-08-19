@@ -29,6 +29,7 @@ import { TenantProvider } from "@/contexts/TenantContext";
 import { ConnectivityProvider } from "@/contexts/ConnectivityContext";
 import { TenantGate } from "@/components/TenantGate";
 import { StatusBarColor } from "@/components/StatusBarColor";
+import { PersistentBottomNav } from "@/components/PersistentBottomNav";
 import { registerTenantChangeListener } from '@/integrations/supabase/client';
 import { scheduleNativeSplashFallback } from '@/lib/nativeSplash';
 import { initNativeBars } from '@/lib/nativeStatusBar';
@@ -211,6 +212,7 @@ function AppContent() {
       <StatusBarColor />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <PersistentBottomNav />
 
       <AlertDialog open={showExitDialog} onOpenChange={handleCancelExit}>
         <AlertDialogContent>
