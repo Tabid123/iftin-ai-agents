@@ -16,6 +16,8 @@ import somtelLogo from '@/assets/providers/somtel-logo.jpg';
 import amtelLogo from '@/assets/providers/amtel-logo.png';
 import somlinkLogo from '@/assets/providers/somlink-logo.png';
 import CachedImage from '@/components/CachedImage';
+import PhoneNumberInput from '@/components/PhoneNumberInput';
+
 
 // Full provider map for receiver phone (all providers supported)
 const allProviderMap: {
