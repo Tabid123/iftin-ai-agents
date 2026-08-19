@@ -34,10 +34,7 @@ const badgeClass = (result: string) => {
   }
 };
 
-type Tab = 'orders' | 'unpaid';
-
 const IftinDailyOrders: React.FC<{ isSo?: boolean }> = ({ isSo = true }) => {
-  const [tab, setTab] = useState<Tab>('orders');
   const [data, setData] = useState<PartnerIntentsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +48,7 @@ const IftinDailyOrders: React.FC<{ isSo?: boolean }> = ({ isSo = true }) => {
         const tenantId = await resolveTenantId();
         if (!tenantId) throw new Error('Reseller-ka lama garanayo');
         const res = await listPartnerIntents({
-          data: { tenantId, limit: 100, includeUnpaid: tab === 'unpaid' },
+          data: { tenantId, limit: 100, includeUnpaid: false },
         });
         setData(res);
       } catch (e: any) {
@@ -60,10 +57,10 @@ const IftinDailyOrders: React.FC<{ isSo?: boolean }> = ({ isSo = true }) => {
         setLoading(false);
       }
     },
-    [tab],
+    [],
   );
 
-  // Full refresh from the API on mount / tab change (server is source of truth).
+  // Full refresh from the API on mount (server is source of truth).
   useEffect(() => {
     void load();
   }, [load]);
@@ -76,17 +73,13 @@ const IftinDailyOrders: React.FC<{ isSo?: boolean }> = ({ isSo = true }) => {
   const summary = data?.summary;
 
   const rows = useMemo(() => {
-    const all = data?.intents ?? [];
-    const list =
-      tab === 'orders'
-        ? all.filter((i) => i.counts_as_order === true)
-        : all.filter((i) => i.counts_as_order === false);
+    const list = (data?.intents ?? []).filter((i) => i.counts_as_order === true);
     const q = search.replace(/\D/g, '');
     if (!q) return list;
     return list.filter(
       (i) => (i.receiver_phone ?? '').includes(q) || (i.sender_phone ?? '').includes(q),
     );
-  }, [data, tab, search]);
+  }, [data, search]);
 
   const revenue = useMemo(
     () =>
@@ -107,14 +100,7 @@ const IftinDailyOrders: React.FC<{ isSo?: boolean }> = ({ isSo = true }) => {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-2">
-          <Button size="sm" variant={tab === 'orders' ? 'default' : 'outline'} onClick={() => setTab('orders')}>
-            {isSo ? 'Dalabyada' : 'Orders'}
-          </Button>
-          <Button size="sm" variant={tab === 'unpaid' ? 'default' : 'outline'} onClick={() => setTab('unpaid')}>
-            {isSo ? 'Lacag lama bixin' : 'Unpaid'}
-          </Button>
-        </div>
+        <div className="text-sm font-semibold">{isSo ? 'Dalabyada' : 'Orders'}</div>
         <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
         </Button>
@@ -184,13 +170,6 @@ const IftinDailyOrders: React.FC<{ isSo?: boolean }> = ({ isSo = true }) => {
         </div>
       )}
 
-      {tab === 'unpaid' && (
-        <p className="text-[11px] text-muted-foreground text-center">
-          {isSo
-            ? `Lacag lama bixin — kuwan dalab lama tirinayo (${data?.unpaid_ttl_minutes ?? 60} daqiiqo kadib way dhacaan).`
-            : `Unpaid intents are not orders (they expire after ${data?.unpaid_ttl_minutes ?? 60} minutes).`}
-        </p>
-      )}
     </div>
   );
 };
