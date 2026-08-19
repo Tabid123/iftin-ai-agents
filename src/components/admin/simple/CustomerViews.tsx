@@ -233,8 +233,8 @@ export const OfflineRegistrationsCustomView = ({ isSo }: { isSo: boolean }) => {
       </button>
       {showAdd && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border p-3 space-y-2 animate-in slide-in-from-top-2">
-          <input value={newReg.sender_phone} onChange={e => setNewReg(p => ({...p, sender_phone: e.target.value}))} placeholder={isSo ? 'Lambarka Diraha' : 'Sender Phone'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
-          <input value={newReg.receiver_phone} onChange={e => setNewReg(p => ({...p, receiver_phone: e.target.value}))} placeholder={isSo ? 'Lambarka Qaataha' : 'Receiver Phone'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newReg.sender_phone} onChange={e => setNewReg(p => ({...p, sender_phone: e.target.value.replace(/\D/g, '')}))} placeholder={isSo ? 'Lambarka Diraha' : 'Sender Phone'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newReg.receiver_phone} onChange={e => setNewReg(p => ({...p, receiver_phone: e.target.value.replace(/\D/g, '')}))} placeholder={isSo ? 'Lambarka Qaataha' : 'Receiver Phone'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <input value={newReg.provider_name} onChange={e => setNewReg(p => ({...p, provider_name: e.target.value}))} placeholder={isSo ? 'Shirkadda (optional)' : 'Provider (optional)'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <button onClick={addReg} className="w-full py-2 bg-green-500 text-white rounded-lg text-sm font-medium active:bg-green-600">
             <Plus className="w-3.5 h-3.5 inline mr-1" /> {isSo ? 'Ku Dar' : 'Add'}
@@ -597,7 +597,7 @@ export const BlockedCustomView = ({ isSo }: { isSo: boolean }) => {
       ]} />
       <div className="bg-white dark:bg-gray-800 rounded-xl border p-3 space-y-2">
         <div className="text-xs font-bold text-gray-700 dark:text-gray-200">➕ {isSo ? 'User Cusub Block' : 'Block New User'}</div>
-        <input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder={isSo ? 'Lambarka...' : 'Phone number...'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+        <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newPhone} onChange={e => setNewPhone(e.target.value.replace(/\D/g, ''))} placeholder={isSo ? 'Lambarka...' : 'Phone number...'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
         <input value={newReason} onChange={e => setNewReason(e.target.value)} placeholder={isSo ? 'Sababta...' : 'Reason (optional)...'} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
         <button onClick={blockUser} className="w-full py-2 bg-red-500 text-white rounded-lg text-sm font-medium active:bg-red-600">
           <Ban className="w-3.5 h-3.5 inline mr-1" /> {isSo ? 'Xir' : 'Block'}
