@@ -3,7 +3,7 @@
   "appName": "Iftin Agents",
   "webDir": "dist",
   "android": {
-    "captureInput": true,
+    "captureInput": false,
     "adjustMarginsForEdgeToEdge": "force"
   },
   "plugins": {

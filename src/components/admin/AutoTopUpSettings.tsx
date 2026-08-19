@@ -339,7 +339,7 @@ export const AutoTopUpSettings = () => {
                           </div>
                           <div>
                             <Label className="text-xs">SIM Password</Label>
-                            <Input value={form.simPassword} onChange={(e) => updatePkgForm(num.id, 'simPassword', e.target.value)} placeholder="5516" className="h-8 text-sm" />
+                            <Input type="tel" inputMode="numeric" pattern="[0-9]*" value={form.simPassword} onChange={(e) => updatePkgForm(num.id, 'simPassword', e.target.value.replace(/\D/g, ''))} placeholder="5516" className="h-8 text-sm" />
                           </div>
                         </div>
                         <Button size="sm" onClick={() => addPackage(num.id)} disabled={addingPkg === num.id || !form.name.trim() || !form.price.trim()} className="w-full">

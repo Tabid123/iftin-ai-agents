@@ -78,7 +78,7 @@ jobs:
 
       - name: Stamp Android web bundle
         run: |
-          printf '{"commit":"%s","tenant":"%s","bannerCache":"tenant-scoped","numericKeyboard":"tel"}\n' "${GITHUB_SHA}" "${TENANT_SLUG}" > public/apk-build.json
+          printf '{"commit":"%s","tenant":"%s","bannerCache":"tenant-scoped","numericKeyboard":"native-webview-numeric"}\n' "${GITHUB_SHA}" "${TENANT_SLUG}" > public/apk-build.json
 
       - name: Build web bundle
         run: bun run build
@@ -129,10 +129,12 @@ jobs:
           test -f android/app/src/main/assets/public/apk-build.json
           grep -Fq "${GITHUB_SHA}" android/app/src/main/assets/public/apk-build.json
           grep -Fq '"bannerCache":"tenant-scoped"' android/app/src/main/assets/public/apk-build.json
-          grep -Fq '"numericKeyboard":"tel"' android/app/src/main/assets/public/apk-build.json
+          grep -Fq '"numericKeyboard":"native-webview-numeric"' android/app/src/main/assets/public/apk-build.json
+          grep -Fq '"captureInput": false' capacitor.config.json
+          grep -Fq '"captureInput": false' android/app/src/main/assets/capacitor.config.json
           grep -Rqs "offline_banners:" android/app/src/main/assets/public
           grep -Rqs "SET_VERSION" android/app/src/main/assets/public
-          echo "Fresh tenant banner and numeric-input code verified in Android bundle"
+          echo "Fresh tenant banner and native numeric keyboard configuration verified in Android bundle"
 
       - name: Apply app id, label and splash color
         env:

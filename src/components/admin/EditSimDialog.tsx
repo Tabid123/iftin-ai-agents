@@ -95,9 +95,10 @@ export const EditSimDialog = ({ sim, open, onOpenChange, onSuccess }: EditSimDia
             <Input
               id="sim-number"
               value={simNumber}
-              onChange={(e) => setSimNumber(e.target.value)}
+              onChange={(e) => setSimNumber(e.target.value.replace(/\D/g, ''))}
               type="tel"
               inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="e.g., +252612345678"
             />
           </div>

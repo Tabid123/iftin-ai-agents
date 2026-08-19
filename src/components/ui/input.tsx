@@ -5,7 +5,10 @@ import { cn } from "@/lib/utils";
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, inputMode, pattern, ...props }, ref) => {
     // Numeric fields must always open the digits-only keypad on mobile.
-    const isTel = type === "tel";
+    // Capacitor's Android WebView is most reliable when numeric-only fields
+    // have both inputmode="numeric" and the native telephone input type.
+    const resolvedType = type ?? (inputMode === "numeric" ? "tel" : undefined);
+    const isTel = resolvedType === "tel";
     const isNumber = type === "number";
     const resolvedInputMode =
       inputMode ?? (isTel ? "numeric" : isNumber ? "decimal" : undefined);
@@ -14,7 +17,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
 
     return (
       <input
-        type={type}
+        type={resolvedType}
         inputMode={resolvedInputMode}
         pattern={resolvedPattern}
         className={cn(
