@@ -159,9 +159,12 @@ export const AddDeviceDialog = ({ open, onOpenChange, onDeviceAdded }: AddDevice
               <div className="space-y-1">
                 <Label className="text-xs">{language === 'so' ? 'Lambarka' : 'Number'}</Label>
                 <Input
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="252..."
                   value={sim1Number}
-                  onChange={(e) => setSim1Number(e.target.value)}
+                  onChange={(e) => setSim1Number(e.target.value.replace(/\D/g, ''))}
                 />
               </div>
               <div className="space-y-1">
@@ -193,9 +196,12 @@ export const AddDeviceDialog = ({ open, onOpenChange, onDeviceAdded }: AddDevice
               <div className="space-y-1">
                 <Label className="text-xs">{language === 'so' ? 'Lambarka' : 'Number'}</Label>
                 <Input
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="252..."
                   value={sim2Number}
-                  onChange={(e) => setSim2Number(e.target.value)}
+                  onChange={(e) => setSim2Number(e.target.value.replace(/\D/g, ''))}
                 />
               </div>
               <div className="space-y-1">

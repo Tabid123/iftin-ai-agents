@@ -146,8 +146,11 @@ export const EditDeviceDialog = ({
           <div className="space-y-2">
             <Label>{language === 'so' ? 'SIM 1 Lambar' : 'SIM 1 Number'}</Label>
             <Input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={simNumber}
-              onChange={(e) => setSimNumber(e.target.value)}
+              onChange={(e) => setSimNumber(e.target.value.replace(/\D/g, ''))}
               placeholder={language === 'so' ? 'Tusaale: 615123456' : 'e.g. 615123456'}
               disabled={loading}
             />
@@ -172,8 +175,11 @@ export const EditDeviceDialog = ({
           <div className="space-y-2">
             <Label>{language === 'so' ? 'SIM 2 Lambar' : 'SIM 2 Number'} ({language === 'so' ? 'Ikhtiyaari' : 'Optional'})</Label>
             <Input
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={sim2Number}
-              onChange={(e) => setSim2Number(e.target.value)}
+              onChange={(e) => setSim2Number(e.target.value.replace(/\D/g, ''))}
               placeholder={language === 'so' ? 'Tusaale: 690123456' : 'e.g. 690123456'}
               disabled={loading}
             />

@@ -91,8 +91,11 @@ export const EditSim2Dialog = ({ sim, open, onOpenChange, onSuccess }: EditSim2D
             </Label>
             <Input
               id="sim2-number"
+              type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={sim2Number}
-              onChange={(e) => setSim2Number(e.target.value)}
+              onChange={(e) => setSim2Number(e.target.value.replace(/\D/g, ''))}
               placeholder={language === 'so' ? 'Tusaale: 612345678' : 'e.g., 612345678'}
             />
           </div>
