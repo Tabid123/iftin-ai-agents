@@ -281,7 +281,7 @@ const RotatingBanner = () => {
             src={currentMedia.banner_image}
             alt={currentMedia.alt_text || 'Promotional banner'}
             kind="banner"
-            bundledName={`banner${currentBanner + 1}`}
+            bundledName={null}
             className="w-full h-full object-cover animate-fade-in"
             width={1200}
             height={400}

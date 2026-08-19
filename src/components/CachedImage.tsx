@@ -18,8 +18,11 @@ type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
  * logo bundled in the build — so logos render 100% of the time, online or offline.
  */
 const CachedImage = ({ src, alt, bundledName, kind = 'provider', providerName, fallback, ...rest }: Props) => {
+  // bundledName === null means "never substitute a bundled asset" (e.g. banners
+  // uploaded by a tenant admin must render exactly as uploaded).
+  const skipBundled = bundledName === null;
   const imageName = bundledName ?? (typeof alt === 'string' ? alt : null);
-  const bundled = getLocalImage(kind, imageName, src, providerName);
+  const bundled = skipBundled ? null : getLocalImage(kind, imageName, src, providerName);
   // Bundled asset first: it ships inside the build, so it paints instantly and
   // works with zero network. Cached data URL next, remote URL last.
   const pick = (s: string | null | undefined) => bundled ?? getCachedImage(s) ?? s ?? null;
