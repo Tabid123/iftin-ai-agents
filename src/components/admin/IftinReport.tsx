@@ -12,11 +12,36 @@ const dayKey = (iso?: string | null) => (iso ? isoDayFmt.format(new Date(iso)) :
 const todayKey = () => isoDayFmt.format(new Date());
 const money = (n: number) => `$${n.toFixed(2)}`;
 
-const PROVIDERS = ['Hormuud', 'Somtel', 'Somnet', 'Amtel', 'Golis', 'Telesom', 'Nationlink'];
-const providerOf = (p: PartnerIntent) => {
-  const name = (p.package_name ?? '').toLowerCase();
-  return PROVIDERS.find((x) => name.includes(x.toLowerCase())) ?? 'Kale';
+const NAME_MATCH: Array<[string, string[]]> = [
+  ['Hormuud', ['hormuud', 'evc']],
+  ['Somtel', ['somtel', 'edahab', 'e-dahab']],
+  ['Somnet', ['somnet', 'jeeb']],
+  ['Somlink', ['somlink']],
+  ['Amtel', ['amtel']],
+  ['Telesom', ['telesom', 'zaad']],
+  ['Golis', ['golis', 'sahal']],
+  ['Nationlink', ['nationlink', 'nation link']],
+];
+const PREFIX_MATCH: Record<string, string> = {
+  '61': 'Hormuud', '77': 'Hormuud',
+  '62': 'Somtel', '68': 'Somnet', '64': 'Somlink',
+  '71': 'Amtel', '63': 'Telesom',
+  '90': 'Golis', '85': 'Golis',
+  '67': 'Nationlink', '69': 'Nationlink',
 };
+
+const providerOf = (p: PartnerIntent) => {
+  const raw = p as unknown as Record<string, unknown>;
+  const text = [raw['provider_name'], raw['provider'], raw['network'], p.package_name]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  const byName = NAME_MATCH.find(([, keys]) => keys.some((k) => text.includes(k)));
+  if (byName) return byName[0];
+  const phone = String(p.receiver_phone ?? '').replace(/\D/g, '').replace(/^252/, '');
+  return PREFIX_MATCH[phone.slice(0, 2)] ?? 'Kale';
+};
+
 
 type Agg = { orders: number; sales: number; cost: number; profit: number };
 const emptyAgg = (): Agg => ({ orders: 0, sales: 0, cost: 0, profit: 0 });
