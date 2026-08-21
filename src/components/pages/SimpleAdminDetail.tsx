@@ -89,6 +89,7 @@ const DETAIL_CONFIGS: Record<string, DetailConfig> = {
   'payment-settings': { title: 'Payment Providers', titleSo: 'Payment Settings', headerBg: 'from-violet-500 to-violet-700' },
   'system-codes': { title: 'System Codes', titleSo: 'USSD Codes', headerBg: 'from-indigo-600 to-indigo-800' },
   transactions: { title: 'Transactions', titleSo: 'Transactions', headerBg: 'from-blue-600 to-blue-800' },
+  warbixin: { title: 'Report', titleSo: 'Warbixin', headerBg: 'from-indigo-600 to-indigo-800' },
   'sms-lacago': { title: 'SMS Lacago', titleSo: 'SMS Lacago', headerBg: 'from-orange-600 to-orange-800' },
   'evoucher-rates': { title: 'E-Voucher Rates', titleSo: 'E-Voucher Rates', headerBg: 'from-emerald-600 to-emerald-800' },
   'bulk-sms': { title: 'Bulk SMS', titleSo: 'Bulk SMS', headerBg: 'from-teal-600 to-teal-800' },
