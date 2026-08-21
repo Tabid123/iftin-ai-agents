@@ -181,7 +181,7 @@ const SimpleAdminDetail = () => {
       case 'payment-settings': return <PaymentSettingsCustomView isSo={isSo} />;
       case 'system-codes': return <SystemCodesCustomView isSo={isSo} />;
       // Full admin components (lazy-loaded)
-      case 'transactions': return <TransactionsDashboard />;
+      case 'transactions': return isPartner ? <IftinTransactions isSo={isSo} /> : <TransactionsDashboard />;
       case 'sms-lacago': return <SmsLacagoCards />;
       case 'evoucher-rates': return <CompanyFinances />;
       case 'bulk-sms': return <BulkSmsManager />;
