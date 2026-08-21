@@ -32,6 +32,7 @@ const SystemCodesCustomView = lazy(() => import('@/components/admin/simple/Confi
 
 // Lazy-loaded full admin components
 const TransactionsDashboard = lazy(() => import('@/components/admin/TransactionsDashboard').then(m => ({ default: m.TransactionsDashboard })));
+const IftinTransactions = lazy(() => import('@/components/admin/IftinTransactions'));
 const CombinedPaymentAnalytics = lazy(() => import('@/components/admin/CombinedPaymentAnalytics'));
 const OnlinePaymentsDashboard = lazy(() => import('@/components/admin/OnlinePaymentsDashboard').then(m => ({ default: m.OnlinePaymentsDashboard })));
 const SMSOfflineOrdersDashboard = lazy(() => import('@/components/admin/SMSOfflineOrdersDashboard').then(m => ({ default: m.SMSOfflineOrdersDashboard })));
