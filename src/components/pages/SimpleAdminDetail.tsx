@@ -33,6 +33,7 @@ const SystemCodesCustomView = lazy(() => import('@/components/admin/simple/Confi
 // Lazy-loaded full admin components
 const TransactionsDashboard = lazy(() => import('@/components/admin/TransactionsDashboard').then(m => ({ default: m.TransactionsDashboard })));
 const IftinTransactions = lazy(() => import('@/components/admin/IftinTransactions'));
+const IftinReport = lazy(() => import('@/components/admin/IftinReport'));
 const CombinedPaymentAnalytics = lazy(() => import('@/components/admin/CombinedPaymentAnalytics'));
 const OnlinePaymentsDashboard = lazy(() => import('@/components/admin/OnlinePaymentsDashboard').then(m => ({ default: m.OnlinePaymentsDashboard })));
 const SMSOfflineOrdersDashboard = lazy(() => import('@/components/admin/SMSOfflineOrdersDashboard').then(m => ({ default: m.SMSOfflineOrdersDashboard })));
@@ -88,6 +89,7 @@ const DETAIL_CONFIGS: Record<string, DetailConfig> = {
   'payment-settings': { title: 'Payment Providers', titleSo: 'Payment Settings', headerBg: 'from-violet-500 to-violet-700' },
   'system-codes': { title: 'System Codes', titleSo: 'USSD Codes', headerBg: 'from-indigo-600 to-indigo-800' },
   transactions: { title: 'Transactions', titleSo: 'Transactions', headerBg: 'from-blue-600 to-blue-800' },
+  warbixin: { title: 'Report', titleSo: 'Warbixin', headerBg: 'from-indigo-600 to-indigo-800' },
   'sms-lacago': { title: 'SMS Lacago', titleSo: 'SMS Lacago', headerBg: 'from-orange-600 to-orange-800' },
   'evoucher-rates': { title: 'E-Voucher Rates', titleSo: 'E-Voucher Rates', headerBg: 'from-emerald-600 to-emerald-800' },
   'bulk-sms': { title: 'Bulk SMS', titleSo: 'Bulk SMS', headerBg: 'from-teal-600 to-teal-800' },
@@ -183,6 +185,7 @@ const SimpleAdminDetail = () => {
       case 'system-codes': return <SystemCodesCustomView isSo={isSo} />;
       // Full admin components (lazy-loaded)
       case 'transactions': return isPartner ? <IftinTransactions isSo={isSo} /> : <TransactionsDashboard />;
+      case 'warbixin': return <IftinReport isSo={isSo} />;
       case 'sms-lacago': return <SmsLacagoCards />;
       case 'evoucher-rates': return <CompanyFinances />;
       case 'bulk-sms': return <BulkSmsManager />;

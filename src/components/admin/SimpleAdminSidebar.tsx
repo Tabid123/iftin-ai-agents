@@ -39,6 +39,7 @@ const menuGroups: MenuItem[] = [
     label: 'Payments & Analytics', labelSo: 'Lacagaha & Falanqayn', icon: BarChart3,
     children: [
       { label: 'Transactions', labelSo: 'Transactions', icon: Receipt, path: '/dashboard/transactions' },
+      { label: 'Report', labelSo: 'Warbixin', icon: Receipt, path: '/dashboard/warbixin' },
       { label: 'SMS Lacago', labelSo: 'SMS Lacago', icon: MessageSquare, path: '/dashboard/sms-lacago' },
       { label: 'Bank Transactions', labelSo: 'Lacagaha Bank-ka', icon: Banknote, path: '/dashboard/bank-transactions' },
       { label: 'E-Voucher Rates', labelSo: 'E-Voucher Rates', icon: Wallet, path: '/dashboard/evoucher-rates' },

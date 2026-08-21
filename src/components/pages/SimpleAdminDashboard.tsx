@@ -325,6 +325,7 @@ const SimpleAdminDashboard = () => {
   const statCards = ([
     { label: "Wallet & Faa'iido", value: `$${wallet.available.toFixed(2)}`, sub: `La baxsan karo · Faa'idada ${periodLabel.toLowerCase()}: $${stats.todayProfit.toFixed(2)}`, color: 'from-emerald-500 to-teal-700', darkFooter: 'bg-emerald-800', link: '/dashboard/iftin-wallet', fullWidth: true, isWallet: true },
     { label: 'Transactions', value: `$${stats.todayProfit.toFixed(2)}`, color: 'from-green-500 to-green-700', darkFooter: 'bg-green-800', link: '/dashboard/transactions' },
+    { label: 'Warbixin', value: stats.todayOrderCount, sub: 'Shirkad walba & taariikh', color: 'from-indigo-500 to-indigo-700', darkFooter: 'bg-indigo-800', link: '/dashboard/warbixin' },
     { label: `Dalabyada ${periodLabel}`, value: stats.todayOrderCount, color: 'from-teal-400 to-teal-600', darkFooter: 'bg-teal-700', link: '/dashboard/daily-orders' },
     { label: 'Abdiqafar', value: stats.todayOrderCount, sub: `${stats.todayDelivered} guul · ${stats.todayFailed} fashil`, color: 'from-pink-500 to-pink-700', darkFooter: 'bg-pink-800', link: '/dashboard/abdiqafar' },
     { label: 'Devices Online', value: stats.devicesOnline, color: 'from-yellow-400 to-yellow-600', darkFooter: 'bg-yellow-700', link: '/dashboard/devices' },
