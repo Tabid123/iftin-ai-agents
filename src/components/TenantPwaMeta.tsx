@@ -35,7 +35,9 @@ export function TenantPwaMeta() {
 
     const slug = tenant?.slug;
     const theme = tenant?.primary_color?.trim() || "#1E3A8A";
-    const logo = tenant?.logo_url || "/icon-512.png";
+    const logo = slug
+      ? `/api/public/tenant-icon?tenant=${encodeURIComponent(slug)}`
+      : "/icon-512.png";
 
     upsertLink("manifest", slug ? `/api/public/manifest?tenant=${encodeURIComponent(slug)}` : "/manifest.json");
     upsertMeta("theme-color", theme);
@@ -44,6 +46,7 @@ export function TenantPwaMeta() {
     upsertMeta("apple-mobile-web-app-title", tenant?.name || "Iftin Agents");
     upsertLink("apple-touch-icon", logo);
     upsertLink("icon", logo, { type: "image/png" });
+
 
     if (tenant?.name) document.title = tenant.name;
   }, [tenant?.slug, tenant?.name, tenant?.logo_url, tenant?.primary_color]);
