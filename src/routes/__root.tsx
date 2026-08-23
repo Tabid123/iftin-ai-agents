@@ -157,8 +157,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
       { name: "twitter:title", content: "Iftin Agents — Buy Mobile Data & Airtime in Somalia" },
       { name: "twitter:description", content: "Buy mobile data bundles and airtime instantly from Somali networks with fast, secure mobile-money payments." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1687266c-6eb1-4513-bf02-edb8a7c0f98a/id-preview-accb2e9d--687e4eda-5f5d-4e1b-8e82-ab2c0c1293a5.lovable.app-1785847005734.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1687266c-6eb1-4513-bf02-edb8a7c0f98a/id-preview-accb2e9d--687e4eda-5f5d-4e1b-8e82-ab2c0c1293a5.lovable.app-1785847005734.png" },
+      { property: "og:image", content: "https://iftinagents.com/og-image.png" },
+      { name: "twitter:image", content: "https://iftinagents.com/og-image.png" },
     ],
     links: [
       {
