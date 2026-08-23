@@ -31,6 +31,7 @@ import { Route as AdminResellersIdRouteImport } from './routes/admin.resellers.$
 import { Route as AdminResellersNewRouteImport } from './routes/admin.resellers.new'
 import { Route as ApiPublicManifestRouteImport } from './routes/api/public/manifest'
 import { Route as ApiPublicOfflineRegisterRouteImport } from './routes/api/public/offline-register'
+import { Route as ApiPublicTenantIconRouteImport } from './routes/api/public/tenant-icon'
 import { Route as TSlugIndexRouteImport } from './routes/t.$slug.index'
 import { Route as TSlugHistoryRouteImport } from './routes/t.$slug.history'
 import { Route as TSlugNotificationsRouteImport } from './routes/t.$slug.notifications'
@@ -157,6 +158,11 @@ const ApiPublicOfflineRegisterRoute =
     path: '/api/public/offline-register',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicTenantIconRoute = ApiPublicTenantIconRouteImport.update({
+  id: '/api/public/tenant-icon',
+  path: '/api/public/tenant-icon',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TSlugIndexRoute = TSlugIndexRouteImport.update({
   id: '/t/$slug/',
   path: '/t/$slug/',
@@ -250,6 +256,7 @@ export interface FileRoutesByFullPath {
   '/admin/resellers/new': typeof AdminResellersNewRoute
   '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/offline-register': typeof ApiPublicOfflineRegisterRoute
+  '/api/public/tenant-icon': typeof ApiPublicTenantIconRoute
   '/t/$slug/history': typeof TSlugHistoryRoute
   '/t/$slug/notifications': typeof TSlugNotificationsRoute
   '/t/$slug/offline-mode': typeof TSlugOfflineModeRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/admin/resellers/new': typeof AdminResellersNewRoute
   '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/offline-register': typeof ApiPublicOfflineRegisterRoute
+  '/api/public/tenant-icon': typeof ApiPublicTenantIconRoute
   '/t/$slug/history': typeof TSlugHistoryRoute
   '/t/$slug/notifications': typeof TSlugNotificationsRoute
   '/t/$slug/offline-mode': typeof TSlugOfflineModeRoute
@@ -326,6 +334,7 @@ export interface FileRoutesById {
   '/admin/resellers/new': typeof AdminResellersNewRoute
   '/api/public/manifest': typeof ApiPublicManifestRoute
   '/api/public/offline-register': typeof ApiPublicOfflineRegisterRoute
+  '/api/public/tenant-icon': typeof ApiPublicTenantIconRoute
   '/t/$slug/history': typeof TSlugHistoryRoute
   '/t/$slug/notifications': typeof TSlugNotificationsRoute
   '/t/$slug/offline-mode': typeof TSlugOfflineModeRoute
@@ -366,6 +375,7 @@ export interface FileRouteTypes {
     | '/admin/resellers/new'
     | '/api/public/manifest'
     | '/api/public/offline-register'
+    | '/api/public/tenant-icon'
     | '/t/$slug/history'
     | '/t/$slug/notifications'
     | '/t/$slug/offline-mode'
@@ -403,6 +413,7 @@ export interface FileRouteTypes {
     | '/admin/resellers/new'
     | '/api/public/manifest'
     | '/api/public/offline-register'
+    | '/api/public/tenant-icon'
     | '/t/$slug/history'
     | '/t/$slug/notifications'
     | '/t/$slug/offline-mode'
@@ -441,6 +452,7 @@ export interface FileRouteTypes {
     | '/admin/resellers/new'
     | '/api/public/manifest'
     | '/api/public/offline-register'
+    | '/api/public/tenant-icon'
     | '/t/$slug/history'
     | '/t/$slug/notifications'
     | '/t/$slug/offline-mode'
@@ -476,6 +488,7 @@ export interface RootRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
   ApiPublicManifestRoute: typeof ApiPublicManifestRoute
   ApiPublicOfflineRegisterRoute: typeof ApiPublicOfflineRegisterRoute
+  ApiPublicTenantIconRoute: typeof ApiPublicTenantIconRoute
   TSlugHistoryRoute: typeof TSlugHistoryRoute
   TSlugNotificationsRoute: typeof TSlugNotificationsRoute
   TSlugOfflineModeRoute: typeof TSlugOfflineModeRoute
@@ -648,6 +661,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOfflineRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/tenant-icon': {
+      id: '/api/public/tenant-icon'
+      path: '/api/public/tenant-icon'
+      fullPath: '/api/public/tenant-icon'
+      preLoaderRoute: typeof ApiPublicTenantIconRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/t/$slug/': {
       id: '/t/$slug/'
       path: '/t/$slug'
@@ -785,6 +805,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
   ApiPublicManifestRoute: ApiPublicManifestRoute,
   ApiPublicOfflineRegisterRoute: ApiPublicOfflineRegisterRoute,
+  ApiPublicTenantIconRoute: ApiPublicTenantIconRoute,
   TSlugHistoryRoute: TSlugHistoryRoute,
   TSlugNotificationsRoute: TSlugNotificationsRoute,
   TSlugOfflineModeRoute: TSlugOfflineModeRoute,
