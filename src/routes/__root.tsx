@@ -209,6 +209,7 @@ function AppContent() {
 
   return (
     <>
+      <TenantPwaMeta />
       <StatusBarColor />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
