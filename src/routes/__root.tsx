@@ -147,7 +147,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#1E3A8A" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { title: "Iftin Agents — Buy Mobile Data & Airtime in Somalia" },
       { name: "description", content: "Buy mobile data bundles and airtime instantly from Somali networks with fast, secure mobile-money payments." },
       { name: "author", content: "Iftin Agents" },
