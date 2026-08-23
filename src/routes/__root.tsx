@@ -26,6 +26,7 @@ import {
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { TenantProvider } from "@/contexts/TenantContext";
+import { TenantPwaMeta } from "@/components/TenantPwaMeta";
 import { ConnectivityProvider } from "@/contexts/ConnectivityContext";
 import { TenantGate } from "@/components/TenantGate";
 import { StatusBarColor } from "@/components/StatusBarColor";
