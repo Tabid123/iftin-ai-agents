@@ -208,16 +208,6 @@ export function SimpleAdminSidebar() {
 
           <div className="my-3 border-t border-gray-700" />
 
-          {/* Full Admin link */}
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={() => handleNav('/admin')}
-              className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
-            >
-              <LayoutDashboard className="h-5 w-5" />
-              <span className="text-sm">Full Admin Dashboard</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
 
           {/* Logout */}
           <SidebarMenuItem>

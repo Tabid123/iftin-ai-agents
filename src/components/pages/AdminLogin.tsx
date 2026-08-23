@@ -260,17 +260,6 @@ const AdminLogin = () => {
             </div>
           )}
 
-          {/* Manual emergency mode trigger */}
-          {!showEmergencyMode && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full text-muted-foreground text-xs"
-              onClick={() => setShowEmergencyMode(true)}
-            >
-              Supabase xiran? Emergency mode
-            </Button>
-          )}
         </CardContent>
       </Card>
     </div>
