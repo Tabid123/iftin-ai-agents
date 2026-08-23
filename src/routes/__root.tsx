@@ -26,6 +26,7 @@ import {
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { TenantProvider } from "@/contexts/TenantContext";
+import { TenantPwaMeta } from "@/components/TenantPwaMeta";
 import { ConnectivityProvider } from "@/contexts/ConnectivityContext";
 import { TenantGate } from "@/components/TenantGate";
 import { StatusBarColor } from "@/components/StatusBarColor";
@@ -146,7 +147,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "theme-color", content: "#1E3A8A" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { title: "Iftin Agents — Buy Mobile Data & Airtime in Somalia" },
       { name: "description", content: "Buy mobile data bundles and airtime instantly from Somali networks with fast, secure mobile-money payments." },
       { name: "author", content: "Iftin Agents" },
@@ -166,6 +169,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
+      { rel: "manifest", href: "/manifest.json" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -209,6 +214,7 @@ function AppContent() {
 
   return (
     <>
+      <TenantPwaMeta />
       <StatusBarColor />
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
