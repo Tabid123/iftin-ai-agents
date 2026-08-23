@@ -1,10 +1,7 @@
 // Per-tenant PWA manifest. Served publicly so the browser can fetch it
 // without credentials during install ("Add to Home Screen").
 import { createFileRoute } from '@tanstack/react-router';
-
-const SUPABASE_URL = 'https://bpkddmxpyeyxvjyebull.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwa2RkbXhweWV5eHZqeWVidWxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NTQ5NzEsImV4cCI6MjA5NjMzMDk3MX0.vHVvxVI2x87aWeiNlzwIoCqU1y-tNlvbc0j_PJcRuvk';
+import { fetchTenantBranding } from '@/lib/tenantBranding.server';
 
 const DEFAULT_THEME = '#1E3A8A';
 
@@ -22,28 +19,26 @@ export const Route = createFileRoute('/api/public/manifest')({
         let name = 'Iftin Agents';
         let shortName = 'Iftin';
         let themeColor = DEFAULT_THEME;
-        let icon = '/icon-512.png';
+        let icons: Array<{ src: string; sizes: string; type: string; purpose: string }> = [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ];
         let scope = '/';
 
-        if (slug && /^[a-z0-9-]{1,60}$/.test(slug)) {
-          try {
-            const res = await fetch(
-              `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}&select=name,slug,logo_url,primary_color&limit=1`,
-              { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
-            );
-            const rows = res.ok ? ((await res.json()) as any[]) : [];
-            const tenant = rows?.[0];
-            if (tenant) {
-              name = String(tenant.name || name);
-              shortName = name.split(' ')[0]?.slice(0, 12) || shortName;
-              if (isHexColor(tenant.primary_color)) themeColor = tenant.primary_color.trim();
-              if (typeof tenant.logo_url === 'string' && tenant.logo_url.startsWith('http')) {
-                icon = tenant.logo_url;
-              }
-              scope = `/t/${slug}/`;
-            }
-          } catch {
-            /* fall back to platform defaults */
+        const tenant = await fetchTenantBranding(slug);
+        if (tenant) {
+          name = tenant.name || name;
+          shortName = (tenant.name || shortName).split(' ')[0].slice(0, 12);
+          if (isHexColor(tenant.primary_color)) themeColor = tenant.primary_color.trim();
+          scope = `/t/${tenant.slug}/`;
+          if (tenant.logo_url) {
+            const src = `/api/public/tenant-icon?tenant=${encodeURIComponent(tenant.slug)}`;
+            icons = [
+              { src, sizes: '192x192', type: 'image/png', purpose: 'any' },
+              { src, sizes: '512x512', type: 'image/png', purpose: 'any' },
+              { src, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+            ];
           }
         }
 
@@ -61,11 +56,7 @@ export const Route = createFileRoute('/api/public/manifest')({
           lang: 'so',
           dir: 'ltr',
           categories: ['business', 'utilities'],
-          icons: [
-            { src: icon, sizes: '192x192', type: 'image/png', purpose: 'any' },
-            { src: icon, sizes: '512x512', type: 'image/png', purpose: 'any' },
-            { src: icon, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-          ],
+          icons,
         };
 
         return new Response(JSON.stringify(manifest), {
