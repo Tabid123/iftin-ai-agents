@@ -13,7 +13,7 @@ import { showBannerAd, hideBannerAd } from '@/services/admob';
 import { logScreenView } from '@/services/firebase';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
 import { useTenant } from '@/contexts/TenantContext';
-import { buildPaymentUssd, fetchIftinCatalog, hasCatalog, isOrderingBlocked, mapProviders, mapCategories, mapPackages, mapPaymentProviders } from '@/lib/iftinCatalog';
+import { buildPaymentUssd, formatUssdAmount, fetchIftinCatalog, hasCatalog, isOrderingBlocked, mapProviders, mapCategories, mapPackages, mapPaymentProviders } from '@/lib/iftinCatalog';
 
 
 interface Category {
@@ -364,7 +364,7 @@ const DataPackages = () => {
     const paymentNumber = payProvider?.payment_number || '';
 
     // USSD string built strictly from the payment provider data (no hardcoding)
-    const amountFormatted = amount.replace('.', '*');
+    const amountFormatted = formatUssdAmount(amount);
     const ussdCode = buildPaymentUssd(payProvider ?? {}, amountFormatted) ?? '';
     
     // Create offline order and queue it
@@ -391,8 +391,8 @@ const DataPackages = () => {
     
     const queuedOrderId = queueOrder(offlineOrderData as any);
 
-    // Trigger USSD dial first - DO NOT encode the USSD code
-    window.location.href = `tel:${ussdCode}`;
+    // Trigger USSD dial — encode so Android dialers keep the leading "*" and the trailing "#"
+    window.location.href = `tel:${encodeURIComponent(ussdCode)}`;
     
     // Show toast message after USSD dialer opens (user sees it while in USSD)
     setTimeout(() => {
@@ -656,7 +656,7 @@ const DataPackages = () => {
               const ppList = cachedPP ? JSON.parse(cachedPP) : [];
               const pp = ppList.find((x: any) => x.prefix_code && sp && String(x.prefix_code).startsWith(sp)) ?? ppList[0];
 
-              const amountFormatted = amount.replace('.', '*');
+              const amountFormatted = formatUssdAmount(amount);
               const ussdCode = buildPaymentUssd(pp ?? {}, amountFormatted) ?? '';
               
               const handleCopyUssd = async () => {

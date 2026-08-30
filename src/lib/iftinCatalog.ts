@@ -296,23 +296,38 @@ export function mapPaymentProviders(catalog: IftinCatalog) {
   }));
 }
 
+/** Default USSD prefixes when Iftin sent no ussd_prefix (Hormuud EVC *712*, Jeeb *812*). */
+const DEFAULT_USSD_PREFIX: Record<string, string> = { '61': '*712*', '77': '*712*', '68': '*812*' };
+
+/** Formats a money string ("17.50") for USSD menus: dollars*cents ("17*50"). */
+export function formatUssdAmount(amount: number | string): string {
+  const n = Number(String(amount).replace('$', '').trim());
+  if (!isFinite(n)) return String(amount);
+  const dollars = Math.floor(n);
+  const cents = Math.round((n - dollars) * 100);
+  return cents > 0 ? `${dollars}*${String(cents).padStart(2, '0')}` : `${dollars}`;
+}
+
 /**
  * Builds the USSD string strictly from what Iftin returned for that payment
- * provider. Nothing (no `*712*`, no number) is hardcoded here.
+ * provider (ussd_code_template → ussd_prefix → known default for the phone
+ * prefix). prefix_code ("61") is a phone prefix, never used as a USSD code.
  */
 export function buildPaymentUssd(
   paymentProvider: { ussd_code_template?: string | null; ussd_prefix?: string | null; prefix_code?: string | null; payment_number?: string | null },
   amount: number | string,
 ): string | null {
   const number = paymentProvider.payment_number ?? '';
+  if (!number) return null;
   const tpl = paymentProvider.ussd_code_template;
   if (tpl) {
     return tpl
       .replace(/\{\{?\s*(number|payment_number|phone)\s*\}?\}/gi, number)
       .replace(/\{\{?\s*amount\s*\}?\}/gi, String(amount));
   }
-  const prefix = paymentProvider.ussd_prefix ?? paymentProvider.prefix_code;
-  if (!prefix || !number) return null;
+  const prefixCode = (paymentProvider.prefix_code ?? '').trim();
+  const prefix = (paymentProvider.ussd_prefix ?? '').trim() || DEFAULT_USSD_PREFIX[prefixCode] || '';
+  if (!prefix) return null;
   const base = prefix.endsWith('*') ? prefix : `${prefix}*`;
   return `${base}${number}*${amount}#`;
 }
