@@ -2278,6 +2278,7 @@ export type Database = {
           primary_color: string | null
           slug: string
           status: string
+          support_phone: string | null
           trial_ends_at: string | null
           updated_at: string
         }
@@ -2302,6 +2303,7 @@ export type Database = {
           primary_color?: string | null
           slug: string
           status?: string
+          support_phone?: string | null
           trial_ends_at?: string | null
           updated_at?: string
         }
@@ -2326,6 +2328,7 @@ export type Database = {
           primary_color?: string | null
           slug?: string
           status?: string
+          support_phone?: string | null
           trial_ends_at?: string | null
           updated_at?: string
         }
@@ -2603,6 +2606,7 @@ export type Database = {
           primary_color: string
           slug: string
           status: string
+          support_phone: string
           trial_ends_at: string
         }[]
       }
