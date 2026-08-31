@@ -260,6 +260,14 @@ export default function ResellerDetailPage() {
             <ColorField label="Accent color" value={accent} onChange={setAccent}
               placeholder="#C5F82A ama 76 94% 57%" />
 
+            <div>
+              <Label>Lambarka customer support (9 god)</Label>
+              <Input type="tel" inputMode="numeric" maxLength={9} placeholder="615555495"
+                value={supportPhone}
+                onChange={e => setSupportPhone(e.target.value.replace(/\D/g, '').slice(0, 9))} />
+              <p className="text-xs text-muted-foreground mt-1">Lambarkan ayaa ka muuqanaya app-ka reseller-kan.</p>
+            </div>
+
             <div className="flex gap-2 pt-2 border-t flex-wrap">
               {tenant.status !== 'active' && (
                 <Button size="sm" onClick={() => update({ status: 'active' })} disabled={saving}>
