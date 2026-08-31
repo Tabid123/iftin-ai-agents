@@ -182,6 +182,16 @@ export default function ResellerNewPage() {
 
 
             <div>
+              <Label>Lambarka customer support (9 god)</Label>
+              <Input type="tel" inputMode="numeric" maxLength={9} placeholder="615555495"
+                value={form.support_phone}
+                onChange={e => setForm({ ...form, support_phone: e.target.value.replace(/\D/g, '').slice(0, 9) })} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Lambarkan ayaa ka muuqanaya app-ka reseller-kan marka customer-ku support raadinayo.
+              </p>
+            </div>
+
+            <div>
               <Label>Primary color (HSL "H S% L%")</Label>
               <Input value={form.primary_color}
                 onChange={e => setForm({ ...form, primary_color: e.target.value })} />

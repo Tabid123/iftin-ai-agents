@@ -28,6 +28,7 @@ export default function ResellerDetailPage() {
   const [name, setName] = useState('')
   const [primary, setPrimary] = useState('')
   const [accent, setAccent] = useState('')
+  const [supportPhone, setSupportPhone] = useState('')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -90,6 +91,7 @@ export default function ResellerDetailPage() {
       setName(t.name ?? '')
       setPrimary(t.primary_color ?? '')
       setAccent((t as any).accent_color ?? '')
+      setSupportPhone(t.support_phone ?? '')
       setLogoUrl(t.logo_url ?? null)
     }
   }
@@ -143,6 +145,7 @@ export default function ResellerDetailPage() {
     name !== (tenant.name ?? '') ||
     primary !== (tenant.primary_color ?? '') ||
     accent !== ((tenant as any).accent_color ?? '') ||
+    supportPhone !== (tenant.support_phone ?? '') ||
     logoUrl !== (tenant.logo_url ?? null)
 
   const saveBranding = async () => {
@@ -150,6 +153,7 @@ export default function ResellerDetailPage() {
       name: name.trim() || tenant.name,
       primary_color: primary.trim() || null,
       accent_color: accent.trim() || null,
+      support_phone: supportPhone.replace(/\D/g, '').slice(0, 9) || null,
       logo_url: logoUrl,
     })
   }
