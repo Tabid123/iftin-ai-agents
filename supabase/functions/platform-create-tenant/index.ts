@@ -70,6 +70,7 @@ Deno.serve(async (req) => {
         slug,
         name,
         primary_color: primary_color ?? null,
+        support_phone: support_phone ? String(support_phone).replace(/\D/g, '').slice(-9) : null,
         logo_url: logo_url ?? null,
         plan_id: plan_id ?? null,
         status: 'active',
