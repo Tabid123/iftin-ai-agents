@@ -8,6 +8,7 @@ export interface TenantBranding {
   name: string;
   logo_url: string | null;
   primary_color: string | null;
+  support_phone: string | null;
 }
 
 export async function fetchTenantBranding(slug: string): Promise<TenantBranding | null> {
@@ -31,6 +32,7 @@ export async function fetchTenantBranding(slug: string): Promise<TenantBranding 
       name: String(row.name ?? ''),
       logo_url: row.logo_url ?? null,
       primary_color: row.primary_color ?? null,
+      support_phone: row.support_phone ?? null,
     };
   } catch {
     return null;
