@@ -21,6 +21,7 @@ export interface Tenant {
   plan_id: string | null;
   trial_ends_at: string | null;
   current_period_end: string | null;
+  support_phone?: string | null;
 }
 
 
