@@ -15,6 +15,7 @@ export default function ResellerNewPage() {
   const [form, setForm] = useState({
     name: '', slug: '', owner_email: '', owner_password: '',
     plan_id: '', primary_color: '276 100% 20%', period_days: 30,
+    support_phone: '',
     delivery_mode: 'android_device',
     iftin_api_key: '',
     iftin_callback_secret: '',
