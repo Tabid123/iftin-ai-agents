@@ -15,6 +15,7 @@ export default function ResellerNewPage() {
   const [form, setForm] = useState({
     name: '', slug: '', owner_email: '', owner_password: '',
     plan_id: '', primary_color: '276 100% 20%', period_days: 30,
+    support_phone: '',
     delivery_mode: 'android_device',
     iftin_api_key: '',
     iftin_callback_secret: '',
@@ -179,6 +180,16 @@ export default function ResellerNewPage() {
               </div>
             )}
 
+
+            <div>
+              <Label>Lambarka customer support (9 god)</Label>
+              <Input type="tel" inputMode="numeric" maxLength={9} placeholder="615555495"
+                value={form.support_phone}
+                onChange={e => setForm({ ...form, support_phone: e.target.value.replace(/\D/g, '').slice(0, 9) })} />
+              <p className="text-xs text-muted-foreground mt-1">
+                Lambarkan ayaa ka muuqanaya app-ka reseller-kan marka customer-ku support raadinayo.
+              </p>
+            </div>
 
             <div>
               <Label>Primary color (HSL "H S% L%")</Label>

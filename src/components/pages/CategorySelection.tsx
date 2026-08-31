@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { showBannerAd, hideBannerAd } from '@/services/admob';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
 import { useTenant } from '@/contexts/TenantContext';
+import { useSupportPhone } from '@/hooks/useSupportPhone';
 import { fetchIftinCatalog, hasCatalog, mapProviders, mapCategories, mapPackages, mapPaymentProviders } from '@/lib/iftinCatalog';
 import { setCategoryIntent } from '@/lib/categoryIntent';
 
@@ -29,6 +30,7 @@ const CategorySelection = () => {
   const { isReallyOnline } = useConnectivity();
   const queryClient = useQueryClient();
   const tenantState = useTenant();
+  const support = useSupportPhone();
   const brandName = (tenantState as any).tenant?.name || 'App';
   const {
     provider
@@ -291,8 +293,8 @@ const CategorySelection = () => {
             </div>
             <div className="flex items-center gap-2">
               <div className="flex gap-3 ml-2">
-                <Phone className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open('tel:+252615555495', '_self')} />
-                <MessageCircle className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open('https://wa.me/252615555495', '_blank')} />
+                <Phone className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(support.telHref, '_self')} />
+                <MessageCircle className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(support.whatsappHref, '_blank')} />
               </div>
             </div>
           </div>

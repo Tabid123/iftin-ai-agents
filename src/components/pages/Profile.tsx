@@ -16,9 +16,11 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useEffect } from 'react';
+import { useSupportPhone } from '@/hooks/useSupportPhone';
 
 const Profile = () => {
   const navigate = useNavigate();
+  const support = useSupportPhone();
 
   useEffect(() => {
     showBannerAd();
@@ -75,12 +77,12 @@ const Profile = () => {
     {
       icon: MessageCircle,
       title: 'Chat on Whatsapp',
-      action: () => window.open('https://wa.me/252615555495', '_blank')
+      action: () => window.open(support.whatsappHref, '_blank')
     },
     {
       icon: Phone,
       title: 'Customer support call',
-      action: () => window.open('tel:+252615555495', '_self')
+      action: () => window.open(support.telHref, '_self')
     },
     {
       icon: Star,
