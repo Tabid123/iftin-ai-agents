@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
       owner_password,
       plan_id,
       primary_color,
+      support_phone,
       logo_url,
       period_days = 30,
       delivery_mode = 'android_device',
