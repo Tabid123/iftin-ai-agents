@@ -12,6 +12,7 @@ import { logScreenView } from '@/services/firebase';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
 import najaxLogo from '@/assets/najax-logo.jpeg';
 import { useTenant } from '@/contexts/TenantContext';
+import { useSupportPhone } from '@/hooks/useSupportPhone';
 import { fetchIftinCatalog, hasCatalog, mapProviders, mapCategories, mapPackages, mapPaymentProviders } from '@/lib/iftinCatalog';
 import { Button } from '@/components/ui/button';
 import { localizeImage } from '@/lib/localImages';
@@ -29,6 +30,7 @@ const ProviderSelection = () => {
   const queryClient = useQueryClient();
   const { isReallyOnline } = useConnectivity();
   const t = useTenant();
+  const support = useSupportPhone();
   const tenant = t.status === 'ready' || t.status === 'suspended' ? t.tenant : null;
   const brandLogo = tenant?.logo_url || najaxLogo;
   const brandName = tenant?.name || 'Najax Data';
@@ -262,7 +264,7 @@ const ProviderSelection = () => {
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => window.open('tel:+252615555495', '_self')}
+              onClick={() => window.open(support.telHref, '_self')}
               aria-label="Call"
               className="h-10 w-10 rounded-full bg-primary-foreground/10 p-0 text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground active:scale-95 [&_svg]:size-[22px]"
             >
@@ -386,7 +388,7 @@ const ProviderSelection = () => {
       {showContactSheet && (
         <div className="fixed bottom-40 right-4 z-40 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <a 
-            href="tel:+252615555495"
+            href={support.telHref}
             onClick={() => setShowContactSheet(false)}
             className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
             style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary)))' }}
@@ -400,7 +402,7 @@ const ProviderSelection = () => {
             <X className="w-4 h-4 text-white" />
           </button>
           <a 
-            href="https://wa.me/252615555495" target="_blank" rel="noopener noreferrer"
+            href={support.whatsappHref} target="_blank" rel="noopener noreferrer"
             onClick={() => setShowContactSheet(false)}
             className="w-14 h-14 bg-[#25D366] rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
           >
