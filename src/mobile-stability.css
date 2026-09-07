@@ -21,19 +21,18 @@
 }
 
 @media (max-width: 767px) {
-  /* Provider home header: 62px -> compact 52px. Android's native status bar is
-   * already outside the WebView (`overlay: false`), so no second top inset is
-   * needed inside the web header. */
+  /* Provider home header: keep one consistent 56px bar with even breathing
+   * room, so the title never sits flush against the Android status bar. */
   .min-h-screen.bg-background.flex.flex-col > .fixed.top-0.left-0.right-0.z-50 > .grid.h-\[62px\] {
-    height: 52px !important;
+    height: 56px !important;
   }
 
   /* Category fixed header. */
   .min-h-screen.bg-background.flex.flex-col > .fixed.top-0.left-0.right-0.z-50 > .text-white.p-4 {
-    min-height: 52px !important;
-    height: 52px !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    min-height: 56px !important;
+    height: 56px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
     display: flex !important;
     align-items: center !important;
   }
@@ -43,17 +42,15 @@
   .min-h-screen.bg-background.flex.flex-col > .flex-1.overflow-y-auto,
   .min-h-screen.bg-background.flex.flex-col > .flex-1[style*="paddingTop"],
   .min-h-screen.bg-background.flex.flex-col > .flex-1[style*="padding-top"] {
-    padding-top: 52px !important;
+    padding-top: 56px !important;
   }
 
-  /* Non-fixed customer headers (packages, notifications, profile, history).
-   * Inline safe-area padding is overridden because the native status bar has
-   * already reserved that space. */
+  /* Non-fixed customer headers (packages, notifications, profile, history). */
   .min-h-screen.bg-background > .text-white.py-4.px-4,
   .min-h-screen.bg-background > div.text-white.py-4.px-4 {
-    min-height: 52px !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    min-height: 56px !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
     display: flex !important;
     align-items: center !important;
   }
