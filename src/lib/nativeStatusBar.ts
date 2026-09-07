@@ -22,19 +22,16 @@ function isLight(hex: string): boolean {
   return (r * 299 + g * 587 + b * 114) / 1000 > 155;
 }
 
-/** Color chosen in the GitHub "Run workflow" form (splash / status bar color). */
 export const BUILD_BAR_COLOR: string | null =
   (import.meta.env.VITE_SPLASH_COLOR as string | undefined)?.trim() || null;
 
 let appliedHex: string | null = null;
-let edgeLayoutInitialized = false;
+let overlayInitialized = false;
 let queue: Promise<unknown> = Promise.resolve();
 
 /**
- * Applies the tenant build color without changing WebView inset ownership.
- * Capawesome EdgeToEdge owns Android insets; Capacitor SystemBars inset handling
- * is disabled in capacitor.config.json. Do not call StatusBar.setOverlaysWebView
- * here — that would add a second native layout adjustment.
+ * Keep Android system bars stable. The WebView is placed below the status bar
+ * exactly once at startup; route changes never alter native insets.
  */
 export async function applyNativeStatusBarColor(color: string, force = false) {
   if (!Capacitor.isNativePlatform()) return;
@@ -49,30 +46,20 @@ export async function applyNativeStatusBarColor(color: string, force = false) {
 
 async function applyNow(hex: string) {
   try {
-    const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
-    if (!edgeLayoutInitialized) {
-      edgeLayoutInitialized = true;
-      await EdgeToEdge.disable();
-    }
-    await EdgeToEdge.setStatusBarColor({ color: hex });
-    await EdgeToEdge.setNavigationBarColor({ color: hex });
-  } catch {
-    /* plugin unavailable */
-  }
-
-  try {
     const { StatusBar, Style } = await import('@capacitor/status-bar');
-    // Light backgrounds need dark icons; dark backgrounds need light icons.
+    if (!overlayInitialized) {
+      overlayInitialized = true;
+      await StatusBar.setOverlaysWebView({ overlay: false });
+    }
+    await StatusBar.setBackgroundColor({ color: hex });
+    // Dark tenant header -> light icons. Light header -> dark icons.
     await StatusBar.setStyle({ style: isLight(hex) ? Style.Dark : Style.Light });
   } catch {
-    /* plugin unavailable */
+    /* status bar plugin unavailable */
   }
 }
 
-/**
- * Locks the native bars to the build-time color once and re-applies the color
- * after resume without recreating or re-insetting the WebView.
- */
+/** Apply color once and on resume without changing WebView geometry again. */
 export function initNativeBars(fallbackColor = 'hsl(var(--primary))') {
   if (!Capacitor.isNativePlatform()) return () => {};
   void applyNativeStatusBarColor(fallbackColor);
