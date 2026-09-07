@@ -1,6 +1,5 @@
 import { useNavigate, useLocation } from "@/lib/router-compat";
 import { useNotifications } from '@/hooks/useNotifications';
-import { useVisualViewport } from '@/hooks/useVisualViewport';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTenant } from '@/contexts/TenantContext';
 
@@ -8,14 +7,14 @@ interface BottomNavigationProps {
   onNotificationsClick?: () => void;
 }
 
-const HomeIcon = (_: { active: boolean }) => (
+const HomeIcon = () => (
   <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M4 10.2C4 9.5 4.32 8.85 4.87 8.43L10.47 4.15C11.37 3.46 12.63 3.46 13.53 4.15L19.13 8.43C19.68 8.85 20 9.5 20 10.2V17.5C20 19.16 18.66 20.5 17 20.5H7C5.34 20.5 4 19.16 4 17.5V10.2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
     <path d="M10 20.5V14.5C10 13.95 10.45 13.5 11 13.5H13C13.55 13.5 14 13.95 14 14.5V20.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
-const HistoryIcon = (_: { active: boolean }) => (
+const HistoryIcon = () => (
   <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M3.5 8.5V4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
     <path d="M3.5 8.5H8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -24,14 +23,14 @@ const HistoryIcon = (_: { active: boolean }) => (
   </svg>
 );
 
-const BellIcon = (_: { active: boolean }) => (
+const BellIcon = () => (
   <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M6 10C6 6.69 8.69 4 12 4C15.31 4 18 6.69 18 10V14.2L19.4 16.6C19.6 16.93 19.36 17.35 18.97 17.35H5.03C4.64 17.35 4.4 16.93 4.6 16.6L6 14.2V10Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
     <path d="M9.8 20C10.35 20.6 11.13 20.95 12 20.95C12.87 20.95 13.65 20.6 14.2 20" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
   </svg>
 );
 
-const UserIcon = (_: { active: boolean }) => (
+const UserIcon = () => (
   <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.7" />
     <path d="M5 20.5C5 17.2 8.13 15.5 12 15.5C15.87 15.5 19 17.2 19 20.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
@@ -46,23 +45,16 @@ export function BottomNavigation({ onNotificationsClick }: BottomNavigationProps
   const t = useTenant();
   const tenant = t.status === 'ready' || t.status === 'suspended' ? t.tenant : null;
 
-  useVisualViewport();
-
   const isActive = (path: string) => location.pathname === path;
   const go = (path: string) => {
-    // Re-navigating to the route already on screen creates pointless router
-    // work and a visible redraw on some Android WebViews.
     if (isActive(path)) return;
     navigate(path);
   };
 
   const handleNotificationsClick = () => {
     markAsSeen();
-    if (onNotificationsClick) {
-      onNotificationsClick();
-    } else if (!isActive('/notifications')) {
-      navigate('/notifications');
-    }
+    if (onNotificationsClick) onNotificationsClick();
+    else go('/notifications');
   };
 
   const navItems = [
@@ -72,17 +64,17 @@ export function BottomNavigation({ onNotificationsClick }: BottomNavigationProps
     { icon: UserIcon, path: '/profile', label: 'Profile', onClick: () => go('/profile') },
   ];
 
-  const navBackground = tenant?.primary_color ? tenant.primary_color : 'hsl(var(--primary))';
+  const navBackground = tenant?.primary_color || 'hsl(var(--primary))';
 
   return (
-    <div
-      className="fixed bottom-0 left-0 right-0 z-50 transform-gpu"
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50"
       style={{
         paddingBottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
-        contain: 'layout paint',
         background: navBackground,
         WebkitTapHighlightColor: 'transparent',
       }}
+      aria-label="Main navigation"
     >
       <div className="mx-auto w-full max-w-md">
         <div className="grid h-[68px] grid-cols-4 items-center px-2">
@@ -97,21 +89,15 @@ export function BottomNavigation({ onNotificationsClick }: BottomNavigationProps
                 style={{ WebkitTapHighlightColor: 'transparent' }}
                 aria-current={active ? 'page' : undefined}
               >
-                <div
-                  className={`flex h-9 w-14 items-center justify-center rounded-full transition-colors duration-100 ${
-                    active ? 'bg-white shadow-sm' : 'bg-transparent'
-                  }`}
-                >
+                <div className={`flex h-9 w-14 items-center justify-center rounded-full ${active ? 'bg-white shadow-sm' : 'bg-transparent'}`}>
                   <div
                     className="h-[26px] w-[26px]"
-                    style={active ? { color: navBackground } : { color: 'rgba(255,255,255,0.6)' }}
+                    style={{ color: active ? navBackground : 'rgba(255,255,255,0.6)' }}
                   >
-                    <Icon active={active} />
+                    <Icon />
                   </div>
                 </div>
-                <span className={`w-full truncate text-center text-[11px] leading-none ${
-                  active ? 'text-white font-bold' : 'text-white/60'
-                }`}>
+                <span className={`w-full truncate text-center text-[11px] leading-none ${active ? 'text-white font-bold' : 'text-white/60'}`}>
                   {label}
                 </span>
                 {badge != null && badge > 0 && (
@@ -124,6 +110,6 @@ export function BottomNavigation({ onNotificationsClick }: BottomNavigationProps
           })}
         </div>
       </div>
-    </div>
+    </nav>
   );
 }
