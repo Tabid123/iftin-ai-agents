@@ -52,8 +52,6 @@ async function applyNow(hex: string) {
     const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
     if (!edgeLayoutInitialized) {
       edgeLayoutInitialized = true;
-      // Preserve the traditional fitted WebView: status/navigation bars reserve
-      // their space once, instead of content being laid underneath them.
       await EdgeToEdge.disable();
     }
     await EdgeToEdge.setStatusBarColor({ color: hex });
@@ -64,8 +62,8 @@ async function applyNow(hex: string) {
 
   try {
     const { StatusBar, Style } = await import('@capacitor/status-bar');
-    // Style only. Layout/insets and background surfaces are owned by EdgeToEdge.
-    await StatusBar.setStyle({ style: isLight(hex) ? Style.Light : Style.Dark });
+    // Light backgrounds need dark icons; dark backgrounds need light icons.
+    await StatusBar.setStyle({ style: isLight(hex) ? Style.Dark : Style.Light });
   } catch {
     /* plugin unavailable */
   }
