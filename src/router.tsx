@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import "./mobile-stability.css";
 
 function readJson(key: string): any {
   if (typeof window === "undefined") return null;
@@ -37,14 +38,12 @@ function hydrateStorefrontCache(queryClient: QueryClient) {
       if (!providerId) continue;
       const scoped = categories.filter((category: any) => String(category?.provider_id ?? "") === providerId);
       queryClient.setQueryData(["categories", providerId], scoped);
-      // CategorySelection currently includes both URL provider and resolved id.
       queryClient.setQueryData(["categories", providerId, providerId], scoped);
     }
   }
 
   const rawPackages = readJson("offline_packages");
   if (rawPackages) {
-    // Migrate older Iftin builds that stored a flat package array.
     const grouped: Record<string, any[]> = Array.isArray(rawPackages) ? {} : rawPackages;
     if (Array.isArray(rawPackages)) {
       for (const pkg of rawPackages) {
