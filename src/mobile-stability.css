@@ -21,35 +21,40 @@
 }
 
 @media (max-width: 767px) {
-  /* Provider home header: keep one consistent 56px bar with even breathing
-   * room, so the title never sits flush against the Android status bar. */
+  /* Provider home header: one consistent 56px bar that always sits BELOW the
+   * phone status bar (the safe-area inset is added on top of the bar height). */
   .min-h-screen.bg-background.flex.flex-col > .fixed.top-0.left-0.right-0.z-50 > .grid.h-\[62px\] {
-    height: 56px !important;
+    height: auto !important;
+    min-height: 56px !important;
+    box-sizing: content-box !important;
+    padding-top: var(--effective-safe-area-top, 0px) !important;
   }
 
   /* Category fixed header. */
   .min-h-screen.bg-background.flex.flex-col > .fixed.top-0.left-0.right-0.z-50 > .text-white.p-4 {
     min-height: 56px !important;
-    height: 56px !important;
-    padding-top: 6px !important;
+    height: auto !important;
+    box-sizing: content-box !important;
+    padding-top: calc(6px + var(--effective-safe-area-top, 0px)) !important;
     padding-bottom: 6px !important;
     display: flex !important;
     align-items: center !important;
   }
 
   /* Provider/category scroll areas had hard-coded 62/80px offsets. Match the
-   * real compact header so the page does not appear pushed downward. */
+   * real compact header plus the status-bar inset. */
   .min-h-screen.bg-background.flex.flex-col > .flex-1.overflow-y-auto,
   .min-h-screen.bg-background.flex.flex-col > .flex-1[style*="paddingTop"],
   .min-h-screen.bg-background.flex.flex-col > .flex-1[style*="padding-top"] {
-    padding-top: 56px !important;
+    padding-top: calc(56px + var(--effective-safe-area-top, 0px)) !important;
   }
 
   /* Non-fixed customer headers (packages, notifications, profile, history). */
   .min-h-screen.bg-background > .text-white.py-4.px-4,
   .min-h-screen.bg-background > div.text-white.py-4.px-4 {
     min-height: 56px !important;
-    padding-top: 6px !important;
+    box-sizing: content-box !important;
+    padding-top: calc(6px + var(--effective-safe-area-top, 0px)) !important;
     padding-bottom: 6px !important;
     display: flex !important;
     align-items: center !important;
