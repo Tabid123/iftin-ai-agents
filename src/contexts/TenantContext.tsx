@@ -225,6 +225,39 @@ function writeCachedTenant(slug: string, tenant: Tenant) {
   }
 }
 
+/**
+ * Native APKs already know which tenant they were built for. When the device
+ * starts fully offline there may be no cached tenant row yet, so use safe
+ * build-time identity instead of incorrectly showing "Workspace lama helin".
+ * The empty id is intentional: tenant-scoped network calls stay disabled until
+ * the real row is resolved from Supabase.
+ */
+function buildFallbackTenant(slug: string): Tenant | null {
+  if (!isNativeApp() || buildTenantSlug() !== slug) return null;
+  const buildName = (import.meta.env.VITE_TENANT_NAME as string | undefined)?.trim();
+  const buildLogo = (import.meta.env.VITE_TENANT_LOGO_URL as string | undefined)?.trim();
+  const buildColor = (import.meta.env.VITE_SPLASH_COLOR as string | undefined)?.trim();
+  const readableSlug = slug
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+  return {
+    id: '',
+    slug,
+    name: buildName || readableSlug || slug,
+    logo_url: buildLogo || null,
+    primary_color: buildColor || null,
+    accent_color: buildColor || null,
+    status: 'active',
+    plan_id: null,
+    trial_ends_at: null,
+    current_period_end: null,
+    support_phone: null,
+  };
+}
+
 export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -237,7 +270,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const { slug, isPlatform, needsCode } = resolveSlug();
 
-    registerDeepLinkTenantListener(() => window.location.reload());
+    void registerDeepLinkTenantListener(() => window.location.reload());
 
     if (needsCode) {
       setTenantHeader(null);
@@ -263,49 +296,65 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    (async () => {
-      // Clear any stale header before resolving the new tenant so the lookup
-      // itself isn't filtered by a wrong tenant.
+    // Clear any stale header before resolving the new tenant so the lookup
+    // itself isn't filtered by a wrong tenant.
+    setTenantHeader(null);
+
+    const cached = readCachedTenant(slug);
+    const buildFallback = cached ? null : buildFallbackTenant(slug);
+
+    // Offline-first: render immediately from the last known tenant. On a fresh
+    // native install with no cache, render from the build identity instead of
+    // blocking the whole app behind a network lookup.
+    if (cached) {
+      setTenantHeader(cached.id);
+      applyBranding(cached);
+      setState(
+        cached.status === "suspended" || cached.status === "cancelled"
+          ? { status: "suspended", tenant: cached, isPlatform: false }
+          : { status: "ready", tenant: cached, isPlatform: false },
+      );
+    } else if (buildFallback) {
       setTenantHeader(null);
+      applyBranding(buildFallback);
+      setState({ status: "ready", tenant: buildFallback, isPlatform: false });
+    }
 
-      const cached = readCachedTenant(slug);
-      // Offline-first: show the last known tenant immediately so the app keeps
-      // working with no network (airplane mode).
-      if (cached) {
-        setTenantHeader(cached.id);
-        applyBranding(cached);
-        setState(
-          cached.status === "suspended" || cached.status === "cancelled"
-            ? { status: "suspended", tenant: cached, isPlatform: false }
-            : { status: "ready", tenant: cached, isPlatform: false },
-        );
-      }
+    let cancelled = false;
 
+    const resolveTenantFromNetwork = async () => {
       let rpcData: unknown = null;
       let error: unknown = null;
       try {
+        // The slug lookup itself must never inherit a stale tenant header.
+        setTenantHeader(null);
         const res = await supabase.rpc("get_tenant_by_slug", { p_slug: slug });
         rpcData = res.data;
         error = res.error;
       } catch (e) {
         error = e;
       }
+      if (cancelled) return;
+
       const data = Array.isArray(rpcData) ? rpcData[0] : rpcData;
 
-      if (error || !data) {
-        // Keep the cached tenant when the lookup failed (offline / server down).
-        if (cached) return;
-        setState({
-          status: "not_found",
-          tenant: null,
-          isPlatform: false,
-          slug,
-        });
+      if (error) {
+        // Network/server failure: cached/build identity remains usable offline.
+        if (cached?.id) setTenantHeader(cached.id);
+        if (cached || buildFallback) return;
+        setState({ status: "not_found", tenant: null, isPlatform: false, slug });
+        return;
+      }
+
+      if (!data) {
+        // Successful lookup with no row means this tenant genuinely does not
+        // exist; do not let an old cache/build identity mask that result.
+        setTenantHeader(null);
+        setState({ status: "not_found", tenant: null, isPlatform: false, slug });
         return;
       }
 
       const tenant = data as Tenant;
-      // Activate tenant scoping for ALL subsequent supabase queries
       setTenantHeader(tenant.id);
       applyBranding(tenant);
       writeCachedTenant(slug, tenant);
@@ -316,8 +365,19 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       setState({ status: "ready", tenant, isPlatform: false });
-    })();
+    };
 
+    void resolveTenantFromNetwork();
+
+    // A fresh-install offline APK has no real tenant id yet. Resolve it as soon
+    // as connectivity returns, without forcing a page reload or visible flash.
+    const handleOnline = () => void resolveTenantFromNetwork();
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('online', handleOnline);
+    };
   }, []);
 
 
