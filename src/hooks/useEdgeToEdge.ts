@@ -8,65 +8,45 @@ const isAndroidWebView = (): boolean => {
   return /Android/.test(ua) && ua.includes('wv');
 };
 
-// Parse Android version from User-Agent string
-const getAndroidVersion = (): number => {
-  if (typeof window === 'undefined' || !navigator?.userAgent) return 0;
-  const match = navigator.userAgent.match(/Android\s(\d+)/);
-  return match ? parseInt(match[1], 10) : 0;
-};
-
 export const useEdgeToEdge = () => {
   useEffect(() => {
-    // Universal safe area for all platforms
     const setSafeArea = () => {
       if (isAndroidWebView()) {
-        const ver = getAndroidVersion();
-        let padding = '18px'; // Default for Android 13-14
-        if (ver >= 15) {
-          padding = '32px';
-        } else if (ver < 13) {
-          padding = '0px';
-        }
-        document.documentElement.style.setProperty('--effective-safe-area-top', padding);
-        console.log(`Android ${ver} WebView - safe area: ${padding}`);
+        // Capacitor already adjusts the Android WebView for edge-to-edge/status
+        // bar insets (`adjustMarginsForEdgeToEdge: force`). Adding a guessed
+        // 18/32px CSS inset on top of that double-counted the status bar and
+        // made every fixed header look too tall. Keep the web header flush with
+        // the WebView's real content bounds and let the native layer own the
+        // Android status-bar inset.
+        document.documentElement.style.setProperty('--effective-safe-area-top', '0px');
       } else {
-        // iOS and Web: Use safe area insets
+        // iOS/web still need the browser-provided safe-area inset.
         document.documentElement.style.setProperty(
           '--effective-safe-area-top',
           'env(safe-area-inset-top, 0px)'
         );
       }
     };
-    
-    // Run immediately on mount
+
     setSafeArea();
-    
-    // Re-apply on app resume (coming back from background)
+
     let resumeListener: { remove: () => void } | undefined;
-    
-    // Try to use Capacitor App listener if available
+
     if (typeof App !== 'undefined' && App.addListener) {
       App.addListener('appStateChange', (state) => {
-        if (state.isActive) {
-          setSafeArea();
-          console.log('App resumed - reapplied safe area CSS');
-        }
+        if (state.isActive) setSafeArea();
       }).then(listener => {
         resumeListener = listener;
       }).catch(() => {
-        // App listener not available in remote URL mode
+        // App listener is not available in a normal browser.
       });
     }
-    
-    // Also handle visibility change (works everywhere)
+
     const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        setSafeArea();
-      }
+      if (!document.hidden) setSafeArea();
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Cleanup
+
     return () => {
       resumeListener?.remove();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
