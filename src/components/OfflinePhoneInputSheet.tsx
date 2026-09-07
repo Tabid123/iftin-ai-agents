@@ -4,8 +4,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
-import { getTenantId } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
 import { registerOfflineCustomer } from '@/lib/iftinOfflineApi';
@@ -15,6 +13,8 @@ interface OfflinePhoneInputSheetProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const digitsOnly = (value: string, max: number) => value.replace(/\D/g, '').slice(0, max);
+
 const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -22,13 +22,11 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
   const [senderPhone, setSenderPhone] = useState('');
   const [receiverPhone, setReceiverPhone] = useState('');
 
-  // Get saved phone numbers for placeholders
   const savedSenderPhone = localStorage.getItem('offlineSenderPhone') || '';
   const savedReceiverPhone = localStorage.getItem('offlineReceiverPhone') || '';
 
   const detectProvider = (phone: string): { id: string; name: string } | null => {
     const prefix = phone.substring(0, 2);
-    
     const providerMap: { [key: string]: { id: string; name: string } } = {
       '61': { id: 'hormuud', name: 'Hormuud' },
       '68': { id: 'somnet', name: 'Somnet' },
@@ -41,10 +39,8 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
   };
 
   const handleContinue = async () => {
-    // Check connectivity status
     const isOnline = isReallyOnline === true;
-    
-    // Check if online before allowing changes
+
     if (!isOnline) {
       toast({
         variant: "destructive",
@@ -55,10 +51,8 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
       return;
     }
 
-    // Detect if ADSL based on receiver phone number starting with 1
     const isADSL = receiverPhone.startsWith('1');
-    
-    // ADSL validation: 7 digits starting with 1
+
     if (isADSL) {
       if (!/^1\d{6}$/.test(receiverPhone)) {
         toast({
@@ -69,20 +63,16 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
         });
         return;
       }
-    } else {
-      // Mobile validation: 9 digits
-      if (!/^\d{9}$/.test(senderPhone) || !/^\d{9}$/.test(receiverPhone)) {
-        toast({
-          variant: "destructive",
-          title: "Khalad",
-          description: "Fadlan geli lambar saxan (9 tiro)",
-          duration: 3000,
-        });
-        return;
-      }
+    } else if (!/^\d{9}$/.test(senderPhone) || !/^\d{9}$/.test(receiverPhone)) {
+      toast({
+        variant: "destructive",
+        title: "Khalad",
+        description: "Fadlan geli lambar saxan (9 tiro)",
+        duration: 3000,
+      });
+      return;
     }
-    
-    // Validate sender phone (always 9 digits)
+
     if (!/^\d{9}$/.test(senderPhone)) {
       toast({
         variant: "destructive",
@@ -94,9 +84,8 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
     }
 
     const provider = isADSL ? { id: 'adsl', name: 'ADSL' } : detectProvider(receiverPhone);
-    
+
     if (provider) {
-      // Iftin Partner API is the only store (mobile packages only; ADSL is local-free too).
       if (!isADSL) {
         const apiRes = await registerOfflineCustomer({
           senderPhone,
@@ -119,12 +108,9 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
         });
       }
 
-      // Session-only values used by the ordering flow.
       localStorage.setItem('offlineSenderPhone', senderPhone);
       localStorage.setItem('offlineReceiverPhone', receiverPhone);
 
-      
-      
       navigate(`/categories/${provider.id}`, {
         state: {
           providerName: provider.name,
@@ -143,7 +129,7 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
         <SheetHeader>
           <SheetTitle>Macluumaadka Offline</SheetTitle>
         </SheetHeader>
-        
+
         <div className="space-y-4 py-4">
           <div className="space-y-2">
             <Label htmlFor="sender-phone">Lambarka laga dirayo</Label>
@@ -153,9 +139,11 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
               inputMode="numeric"
               pattern="[0-9]*"
               autoComplete="tel-national"
+              enterKeyHint="next"
               placeholder={savedSenderPhone || "tusaale 61xxxxxxx"}
               value={senderPhone}
-              onChange={(e) => setSenderPhone(e.target.value)}
+              maxLength={9}
+              onChange={(e) => setSenderPhone(digitsOnly(e.target.value, 9))}
             />
           </div>
 
@@ -167,16 +155,18 @@ const OfflinePhoneInputSheet = ({ open, onOpenChange }: OfflinePhoneInputSheetPr
               inputMode="numeric"
               pattern="[0-9]*"
               autoComplete="tel-national"
+              enterKeyHint="done"
               placeholder={savedReceiverPhone || "Mobile: 61xxxxxxx | ADSL: 1xxxxxx"}
               value={receiverPhone}
-              onChange={(e) => setReceiverPhone(e.target.value)}
+              maxLength={9}
+              onChange={(e) => setReceiverPhone(digitsOnly(e.target.value, 9))}
             />
             <p className="text-xs text-muted-foreground">
               Mobile: 9 lambar (61xxxxxxx) | ADSL: 7 lambar (1xxxxxx)
             </p>
           </div>
 
-          <Button 
+          <Button
             onClick={handleContinue}
             className="w-full"
             disabled={!senderPhone || !receiverPhone}
