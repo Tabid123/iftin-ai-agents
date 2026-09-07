@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import "./mobile-stability.css";
 
 function readJson(key: string): any {
   if (typeof window === "undefined") return null;
@@ -15,11 +14,7 @@ function readJson(key: string): any {
 
 /**
  * Hydrate the route query cache synchronously BEFORE the first page renders.
- *
- * Previously useOfflineCache filled React Query from an effect, which is too
- * late: the destination page rendered once without data and started a request,
- * then rendered a second time when cached/API data arrived. On Android that
- * looked like a flash/refresh on every tap.
+ * Keep this data fix independent from any visual/layout overrides.
  */
 function hydrateStorefrontCache(queryClient: QueryClient) {
   if (typeof window === "undefined") return;
@@ -38,7 +33,6 @@ function hydrateStorefrontCache(queryClient: QueryClient) {
       if (!providerId) continue;
       const scoped = categories.filter((category: any) => String(category?.provider_id ?? "") === providerId);
       queryClient.setQueryData(["categories", providerId], scoped);
-      queryClient.setQueryData(["categories", providerId, providerId], scoped);
     }
   }
 
