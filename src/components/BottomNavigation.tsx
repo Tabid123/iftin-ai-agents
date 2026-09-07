@@ -76,10 +76,9 @@ export function BottomNavigation({ onNotificationsClick }: BottomNavigationProps
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 transform-gpu"
+      className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        paddingBottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
-        contain: 'layout paint',
+        paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
         background: navBackground,
         WebkitTapHighlightColor: 'transparent',
       }}
@@ -98,13 +97,17 @@ export function BottomNavigation({ onNotificationsClick }: BottomNavigationProps
                 aria-current={active ? 'page' : undefined}
               >
                 <div
-                  className={`flex h-9 w-14 items-center justify-center rounded-full transition-colors duration-100 ${
-                    active ? 'bg-white shadow-sm' : 'bg-transparent'
+                  className={`flex h-9 w-14 items-center justify-center rounded-full ${
+                    active ? 'shadow-sm' : ''
                   }`}
+                  style={{
+                    backgroundColor: active ? '#ffffff' : 'transparent',
+                    transition: 'none',
+                  }}
                 >
                   <div
                     className="h-[26px] w-[26px]"
-                    style={active ? { color: navBackground } : { color: 'rgba(255,255,255,0.6)' }}
+                    style={{ color: active ? activeIconColor : 'rgba(255,255,255,0.6)', transition: 'none' }}
                   >
                     <Icon active={active} />
                   </div>
