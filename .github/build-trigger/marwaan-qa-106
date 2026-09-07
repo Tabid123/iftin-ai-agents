@@ -1,5 +1,0 @@
-Marwaan Data stability QA
-version_name=1.0.6
-version_code=8
-branch=fix/marwaan-106-stability
-publish_to_supabase=false
