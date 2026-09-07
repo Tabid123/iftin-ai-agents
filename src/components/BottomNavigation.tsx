@@ -73,6 +73,9 @@ export function BottomNavigation({ onNotificationsClick }: BottomNavigationProps
   ];
 
   const navBackground = tenant?.primary_color ? tenant.primary_color : 'hsl(var(--primary))';
+  // Never resolve to a CSS variable here: on a white pill an unresolved/late
+  // variable would paint the icon invisible for a frame during navigation.
+  const activeIconColor = tenant?.primary_color || '#0F4C81';
 
   return (
     <div
