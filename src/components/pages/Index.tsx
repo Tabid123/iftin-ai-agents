@@ -10,29 +10,22 @@ import { useTenant } from '@/contexts/TenantContext';
 import { hideNativeSplash } from '@/lib/nativeSplash';
 import CachedImage from '@/components/CachedImage';
 
-
- // Validate Somali phone format: 9 digits starting with 61, 77, 62, or 68
+// Validate Somali phone format: 9 digits starting with 61, 77, 62, or 68.
 const isValidSomaliPhone = (phone: string | null): boolean => {
   if (!phone) return false;
   return /^(61|77|62|68)\d{7}$/.test(phone);
 };
 
+const STARTUP_PAINT_MS = 450;
+
 const Index = () => {
   const navigate = useNavigate();
-  
-  // Check if app was already initialized in this session
   const wasAlreadyInitialized = sessionStorage.getItem('appInitialized') === 'true';
-  
-  // If already initialized, skip splash entirely
-  const [isChecking, setIsChecking] = useState(() => {
-    if (wasAlreadyInitialized) {
-      return false;
-    }
-    return true; // Show splash only for first-time app open
-  });
+  const [isChecking, setIsChecking] = useState(!wasAlreadyInitialized);
   const hasInitialized = useRef(false);
+  const { isReallyOnline } = useConnectivity();
+  const { forceRefreshCache } = useOfflineCache();
 
-  // Check if user has completed offline registration or skipped it
   const hasOfflineRegistration = (): boolean => {
     const hasSkipped = localStorage.getItem('hasSkippedOfflineRegistration') === 'true';
     if (hasSkipped) return true;
@@ -41,137 +34,46 @@ const Index = () => {
     return !!sender && !!receiver && sender.length === 9 && receiver.length >= 7;
   };
 
-  // Handle already initialized case - immediate navigation
-  useEffect(() => {
+  const continueIntoApp = () => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
-    
-    if (wasAlreadyInitialized) {
-      const verifiedPhone = localStorage.getItem('verifiedPhone');
-      
-      if (isValidSomaliPhone(verifiedPhone)) {
-        // Check if offline registration is complete
-        if (hasOfflineRegistration()) {
-          navigate('/providers', { replace: true });
-        } else {
-          navigate('/offline-mode', { replace: true });
-        }
-      }
+
+    const verifiedPhone = localStorage.getItem('verifiedPhone');
+    sessionStorage.setItem('appInitialized', 'true');
+
+    if (isValidSomaliPhone(verifiedPhone)) {
+      navigate(hasOfflineRegistration() ? '/providers' : '/offline-mode', { replace: true });
       return;
     }
-  }, [navigate, wasAlreadyInitialized]);
 
-// Get connectivity status - ping runs in background
-  const { isReallyOnline, isChecking: connectivityChecking } = useConnectivity();
-  const { forceRefreshCache } = useOfflineCache();
-  
-  // Force refresh cache during splash screen
-  const splashRefreshDone = useRef(false);
-  useEffect(() => {
-    if (!splashRefreshDone.current && isReallyOnline && isChecking) {
-      splashRefreshDone.current = true;
-      forceRefreshCache();
-    }
-  }, [isReallyOnline, isChecking]);
-  
-  // Track if minimum splash time has passed (1.5 seconds - fast internet)
-  const [splashMinimumReached, setSplashMinimumReached] = useState(false);
-  
-  // Extended splash for slow/no internet (4 seconds)
-  const [extendedSplashReached, setExtendedSplashReached] = useState(false);
-  
-  // Safety net - force exit after 8 seconds MAX (4s splash + 4s skeleton)
-  const [forceExit, setForceExit] = useState(false);
+    if (verifiedPhone) localStorage.removeItem('verifiedPhone');
+    setIsChecking(false);
+  };
 
-  // Minimum 1.5 second splash timer (fast internet case)
+  // Returning to the root route in the same app session should be instant.
   useEffect(() => {
-    if (wasAlreadyInitialized) return;
-    if (!isChecking) return;
-    
-    const splashTimer = setTimeout(() => {
-      setSplashMinimumReached(true);
-    }, 1500); // 1.5 seconds
-    
-    return () => clearTimeout(splashTimer);
+    if (wasAlreadyInitialized) continueIntoApp();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Cold start: give the bundled web UI a very small fixed paint window, then
+  // continue regardless of internet state. Connectivity is never a startup gate.
+  useEffect(() => {
+    if (wasAlreadyInitialized || !isChecking) return;
+    const timer = window.setTimeout(continueIntoApp, STARTUP_PAINT_MS);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wasAlreadyInitialized, isChecking]);
 
-  // Extended 4 second splash timer (data on + no internet case)
+  // Refresh offline data only in the background. This must not hold the splash.
+  const refreshStarted = useRef(false);
   useEffect(() => {
-    if (wasAlreadyInitialized) return;
-    if (!isChecking) return;
-    
-    const extendedTimer = setTimeout(() => {
-      setExtendedSplashReached(true);
-    }, 2500); // 2.5 seconds
-    
-    return () => clearTimeout(extendedTimer);
-  }, [wasAlreadyInitialized, isChecking]);
+    if (!isReallyOnline || refreshStarted.current) return;
+    refreshStarted.current = true;
+    void forceRefreshCache().catch(() => {});
+  }, [isReallyOnline, forceRefreshCache]);
 
-  // Safety timer - 8 seconds MAX (4s splash + 4s skeleton)
-  useEffect(() => {
-    if (wasAlreadyInitialized) return;
-    if (!isChecking) return;
-    
-    const forceTimer = setTimeout(() => {
-      setForceExit(true);
-    }, 5000);
-    
-    return () => clearTimeout(forceTimer);
-  }, [wasAlreadyInitialized, isChecking]);
-
-  // Navigation logic - 2 different paths based on connectivity speed
-  useEffect(() => {
-    if (wasAlreadyInitialized) return;
-    if (!isChecking) return;
-    if (!splashMinimumReached) return; // Min 1.5 seconds always
-    
-    // CASE 1: Fast Internet - ping done + online = navigate after 2s
-    if (!connectivityChecking && isReallyOnline) {
-      const verifiedPhone = localStorage.getItem('verifiedPhone');
-      
-      if (isValidSomaliPhone(verifiedPhone)) {
-        sessionStorage.setItem('appInitialized', 'true');
-        // Check if offline registration is complete
-        if (hasOfflineRegistration()) {
-          navigate('/providers', { replace: true });
-        } else {
-          navigate('/offline-mode', { replace: true });
-        }
-      } else {
-        if (verifiedPhone) localStorage.removeItem('verifiedPhone');
-        sessionStorage.setItem('appInitialized', 'true');
-        setIsChecking(false);
-      }
-      return;
-    }
-    
-    // CASE 2: Data ON + No Internet - wait for 4s splash, then skeleton, then offline
-    if (!extendedSplashReached) return; // Sug 4s splash
-    
-    // After 4s: if offline confirmed OR forceExit
-    if (forceExit || (!connectivityChecking && !isReallyOnline)) {
-      const verifiedPhone = localStorage.getItem('verifiedPhone');
-      
-      if (isValidSomaliPhone(verifiedPhone)) {
-        sessionStorage.setItem('appInitialized', 'true');
-        // Check if offline registration is complete
-        if (hasOfflineRegistration()) {
-          navigate('/providers', { replace: true });
-        } else {
-          navigate('/offline-mode', { replace: true });
-        }
-      } else {
-        if (verifiedPhone) localStorage.removeItem('verifiedPhone');
-        sessionStorage.setItem('appInitialized', 'true');
-        setIsChecking(false);
-      }
-    }
-  }, [navigate, wasAlreadyInitialized, isChecking, splashMinimumReached, extendedSplashReached, connectivityChecking, isReallyOnline, forceExit]);
-
-  // Show splash screen — branded by active tenant
-  if (isChecking) {
-    return <SplashScreen extendedSplashReached={extendedSplashReached} connectivityChecking={connectivityChecking} forceExit={forceExit} />;
-  }
+  if (isChecking) return <SplashScreen />;
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-5 py-6 gap-4">
@@ -186,14 +88,14 @@ const Index = () => {
   );
 };
 
-const SplashScreen = ({ extendedSplashReached, connectivityChecking, forceExit }: { extendedSplashReached: boolean; connectivityChecking: boolean; forceExit: boolean }) => {
+const SplashScreen = () => {
   const t = useTenant();
   const tenant = t.status === 'ready' || t.status === 'suspended' ? t.tenant : null;
   const logo = tenant?.logo_url || najaxLogoSplash;
   const name = tenant?.name || 'Najax Data';
 
-  // Hand off from the native splash to this web splash only once this screen
-  // has painted — otherwise a blank white webview page flashes in between.
+  // Hide the native artwork only after this web screen has painted, preventing
+  // the white WebView flash while still keeping launch time short.
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       requestAnimationFrame(() => void hideNativeSplash());
@@ -203,17 +105,13 @@ const SplashScreen = ({ extendedSplashReached, connectivityChecking, forceExit }
 
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center z-50 bg-primary">
-      <CachedImage src={logo} alt={name} className="w-36 h-36 rounded-2xl animate-pulse object-cover" fallback={<img src={najaxLogoSplash} alt={name} className="w-36 h-36 rounded-2xl animate-pulse object-cover" />} />
-      <div className="w-10 h-10 mt-10 border-4 border-accent/30 border-t-accent rounded-full animate-spin" />
-
-      {extendedSplashReached && connectivityChecking && !forceExit && (
-        <div className="flex flex-col items-center mt-6">
-          <div className="w-48 h-2 bg-accent/20 rounded-full overflow-hidden">
-            <div className="h-full bg-accent/70 rounded-full animate-pulse" style={{ width: '70%' }} />
-          </div>
-          <p className="text-accent/70 text-xs mt-2">Xiriirka la hubinayo...</p>
-        </div>
-      )}
+      <CachedImage
+        src={logo}
+        alt={name}
+        className="w-36 h-36 rounded-2xl object-cover"
+        fallback={<img src={najaxLogoSplash} alt={name} className="w-36 h-36 rounded-2xl object-cover" />}
+      />
+      <div className="w-9 h-9 mt-8 border-[3px] border-accent/30 border-t-accent rounded-full animate-spin" />
     </div>
   );
 };
