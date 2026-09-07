@@ -7,29 +7,40 @@ import { formatPrice } from '@/lib/utils';
 import { fetchIftinCatalog, mapPopularPackages, type PopularPackageDTO } from '@/lib/iftinCatalog';
 import { cacheImages } from '@/lib/imageCache';
 import CachedImage from '@/components/CachedImage';
+import { useTenant } from '@/contexts/TenantContext';
 
-/** Bumped key: the old `popularPackages` cache held pre-Iftin data. */
-const QUERY_KEY = ['popularPackages', 'v2-iftin'] as const;
-const OFFLINE_KEY = 'offline_popular_packages_v2';
+const LEGACY_OFFLINE_KEY = 'offline_popular_packages_v2';
 
-// One-time cleanup of the legacy cache so stale rows never render again.
+// One-time cleanup of the older pre-Iftin cache.
 try {
   localStorage.removeItem('offline_featured_packages');
 } catch { /* ignore */ }
 
-function readOffline(): PopularPackageDTO[] {
+function offlineKey(tenantKey: string) {
+  return `offline_popular_packages_v3:${tenantKey}`;
+}
+
+function readOffline(key: string): PopularPackageDTO[] {
   try {
-    const raw = localStorage.getItem(OFFLINE_KEY);
+    const raw = localStorage.getItem(key);
     const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? parsed : [];
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+
+    // Migrate the previous unscoped cache once. New writes are always tenant
+    // scoped so switching reseller/workspace can never leak another catalog.
+    const legacyRaw = localStorage.getItem(LEGACY_OFFLINE_KEY);
+    const legacy = legacyRaw ? JSON.parse(legacyRaw) : null;
+    return Array.isArray(legacy) ? legacy : [];
   } catch {
     return [];
   }
 }
 
-function writeOffline(list: PopularPackageDTO[]) {
+function writeOffline(key: string, list: PopularPackageDTO[]) {
+  if (list.length === 0) return;
   try {
-    localStorage.setItem(OFFLINE_KEY, JSON.stringify(list));
+    localStorage.setItem(key, JSON.stringify(list));
+    localStorage.removeItem(LEGACY_OFFLINE_KEY);
   } catch { /* quota */ }
 }
 
@@ -45,23 +56,37 @@ const SectionShell = ({ children }: { children: React.ReactNode }) => (
 
 const PopularPackages = () => {
   const navigate = useNavigate();
-  const [offline] = React.useState<PopularPackageDTO[]>(() => readOffline());
+  const tenantState = useTenant();
+  const tenant = tenantState.status === 'ready' || tenantState.status === 'suspended'
+    ? tenantState.tenant
+    : null;
+  const tenantKey = tenant?.id || tenant?.slug || 'default';
+  const storageKey = React.useMemo(() => offlineKey(tenantKey), [tenantKey]);
+  const offline = React.useMemo(() => readOffline(storageKey), [storageKey]);
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: QUERY_KEY,
+    queryKey: ['popularPackages', 'v3', tenantKey],
     queryFn: async (): Promise<PopularPackageDTO[]> => {
-      const catalog = await fetchIftinCatalog({ force: true });
+      // Use the shared catalog cache. The old implementation forced a fresh
+      // API request every time this component mounted, which made API tenants
+      // feel slow and caused the list to disappear/reappear during navigation.
+      const catalog = await fetchIftinCatalog();
       const mapped = mapPopularPackages(catalog);
       if (mapped.length > 0) {
-        writeOffline(mapped);
-        cacheImages(mapped.map((p) => p.provider_logo));
+        writeOffline(storageKey, mapped);
+        void cacheImages(mapped.map((p) => p.provider_logo));
+        return mapped;
       }
-      return mapped;
+
+      // Never replace a visible known-good list with a transient empty API
+      // response. Keep the last snapshot until a real non-empty refresh lands.
+      return offline;
     },
-    // Show the last known list instantly, then refresh in the background.
     initialData: offline.length > 0 ? offline : undefined,
-    refetchOnMount: 'always',
-    staleTime: 0,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     retry: 1,
   });
 
@@ -117,7 +142,7 @@ const PopularPackages = () => {
         {packages.map((pkg, idx) => (
           <Card
             key={`${pkg.package_id}-${pkg.provider_id}-${idx}`}
-            className="p-3 rounded-2xl bg-card hover:shadow-md transition-shadow cursor-pointer border"
+            className="p-3 rounded-2xl bg-card hover:shadow-md transition-shadow cursor-pointer border touch-manipulation"
             onClick={() => navigate(`/packages/${pkg.provider_id}`, {
               state: { providerName: pkg.provider_name, selectedPackageId: pkg.package_id },
             })}
