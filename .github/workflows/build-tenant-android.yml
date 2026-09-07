@@ -29,15 +29,21 @@ on:
         description: "Version code (integer, must increase per release)"
         required: false
         default: "1"
+  push:
+    paths:
+      - '.github/build-trigger/marwaan'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      TENANT_SLUG: ${{ inputs.tenant_slug }}
-      APP_NAME: ${{ inputs.app_name }}
-      APP_VERSION_NAME: ${{ inputs.version_name }}
-      APP_VERSION_CODE: ${{ inputs.version_code }}
+      TENANT_SLUG: ${{ github.event_name == 'push' && 'marwaan' || inputs.tenant_slug }}
+      APP_NAME: ${{ github.event_name == 'push' && 'Marwaan Data' || inputs.app_name }}
+      APP_VERSION_NAME: ${{ github.event_name == 'push' && '1.0.3' || inputs.version_name }}
+      APP_VERSION_CODE: ${{ github.event_name == 'push' && '5' || inputs.version_code }}
+      APP_ID_INPUT: ${{ github.event_name == 'push' && 'com.iftin.marwaan' || inputs.app_id }}
+      LOGO_URL: ${{ github.event_name == 'push' && 'https://cdn.phototourl.com/free/2026-08-16-1bf8f0ac-424f-4a2d-b49c-606ad6013e41.png' || inputs.logo_url }}
+      SPLASH_COLOR: ${{ github.event_name == 'push' && '#071A3D' || inputs.splash_color }}
     steps:
       - uses: actions/checkout@v4
 
@@ -57,7 +63,7 @@ jobs:
 
       - name: Configure app identity for this tenant
         run: |
-          APP_ID="${{ inputs.app_id }}"
+          APP_ID="$APP_ID_INPUT"
           if [ -z "$APP_ID" ]; then APP_ID="com.iftin.$(echo "$TENANT_SLUG" | tr -cd '[:alnum:]')"; fi
           export APP_ID
           echo "APP_ID=$APP_ID" >> "$GITHUB_ENV"
@@ -72,9 +78,6 @@ jobs:
             cfg.plugins.NavigationBar.backgroundColor = color;
             fs.writeFileSync("capacitor.config.json", JSON.stringify(cfg, null, 2));
           '
-        env:
-          APP_ID: ${{ inputs.app_id }}
-          SPLASH_COLOR: ${{ inputs.splash_color }}
 
       - name: Stamp Android web bundle
         run: |
@@ -84,12 +87,11 @@ jobs:
         run: bun run build
         env:
           CAPACITOR_BUILD: "true"
-          VITE_TENANT_SLUG: ${{ inputs.tenant_slug }}
-          VITE_TENANT_NAME: ${{ inputs.app_name }}
-          VITE_TENANT_LOGO_URL: ${{ inputs.logo_url }}
-          VITE_SPLASH_COLOR: ${{ inputs.splash_color }}
+          VITE_TENANT_SLUG: ${{ env.TENANT_SLUG }}
+          VITE_TENANT_NAME: ${{ env.APP_NAME }}
+          VITE_TENANT_LOGO_URL: ${{ env.LOGO_URL }}
+          VITE_SPLASH_COLOR: ${{ env.SPLASH_COLOR }}
           VITE_BUILD_VERSION: ${{ github.sha }}
-
 
       - name: Prepare web assets for Capacitor
         run: |
@@ -139,8 +141,6 @@ jobs:
           echo "Fresh tenant banner and native numeric keyboard configuration verified in Android bundle"
 
       - name: Apply app id, label and splash color
-        env:
-          SPLASH_COLOR: ${{ inputs.splash_color }}
         run: |
           sed -i "s/applicationId \".*\"/applicationId \"${APP_ID}\"/" android/app/build.gradle
           # Keep the Android namespace fixed because MainActivity is compiled as
@@ -161,15 +161,10 @@ jobs:
           c = "android/app/src/main/res/values/colors.xml"
           s = open(c).read()
           s = re.sub(r'(<color name="[A-Za-z_]+">)#[0-9A-Fa-f]{6}(</color>)', r'\g<1>' + color + r'\g<2>', s)
-
           open(c, "w").write(s)
           PY
 
-
       - name: Generate icons and splash from tenant logo
-        env:
-          LOGO_URL: ${{ inputs.logo_url }}
-          SPLASH_COLOR: ${{ inputs.splash_color }}
         run: |
           if [ -z "${LOGO_URL//[[:space:]]/}" ]; then
             echo "No tenant logo URL supplied; keeping the default Android artwork."
@@ -211,7 +206,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.tenant_slug }}-android
+          name: ${{ env.TENANT_SLUG }}-android
           path: |
             android/app/build/outputs/apk/release/*.apk
             android/app/build/outputs/bundle/release/*.aab
