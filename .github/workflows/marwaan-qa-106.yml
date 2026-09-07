@@ -1,0 +1,150 @@
+name: Marwaan 1.0.6 Stability QA
+
+on:
+  push:
+    branches:
+      - fix/marwaan-106-stability
+    paths:
+      - '.github/build-trigger/marwaan-qa-106'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      TENANT_SLUG: marwaan
+      APP_NAME: Marwaan Data
+      APP_ID: com.iftin.marwaan
+      APP_VERSION_NAME: 1.0.6
+      APP_VERSION_CODE: '8'
+      LOGO_URL: https://cdn.phototourl.com/free/2026-08-16-1bf8f0ac-424f-4a2d-b49c-606ad6013e41.png
+      SPLASH_COLOR: '#071A3D'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Configure tenant identity
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const cfg = JSON.parse(fs.readFileSync('capacitor.config.json', 'utf8'));
+          cfg.appId = process.env.APP_ID;
+          cfg.appName = process.env.APP_NAME;
+          cfg.plugins.SplashScreen.backgroundColor = process.env.SPLASH_COLOR;
+          cfg.plugins.StatusBar.backgroundColor = process.env.SPLASH_COLOR;
+          cfg.plugins.NavigationBar.backgroundColor = process.env.SPLASH_COLOR;
+          fs.writeFileSync('capacitor.config.json', JSON.stringify(cfg, null, 2));
+          NODE
+
+      - name: Stamp QA bundle
+        run: |
+          printf '{"commit":"%s","tenant":"%s","version":"%s","uiRollback":"scoped","categoryHydration":"single-key","keyboard":"adjustResize"}\n' "$GITHUB_SHA" "$TENANT_SLUG" "$APP_VERSION_NAME" > public/apk-build.json
+
+      - name: Build web bundle
+        run: bun run build
+        env:
+          CAPACITOR_BUILD: 'true'
+          VITE_TENANT_SLUG: marwaan
+          VITE_TENANT_NAME: Marwaan Data
+          VITE_TENANT_LOGO_URL: https://cdn.phototourl.com/free/2026-08-16-1bf8f0ac-424f-4a2d-b49c-606ad6013e41.png
+          VITE_SPLASH_COLOR: '#071A3D'
+          VITE_BUILD_VERSION: ${{ github.sha }}
+
+      - name: Prepare web assets for Capacitor
+        run: |
+          set -e
+          if [ ! -f dist/index.html ]; then
+            SRC=''
+            for d in .output/public dist/client dist/public build/client build; do
+              if [ -f "$d/index.html" ]; then SRC="$d"; break; fi
+            done
+            if [ -z "$SRC" ]; then echo 'No built index.html found'; exit 1; fi
+            rm -rf dist_capacitor
+            mkdir -p dist_capacitor
+            cp -R "$SRC"/. dist_capacitor/
+            rm -rf dist
+            mv dist_capacitor dist
+          fi
+
+      - name: Sync Capacitor
+        run: |
+          rm -rf android/app/src/main/assets/public
+          npx cap sync android
+
+      - name: Verify regression fixes are packaged
+        run: |
+          set -e
+          test -f android/app/src/main/assets/public/index.html
+          test -f android/app/src/main/assets/public/apk-build.json
+          grep -Fq "$GITHUB_SHA" android/app/src/main/assets/public/apk-build.json
+          grep -Fq '"adjustMarginsForEdgeToEdge": "force"' android/app/src/main/assets/capacitor.config.json
+          ! grep -Fq '"SystemBars"' android/app/src/main/assets/capacitor.config.json
+          ! grep -Fq '"EdgeToEdge"' android/app/src/main/assets/capacitor.config.json
+          grep -Fq 'android:windowSoftInputMode="adjustResize"' android/app/src/main/AndroidManifest.xml
+          ! grep -Rqs 'mobile-stability.css' android/app/src/main/assets/public
+          ! grep -Rqs 'animate-bounce-in opacity-0' android/app/src/main/assets/public
+          grep -Rqs 'offline_packages' android/app/src/main/assets/public
+          grep -Rqs 'offline_popular_packages_v2' android/app/src/main/assets/public
+          echo 'Scoped UI rollback, keyboard resize and synchronous catalog cache verified'
+
+      - name: Apply app id and Android label
+        run: |
+          sed -i "s/applicationId \".*\"/applicationId \"${APP_ID}\"/" android/app/build.gradle
+          python3 - <<'PY'
+          import os, re
+          p = 'android/app/src/main/res/values/strings.xml'
+          s = open(p).read()
+          name = os.environ['APP_NAME']
+          s = re.sub(r'(<string name="app_name">).*?(</string>)', r'\g<1>' + name + r'\g<2>', s)
+          s = re.sub(r'(<string name="title_activity_main">).*?(</string>)', r'\g<1>' + name + r'\g<2>', s)
+          open(p, 'w').write(s)
+          color = os.environ['SPLASH_COLOR']
+          c = 'android/app/src/main/res/values/colors.xml'
+          s = open(c).read()
+          s = re.sub(r'(<color name="[A-Za-z_]+">)#[0-9A-Fa-f]{6}(</color>)', r'\g<1>' + color + r'\g<2>', s)
+          open(c, 'w').write(s)
+          PY
+
+      - name: Generate tenant icons and splash
+        run: |
+          mkdir -p assets
+          if curl --retry 3 --retry-delay 2 -fsSL "$LOGO_URL" -o assets/logo.png; then
+            cp assets/logo.png assets/icon.png
+            cp assets/logo.png assets/splash.png
+            npx @capacitor/assets generate --android --iconBackgroundColor "$SPLASH_COLOR" --splashBackgroundColor "$SPLASH_COLOR" || true
+          fi
+
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/iftin.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/iftin.keystore" >> "$GITHUB_ENV"
+
+      - name: Build signed APK and AAB
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease --no-daemon
+
+      - name: Upload QA artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: marwaan-android-1.0.6
+          path: |
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
