@@ -10,7 +10,6 @@ import { useTenant } from '@/contexts/TenantContext';
 import { hideNativeSplash } from '@/lib/nativeSplash';
 import CachedImage from '@/components/CachedImage';
 
-// Validate Somali phone format: 9 digits starting with 61, 77, 62, or 68.
 const isValidSomaliPhone = (phone: string | null): boolean => {
   if (!phone) return false;
   return /^(61|77|62|68)\d{7}$/.test(phone);
@@ -50,14 +49,11 @@ const Index = () => {
     setIsChecking(false);
   };
 
-  // Returning to the root route in the same app session should be instant.
   useEffect(() => {
     if (wasAlreadyInitialized) continueIntoApp();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cold start: give the bundled web UI a very small fixed paint window, then
-  // continue regardless of internet state. Connectivity is never a startup gate.
   useEffect(() => {
     if (wasAlreadyInitialized || !isChecking) return;
     const timer = window.setTimeout(continueIntoApp, STARTUP_PAINT_MS);
@@ -65,7 +61,6 @@ const Index = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wasAlreadyInitialized, isChecking]);
 
-  // Refresh offline data only in the background. This must not hold the splash.
   const refreshStarted = useRef(false);
   useEffect(() => {
     if (!isReallyOnline || refreshStarted.current) return;
@@ -76,14 +71,16 @@ const Index = () => {
   if (isChecking) return <SplashScreen />;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-5 py-6 gap-4">
-      <div className="w-full max-w-md space-y-5">
+    <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-start sm:justify-center overflow-y-auto px-5 py-5 gap-4">
+      <div className="w-full max-w-md space-y-5 shrink-0">
         <HeroSection />
         <div className="bg-card rounded-2xl p-5 shadow-sm border border-border/50">
           <PhoneInput />
         </div>
       </div>
-      <Footer />
+      <div className="shrink-0 pb-4">
+        <Footer />
+      </div>
     </div>
   );
 };
@@ -94,8 +91,6 @@ const SplashScreen = () => {
   const logo = tenant?.logo_url || najaxLogoSplash;
   const name = tenant?.name || 'Najax Data';
 
-  // Hide the native artwork only after this web screen has painted, preventing
-  // the white WebView flash while still keeping launch time short.
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       requestAnimationFrame(() => void hideNativeSplash());
