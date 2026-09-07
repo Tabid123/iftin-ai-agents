@@ -1,0 +1,67 @@
+/* Android/mobile storefront stability overrides.
+ * Keep this file after styles.css so it can neutralize legacy global rules.
+ */
+
+/* The old global `.fixed { transform: translateZ(0) }` promoted every header,
+ * bottom bar and overlay to a separate Android WebView layer. Route changes then
+ * produced a visible compositing flash. Let the browser compositor decide.
+ */
+.fixed {
+  will-change: auto !important;
+  transform: none !important;
+  backface-visibility: visible !important;
+}
+
+/* Bottom navigation should respond immediately, not animate a large white pill
+ * while the destination route is mounting. */
+.fixed.bottom-0 button,
+.fixed.bottom-0 button * {
+  transition-duration: 0ms !important;
+  animation-duration: 0ms !important;
+}
+
+@media (max-width: 767px) {
+  /* Provider home header: 62px -> compact 52px. Android's native status bar is
+   * already outside the WebView (`overlay: false`), so no second top inset is
+   * needed inside the web header. */
+  .min-h-screen.bg-background.flex.flex-col > .fixed.top-0.left-0.right-0.z-50 > .grid.h-\[62px\] {
+    height: 52px !important;
+  }
+
+  /* Category fixed header. */
+  .min-h-screen.bg-background.flex.flex-col > .fixed.top-0.left-0.right-0.z-50 > .text-white.p-4 {
+    min-height: 52px !important;
+    height: 52px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  /* Provider/category scroll areas had hard-coded 62/80px offsets. Match the
+   * real compact header so the page does not appear pushed downward. */
+  .min-h-screen.bg-background.flex.flex-col > .flex-1.overflow-y-auto,
+  .min-h-screen.bg-background.flex.flex-col > .flex-1[style*="paddingTop"],
+  .min-h-screen.bg-background.flex.flex-col > .flex-1[style*="padding-top"] {
+    padding-top: 52px !important;
+  }
+
+  /* Non-fixed customer headers (packages, notifications, profile, history).
+   * Inline safe-area padding is overridden because the native status bar has
+   * already reserved that space. */
+  .min-h-screen.bg-background > .text-white.py-4.px-4,
+  .min-h-screen.bg-background > div.text-white.py-4.px-4 {
+    min-height: 52px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  /* Avoid WebView touch highlight/selection flashes on navigation controls. */
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation;
+  }
+}
