@@ -27,19 +27,17 @@ export const BUILD_BAR_COLOR: string | null =
   (import.meta.env.VITE_SPLASH_COLOR as string | undefined)?.trim() || null;
 
 let appliedHex: string | null = null;
-let overlaySet = false;
+let edgeLayoutInitialized = false;
 let queue: Promise<unknown> = Promise.resolve();
 
 /**
- * Applies the given color to the native Android status and navigation bars.
- * Calls are serialised and de-duplicated: re-applying the same color makes the
- * native bars re-layout, which the user sees as the navigation bar "jumping"
- * on every tap/page change.
+ * Applies the tenant build color without changing WebView inset ownership.
+ * Capawesome EdgeToEdge owns Android insets; Capacitor SystemBars inset handling
+ * is disabled in capacitor.config.json. Do not call StatusBar.setOverlaysWebView
+ * here — that would add a second native layout adjustment.
  */
 export async function applyNativeStatusBarColor(color: string, force = false) {
   if (!Capacitor.isNativePlatform()) return;
-  // The build-time color always wins on native so every tenant app matches
-  // the color entered in the workflow.
   const source = BUILD_BAR_COLOR ?? color;
   const hex = source.startsWith('#') ? source : resolveCssColor(source);
   if (!hex) return;
@@ -51,29 +49,31 @@ export async function applyNativeStatusBarColor(color: string, force = false) {
 
 async function applyNow(hex: string) {
   try {
-    const { StatusBar, Style } = await import('@capacitor/status-bar');
-    if (!overlaySet) {
-      overlaySet = true;
-      await StatusBar.setOverlaysWebView({ overlay: false });
+    const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
+    if (!edgeLayoutInitialized) {
+      edgeLayoutInitialized = true;
+      // Preserve the traditional fitted WebView: status/navigation bars reserve
+      // their space once, instead of content being laid underneath them.
+      await EdgeToEdge.disable();
     }
-    await StatusBar.setBackgroundColor({ color: hex });
-    await StatusBar.setStyle({ style: isLight(hex) ? Style.Light : Style.Dark });
+    await EdgeToEdge.setStatusBarColor({ color: hex });
+    await EdgeToEdge.setNavigationBarColor({ color: hex });
   } catch {
     /* plugin unavailable */
   }
+
   try {
-    const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
-    await EdgeToEdge.setBackgroundColor({ color: hex });
+    const { StatusBar, Style } = await import('@capacitor/status-bar');
+    // Style only. Layout/insets and background surfaces are owned by EdgeToEdge.
+    await StatusBar.setStyle({ style: isLight(hex) ? Style.Light : Style.Dark });
   } catch {
     /* plugin unavailable */
   }
 }
 
-
 /**
- * Locks the native bars to the build-time (workflow) color as early as
- * possible and re-applies it when the app returns from the background, where
- * Android can reset the navigation bar color. Safe to call multiple times.
+ * Locks the native bars to the build-time color once and re-applies the color
+ * after resume without recreating or re-insetting the WebView.
  */
 export function initNativeBars(fallbackColor = 'hsl(var(--primary))') {
   if (!Capacitor.isNativePlatform()) return () => {};
