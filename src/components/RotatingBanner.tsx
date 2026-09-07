@@ -18,21 +18,17 @@ const RotatingBanner = () => {
   const tenant = tenantState.status === 'ready' || tenantState.status === 'suspended'
     ? tenantState.tenant
     : null;
-  const bannerCacheKey = tenant ? `offline_banners:${tenant.id}` : null;
+  const bannerCacheKey = tenant?.id ? `offline_banners:${tenant.id}` : null;
 
-  // Show only banners uploaded by the tenant admin (cached copy for offline)
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentBanner, setCurrentBanner] = useState(() => {
     try {
-      // Check if this is a fresh app launch or navigation within session
       const sessionActive = sessionStorage.getItem('session_active');
       if (!sessionActive) {
-        // Fresh app launch - start from beginning
         sessionStorage.setItem('session_active', 'true');
         sessionStorage.removeItem('banner_position');
         return 0;
       }
-      // Navigation within session - restore position
       const saved = sessionStorage.getItem('banner_position');
       return saved ? parseInt(saved, 10) : 0;
     } catch {
@@ -44,45 +40,35 @@ const RotatingBanner = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Save banner position to sessionStorage
   useEffect(() => {
     try {
       sessionStorage.setItem('banner_position', currentBanner.toString());
     } catch {
-      // Ignore storage errors
+      // Ignore storage errors.
     }
   }, [currentBanner]);
 
-  // Reset position if out of bounds after banners load
   useEffect(() => {
     if (banners.length > 0 && currentBanner >= banners.length) {
       setCurrentBanner(0);
     }
   }, [banners.length, currentBanner]);
 
-  // Track visibility with IntersectionObserver - pause video when not visible
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
+      ([entry]) => setIsVisible(entry.isIntersecting),
       { threshold: 0.1 }
     );
 
     observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, []);
 
-  // Pause/play video based on visibility and document hidden state
   useEffect(() => {
     if (!videoRef.current) return;
-    
     const currentMedia = banners[currentBanner];
     if (currentMedia?.media_type !== 'video') return;
 
@@ -93,7 +79,6 @@ const RotatingBanner = () => {
     }
   }, [isVisible, currentBanner, banners]);
 
-  // Handle document visibility change
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!videoRef.current) return;
@@ -108,12 +93,11 @@ const RotatingBanner = () => {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [isVisible, currentBanner, banners]);
 
-  // Save video position periodically for persistence across navigation
+  // Persist video position at a low frequency. The old 500ms storage write was
+  // unnecessary work on the main thread while the user was scrolling/tapping.
   useEffect(() => {
     const saveVideoPosition = () => {
       if (videoRef.current && banners[currentBanner]?.media_type === 'video') {
@@ -124,9 +108,9 @@ const RotatingBanner = () => {
       }
     };
 
-    const interval = setInterval(saveVideoPosition, 500);
+    const interval = setInterval(saveVideoPosition, 2000);
     window.addEventListener('beforeunload', saveVideoPosition);
-    
+
     return () => {
       saveVideoPosition();
       clearInterval(interval);
@@ -134,12 +118,11 @@ const RotatingBanner = () => {
     };
   }, [currentBanner, banners]);
 
-  // Restore video position when video loads
   const handleVideoLoaded = () => {
     try {
       const savedPosition = sessionStorage.getItem('video_position');
       const savedBannerIndex = sessionStorage.getItem('video_banner_index');
-      
+
       if (savedPosition && savedBannerIndex === currentBanner.toString()) {
         const position = parseFloat(savedPosition);
         if (videoRef.current && position > 0 && position < (videoRef.current.duration - 0.5)) {
@@ -151,78 +134,69 @@ const RotatingBanner = () => {
     } catch {}
   };
 
-  // Fetch fresh data in background
   useEffect(() => {
-    // The old unscoped key could contain a different reseller's banner after
-    // an APK update. Never use it, and remove it permanently.
     try {
       localStorage.removeItem('offline_banners');
     } catch {}
 
     if (!bannerCacheKey) {
-      setBanners([]);
       setIsLoading(false);
       return;
     }
 
-    // Restore only this tenant's banners. Switching tenant or updating the APK
-    // can never display a banner that belongs to another reseller.
+    let cachedBanners: Banner[] = [];
     try {
       const cached = localStorage.getItem(bannerCacheKey);
-      setBanners(cached ? JSON.parse(cached) as Banner[] : []);
+      const parsed = cached ? JSON.parse(cached) : [];
+      cachedBanners = Array.isArray(parsed) ? parsed : [];
+      if (cachedBanners.length > 0) setBanners(cachedBanners);
     } catch {
-      setBanners([]);
+      cachedBanners = [];
     }
-    setIsLoading(true);
+
+    // A cached banner is usable content; don't replace it with a loading state.
+    setIsLoading(cachedBanners.length === 0);
+    let cancelled = false;
 
     const loadBanners = async () => {
       try {
         const { data, error } = await (supabase as any).rpc('get_tenant_banners');
-
+        if (cancelled) return;
         if (error) throw error;
 
-        const freshBanners = ((data ?? []) as Banner[]);
-        setBanners(freshBanners);
-        if (bannerCacheKey) {
-          if (freshBanners.length > 0) {
-            localStorage.setItem(bannerCacheKey, JSON.stringify(freshBanners));
-          } else {
-            localStorage.removeItem(bannerCacheKey);
-          }
-        }
-
-        if (freshBanners.length === 0) {
-          setCurrentBanner(0);
+        const freshBanners = Array.isArray(data) ? (data as Banner[]) : [];
+        if (freshBanners.length > 0) {
+          setBanners(freshBanners);
           try {
-            sessionStorage.removeItem('banner_position');
+            localStorage.setItem(bannerCacheKey, JSON.stringify(freshBanners));
           } catch {}
         }
-      } catch (e) {
-        // Use cached data if available
+        // Important: a transient empty response must not blank a banner that is
+        // already visible/cached. It will be replaced only by a valid snapshot.
+      } catch {
+        // Keep the cached/current snapshot on network or RPC failure.
       } finally {
-        setIsLoading(false);
+        if (!cancelled) setIsLoading(false);
       }
     };
 
-    loadBanners();
+    void loadBanners();
+    return () => {
+      cancelled = true;
+    };
   }, [bannerCacheKey]);
 
-  // Auto-rotate for images only - videos use onEnded event
   useEffect(() => {
     if (banners.length === 0) return;
-    
+
     const currentMedia = banners[currentBanner];
     if (!currentMedia) return;
-    const isVideo = currentMedia?.media_type === 'video';
-    
-    // For videos, don't use interval - let onEnded handle rotation
-    if (isVideo) return;
-    
-    // For images: use rotation_interval if set, otherwise default 4s
-    const rotationTime = currentMedia.rotation_interval 
-      ? currentMedia.rotation_interval * 1000 
+    if (currentMedia.media_type === 'video') return;
+
+    const rotationTime = currentMedia.rotation_interval
+      ? currentMedia.rotation_interval * 1000
       : 4000;
-    
+
     const interval = setInterval(() => {
       setCurrentBanner((prev) => (prev + 1) % banners.length);
     }, rotationTime);
@@ -230,18 +204,16 @@ const RotatingBanner = () => {
     return () => clearInterval(interval);
   }, [banners.length, currentBanner, banners]);
 
-  // Handle video end - move to next banner
   const handleVideoEnded = () => {
     setCurrentBanner((prev) => (prev + 1) % banners.length);
   };
 
-  // Show skeleton while loading
   if (banners.length === 0) {
     if (isLoading) {
       return (
         <div className="w-full space-y-2">
-          <div 
-            className="w-full rounded-xl overflow-hidden bg-muted animate-pulse" 
+          <div
+            className="w-full rounded-xl overflow-hidden bg-muted animate-pulse"
             style={{ aspectRatio: '2.5/1', maxHeight: '320px' }}
           />
           <div className="flex justify-center space-x-1.5">
@@ -267,7 +239,7 @@ const RotatingBanner = () => {
             ref={videoRef}
             key={currentMedia.banner_image}
             src={currentMedia.banner_image}
-            className="w-full h-full object-cover animate-fade-in"
+            className="w-full h-full object-cover"
             autoPlay
             playsInline
             preload="auto"
@@ -282,7 +254,7 @@ const RotatingBanner = () => {
             alt={currentMedia.alt_text || 'Promotional banner'}
             kind="banner"
             bundledName={null}
-            className="w-full h-full object-cover animate-fade-in"
+            className="w-full h-full object-cover"
             width={1200}
             height={400}
             sizes="(max-width: 768px) 100vw, 1200px"
@@ -293,14 +265,13 @@ const RotatingBanner = () => {
         )}
       </div>
 
-      {/* Navigation bars */}
       <div className="flex justify-center space-x-1.5">
         {banners.map((_, index) => (
           <div
             key={index}
-            className={`h-1.5 rounded-full transition-all duration-500 ease-in-out ${
-              index === currentBanner 
-                ? 'w-8 bg-primary' 
+            className={`h-1.5 rounded-full transition-all duration-300 ease-out ${
+              index === currentBanner
+                ? 'w-8 bg-primary'
                 : 'w-4 bg-muted-foreground/30'
             }`}
             aria-label={`Banner ${index + 1}`}
