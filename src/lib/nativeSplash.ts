@@ -1,7 +1,10 @@
 import { Capacitor } from '@capacitor/core';
 
-/** Fixed native splash duration for every tenant and every launch. */
-export const NATIVE_SPLASH_MS = 1500;
+/**
+ * Keep the native artwork just long enough for the bundled web UI to paint.
+ * Network/tenant lookups must never extend this window.
+ */
+export const NATIVE_SPLASH_MS = 650;
 
 let hidden = false;
 let hidePromise: Promise<void> | null = null;
@@ -15,10 +18,9 @@ function elapsedSinceBoot() {
 }
 
 /**
- * Hides the native (Android) splash screen, but never before NATIVE_SPLASH_MS
- * has passed since app start — so the splash always lasts the same 1.5s for
- * every tenant, on cold start and on resume alike. Callers may invoke this as
- * soon as the web splash has painted; the wait is handled here.
+ * Hides the native Android splash after a short, fixed paint window. This is
+ * deliberately independent of connectivity so airplane mode and slow data
+ * start just as quickly as an online launch.
  */
 export function hideNativeSplash(): Promise<void> {
   if (hidePromise) return hidePromise;
@@ -30,20 +32,16 @@ export function hideNativeSplash(): Promise<void> {
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
     try {
       const { SplashScreen } = await import('@capacitor/splash-screen');
-      await SplashScreen.hide({ fadeOutDuration: 150 });
+      await SplashScreen.hide({ fadeOutDuration: 80 });
     } catch {
-      /* plugin unavailable (web / remote mode) */
+      /* plugin unavailable (web / preview) */
     }
   })();
   return hidePromise;
 }
 
-/**
- * Safety net so the app can never stay stuck behind the native splash, even if
- * the web splash never paints (slow route, error boundary, resume from
- * background). Default fires right after the fixed 1.5s window.
- */
-export function scheduleNativeSplashFallback(ms = NATIVE_SPLASH_MS + 300) {
+/** Safety net: never leave the user trapped behind the native splash. */
+export function scheduleNativeSplashFallback(ms = NATIVE_SPLASH_MS + 200) {
   if (typeof window === 'undefined') return;
   window.setTimeout(() => {
     void hideNativeSplash();
