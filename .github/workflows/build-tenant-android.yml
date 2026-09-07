@@ -90,6 +90,7 @@ jobs:
           VITE_SPLASH_COLOR: ${{ inputs.splash_color }}
           VITE_BUILD_VERSION: ${{ github.sha }}
 
+
       - name: Prepare web assets for Capacitor
         run: |
           set -e
@@ -130,7 +131,7 @@ jobs:
           test -f android/app/src/main/assets/public/apk-build.json
           grep -Fq "${GITHUB_SHA}" android/app/src/main/assets/public/apk-build.json
           grep -Fq '"bannerCache":"tenant-scoped"' android/app/src/main/assets/public/apk-build.json
-          grep -Fq '"numericKeyboard":"native-webview-numeric"' android/app/src/main/assets/capacitor.config.json || true
+          grep -Fq '"numericKeyboard":"native-webview-numeric"' android/app/src/main/assets/public/apk-build.json
           grep -Fq '"captureInput": false' capacitor.config.json
           grep -Fq '"captureInput": false' android/app/src/main/assets/capacitor.config.json
           grep -Rqs "offline_banners:" android/app/src/main/assets/public
@@ -163,6 +164,7 @@ jobs:
 
           open(c, "w").write(s)
           PY
+
 
       - name: Generate icons and splash from tenant logo
         env:
