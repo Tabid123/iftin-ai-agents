@@ -15,36 +15,28 @@ type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
 
 /**
  * <img> that prefers a locally cached data URL, then the network image, then a
- * logo bundled in the build — so logos render 100% of the time, online or offline.
+ * logo bundled in the build — so logos render online/offline without a visible
+ * source swap after first paint.
  */
 const CachedImage = ({ src, alt, bundledName, kind = 'provider', providerName, fallback, ...rest }: Props) => {
-  // bundledName === null means "never substitute a bundled asset" (e.g. banners
-  // uploaded by a tenant admin must render exactly as uploaded).
   const skipBundled = bundledName === null;
   const imageName = bundledName ?? (typeof alt === 'string' ? alt : null);
   const bundled = skipBundled ? null : getLocalImage(kind, imageName, src, providerName);
-  // Bundled asset first: it ships inside the build, so it paints instantly and
-  // works with zero network. Cached data URL next, remote URL last.
   const pick = (s: string | null | undefined) => bundled ?? getCachedImage(s) ?? s ?? null;
 
   const [resolved, setResolved] = useState<string | null>(() => pick(src));
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let alive = true;
     setFailed(false);
     setResolved(pick(src));
 
-    // Keep warming the cache in the background for images we don't bundle.
+    // Warm the cache for the NEXT mount, but never replace the source of an
+    // already-painted image. Replacing remote URL -> data URL after paint made
+    // cards/banner artwork visibly blink during navigation.
     if (!bundled && src && !getCachedImage(src)) {
-      cacheImage(src).then((dataUrl) => {
-        if (alive && dataUrl) {
-          setResolved(dataUrl);
-          setFailed(false);
-        }
-      });
+      void cacheImage(src);
     }
-    return () => { alive = false; };
   }, [src, bundled]);
 
   if (failed && bundled && resolved !== bundled) {
@@ -54,7 +46,6 @@ const CachedImage = ({ src, alt, bundledName, kind = 'provider', providerName, f
   if (!resolved || failed) {
     return <>{fallback ?? <span className="flex size-full items-center justify-center rounded bg-muted text-muted-foreground" aria-hidden="true"><ImageOff className="size-5" /></span>}</>;
   }
-
 
   return (
     <img
