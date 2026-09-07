@@ -44,7 +44,6 @@ function readCachedEntry(): { at: number; catalog: IftinCatalog } | null {
   }
 }
 
-
 export function readCachedCatalog(): IftinCatalog | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -144,7 +143,6 @@ export async function fetchIftinCatalog(opts: { force?: boolean } = {}): Promise
   }
   if (!opts.force && inflight) return inflight;
 
-
   inflight = (async () => {
     try {
       const qs = new URLSearchParams();
@@ -175,7 +173,6 @@ export async function fetchIftinCatalog(opts: { force?: boolean } = {}): Promise
         if (body.error === 'missing_api_key') return null;
         return { error: body.error, providers: [], payment_providers: [] };
       }
-
 
       const catalog: IftinCatalog = {
         ...body,
@@ -308,28 +305,54 @@ export function formatUssdAmount(amount: number | string): string {
   return cents > 0 ? `${dollars}*${String(cents).padStart(2, '0')}` : `${dollars}`;
 }
 
+/** Always produces the amount shape expected by Somali USSD money menus. */
+function normalizePaymentAmount(amount: number | string): string {
+  const raw = String(amount).replace('$', '').trim();
+  if (/^\d+\*\d{2}$/.test(raw)) return raw;
+  if (/^\d+(?:\.\d+)?$/.test(raw)) {
+    const n = Number(raw);
+    const dollars = Math.floor(n);
+    const cents = Math.round((n - dollars) * 100);
+    return `${dollars}*${String(cents).padStart(2, '0')}`;
+  }
+  return raw;
+}
+
 /**
- * Builds the USSD string strictly from what Iftin returned for that payment
- * provider (ussd_code_template → ussd_prefix → known default for the phone
- * prefix). prefix_code ("61") is a phone prefix, never used as a USSD code.
+ * Build the payment USSD centrally for every tenant.
+ *
+ * EVC/Hormuud is intentionally deterministic: bad partner templates must not
+ * create `*712**...` or other duplicate separators. Other providers keep their
+ * API/admin template because their menu layouts may legitimately differ.
  */
 export function buildPaymentUssd(
   paymentProvider: { ussd_code_template?: string | null; ussd_prefix?: string | null; prefix_code?: string | null; payment_number?: string | null },
   amount: number | string,
 ): string | null {
-  const number = paymentProvider.payment_number ?? '';
+  const number = String(paymentProvider.payment_number ?? '').replace(/\D/g, '');
   if (!number) return null;
+
+  const prefixCode = String(paymentProvider.prefix_code ?? '').trim();
+  const explicitPrefix = String(paymentProvider.ussd_prefix ?? '').trim();
+  const resolvedPrefix = explicitPrefix || DEFAULT_USSD_PREFIX[prefixCode] || (prefixCode.startsWith('*') ? prefixCode : '');
+  const ussdAmount = normalizePaymentAmount(amount);
+
+  const compactPrefix = resolvedPrefix.replace(/\s/g, '');
+  const isEvc = compactPrefix.startsWith('*712*') || prefixCode === '61' || prefixCode === '77';
+  if (isEvc) {
+    return `*712*${number}*${ussdAmount}#`;
+  }
+
   const tpl = paymentProvider.ussd_code_template;
   if (tpl) {
     return tpl
       .replace(/\{\{?\s*(number|payment_number|phone)\s*\}?\}/gi, number)
-      .replace(/\{\{?\s*amount\s*\}?\}/gi, String(amount));
+      .replace(/\{\{?\s*amount\s*\}?\}/gi, ussdAmount);
   }
-  const prefixCode = (paymentProvider.prefix_code ?? '').trim();
-  const prefix = (paymentProvider.ussd_prefix ?? '').trim() || DEFAULT_USSD_PREFIX[prefixCode] || '';
-  if (!prefix) return null;
-  const base = prefix.endsWith('*') ? prefix : `${prefix}*`;
-  return `${base}${number}*${amount}#`;
+
+  if (!resolvedPrefix) return null;
+  const base = resolvedPrefix.endsWith('*') ? resolvedPrefix : `${resolvedPrefix}*`;
+  return `${base}${number}*${ussdAmount}#`;
 }
 
 /** Keeps the existing offline caches filled from Iftin's catalog. */
