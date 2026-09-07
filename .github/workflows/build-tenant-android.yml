@@ -85,6 +85,8 @@ jobs:
         env:
           CAPACITOR_BUILD: "true"
           VITE_TENANT_SLUG: ${{ inputs.tenant_slug }}
+          VITE_TENANT_NAME: ${{ inputs.app_name }}
+          VITE_TENANT_LOGO_URL: ${{ inputs.logo_url }}
           VITE_SPLASH_COLOR: ${{ inputs.splash_color }}
           VITE_BUILD_VERSION: ${{ github.sha }}
 
