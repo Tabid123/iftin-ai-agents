@@ -24,6 +24,7 @@ class DeliveryApiClient {
         val phoneNumber: String,
         val menu1Label: String,
         val ussdCode: String,
+        val simSlot: Int,
     )
 
     data class DiscoverySelection(
@@ -90,6 +91,7 @@ class DeliveryApiClient {
             phoneNumber = o.optString("phone_number"),
             menu1Label = o.optString("menu1_label"),
             ussdCode = o.optString("ussd_code"),
+            simSlot = o.optInt("sim_slot", 0),
         )
     }
 
@@ -149,8 +151,9 @@ class DeliveryApiClient {
         Unit
     }
 
-    suspend fun hasWaitingDiscovery(): Boolean = withContext(Dispatchers.IO) {
-        val raw = rpc("discovery_has_waiting_request", JSONObject())
+    /** Device-scoped to prevent one reseller's *212* queue from interrupting another tenant's held session. */
+    suspend fun hasWaitingDiscovery(deviceId: String): Boolean = withContext(Dispatchers.IO) {
+        val raw = rpc("discovery_has_waiting_request", JSONObject().put("p_device_id", deviceId))
         raw.trim().equals("true", ignoreCase = true)
     }
 
