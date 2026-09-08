@@ -27,12 +27,11 @@ export const BUILD_BAR_COLOR: string | null =
   (import.meta.env.VITE_SPLASH_COLOR as string | undefined)?.trim() || null;
 
 let appliedHex: string | null = null;
-let edgeLayoutInitialized = false;
 let queue: Promise<unknown> = Promise.resolve();
 
 /**
- * Applies the tenant build color. Capawesome owns Android's measured status and
- * navigation bar insets, while CSS owns safe areas on iOS/web.
+ * Applies the tenant build color. Capacitor SystemBars supplies measured CSS
+ * insets; this function only paints the native status/navigation bar areas.
  */
 export async function applyNativeStatusBarColor(color: string, force = false) {
   if (!Capacitor.isNativePlatform()) return;
@@ -48,10 +47,6 @@ export async function applyNativeStatusBarColor(color: string, force = false) {
 async function applyNow(hex: string) {
   try {
     const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
-    if (!edgeLayoutInitialized) {
-      edgeLayoutInitialized = true;
-      await EdgeToEdge.enable();
-    }
     await EdgeToEdge.setStatusBarColor({ color: hex });
     await EdgeToEdge.setNavigationBarColor({ color: hex });
   } catch {

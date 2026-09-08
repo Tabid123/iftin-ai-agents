@@ -12,28 +12,15 @@ const setVar = (name: string, value: string) => {
   document.documentElement.style.setProperty(name, value);
 };
 
-/** Keep CSS and native system-bar inset ownership mutually exclusive. */
+/** Use Capacitor SystemBars' measured CSS variables on Android and env() elsewhere. */
 export const useEdgeToEdge = () => {
   useEffect(() => {
-    const applyAndroidInsets = async () => {
-      // Android's plugin applies the measured status/navigation-bar margins to
-      // the WebView. CSS must stay at zero here or the inset is counted twice.
-      setVar('--effective-safe-area-top', '0px');
-      setVar('--effective-safe-area-bottom', '0px');
-      try {
-        const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
-        await EdgeToEdge.enable();
-      } catch {
-        // Older native builds without the plugin still receive a conservative
-        // CSS inset so their header cannot sit beneath the status icons.
-        setVar('--effective-safe-area-top', 'max(env(safe-area-inset-top, 0px), 24px)');
-        setVar('--effective-safe-area-bottom', 'env(safe-area-inset-bottom, 0px)');
-      }
-    };
-
     const setSafeArea = () => {
       if (isAndroidWebView()) {
-        void applyAndroidInsets();
+        // Capacitor injects these from the real Android WindowInsets, avoiding
+        // unreliable env() values in older Android WebViews.
+        setVar('--effective-safe-area-top', 'var(--safe-area-inset-top, env(safe-area-inset-top, 0px))');
+        setVar('--effective-safe-area-bottom', 'var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))');
       } else {
         // iOS / web: the browser reports correct insets.
         setVar('--effective-safe-area-top', 'env(safe-area-inset-top, 0px)');
