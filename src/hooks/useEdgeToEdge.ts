@@ -12,41 +12,22 @@ const setVar = (name: string, value: string) => {
   document.documentElement.style.setProperty(name, value);
 };
 
-/**
- * Keeps --effective-safe-area-top / --effective-safe-area-bottom in sync with the
- * real system bar insets.
- *
- * On Android 15+ the WebView is always laid out edge-to-edge, so content would slide
- * under the status bar icons unless we reserve the inset ourselves. env() is often
- * reported as 0px inside the Android WebView, so we ask the EdgeToEdge plugin for the
- * real inset and fall back to a safe minimum.
- */
+/** Keep CSS and native system-bar inset ownership mutually exclusive. */
 export const useEdgeToEdge = () => {
   useEffect(() => {
-    let cancelled = false;
-
     const applyAndroidInsets = async () => {
-      // Sensible defaults so the header never sits under the status bar even
-      // before the plugin answers.
-      setVar('--effective-safe-area-top', 'max(env(safe-area-inset-top, 0px), 26px)');
-      setVar('--effective-safe-area-bottom', 'max(env(safe-area-inset-bottom, 0px), 0px)');
-
+      // Android's plugin applies the measured status/navigation-bar margins to
+      // the WebView. CSS must stay at zero here or the inset is counted twice.
+      setVar('--effective-safe-area-top', '0px');
+      setVar('--effective-safe-area-bottom', '0px');
       try {
-        const mod = await import('@capawesome/capacitor-android-edge-to-edge-support');
-        const getInsets = (mod as unknown as {
-          EdgeToEdge?: { getInsets?: () => Promise<{ top: number; bottom: number }> };
-        }).EdgeToEdge?.getInsets;
-        if (!getInsets) return;
-        const insets = await getInsets();
-        if (cancelled || !insets) return;
-        if (typeof insets.top === 'number' && insets.top >= 0) {
-          setVar('--effective-safe-area-top', `${Math.round(insets.top)}px`);
-        }
-        if (typeof insets.bottom === 'number' && insets.bottom >= 0) {
-          setVar('--effective-safe-area-bottom', `${Math.round(insets.bottom)}px`);
-        }
+        const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
+        await EdgeToEdge.enable();
       } catch {
-        /* plugin unavailable — keep the env()/minimum fallback */
+        // Older native builds without the plugin still receive a conservative
+        // CSS inset so their header cannot sit beneath the status icons.
+        setVar('--effective-safe-area-top', 'max(env(safe-area-inset-top, 0px), 24px)');
+        setVar('--effective-safe-area-bottom', 'env(safe-area-inset-bottom, 0px)');
       }
     };
 
@@ -83,7 +64,6 @@ export const useEdgeToEdge = () => {
     window.addEventListener('orientationchange', handleResize);
 
     return () => {
-      cancelled = true;
       resumeListener?.remove();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('resize', handleResize);

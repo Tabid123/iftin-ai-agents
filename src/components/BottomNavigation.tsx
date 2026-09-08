@@ -81,7 +81,7 @@ export function BottomNavigation({ onNotificationsClick }: BottomNavigationProps
     <div
       className="fixed bottom-0 left-0 right-0 z-50"
       style={{
-        paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(8px + var(--effective-safe-area-bottom, env(safe-area-inset-bottom, 0px)))',
         background: navBackground,
         WebkitTapHighlightColor: 'transparent',
       }}
