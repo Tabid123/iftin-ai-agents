@@ -7,7 +7,10 @@
   },
   "plugins": {
     "SystemBars": {
-      "insetsHandling": "disable"
+      "insetsHandling": "css",
+      "style": "LIGHT",
+      "hidden": false,
+      "animation": "NONE"
     },
     "EdgeToEdge": {
       "backgroundColor": "#0F4C81",

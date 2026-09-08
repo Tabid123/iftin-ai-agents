@@ -5,6 +5,7 @@
 :root {
   /* Default 0px - JS will set env() for iOS/Web only */
   --effective-safe-area-top: 0px;
+  --effective-safe-area-bottom: 0px;
 }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 

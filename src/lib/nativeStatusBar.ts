@@ -27,14 +27,11 @@ export const BUILD_BAR_COLOR: string | null =
   (import.meta.env.VITE_SPLASH_COLOR as string | undefined)?.trim() || null;
 
 let appliedHex: string | null = null;
-let edgeLayoutInitialized = false;
 let queue: Promise<unknown> = Promise.resolve();
 
 /**
- * Applies the tenant build color without changing WebView inset ownership.
- * Capawesome EdgeToEdge owns Android insets; Capacitor SystemBars inset handling
- * is disabled in capacitor.config.json. Do not call StatusBar.setOverlaysWebView
- * here — that would add a second native layout adjustment.
+ * Applies the tenant build color. Capacitor SystemBars supplies measured CSS
+ * insets; this function only paints the native status/navigation bar areas.
  */
 export async function applyNativeStatusBarColor(color: string, force = false) {
   if (!Capacitor.isNativePlatform()) return;
@@ -50,10 +47,6 @@ export async function applyNativeStatusBarColor(color: string, force = false) {
 async function applyNow(hex: string) {
   try {
     const { EdgeToEdge } = await import('@capawesome/capacitor-android-edge-to-edge-support');
-    if (!edgeLayoutInitialized) {
-      edgeLayoutInitialized = true;
-      await EdgeToEdge.disable();
-    }
     await EdgeToEdge.setStatusBarColor({ color: hex });
     await EdgeToEdge.setNavigationBarColor({ color: hex });
   } catch {

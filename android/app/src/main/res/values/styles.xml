@@ -16,6 +16,9 @@
         <item name="android:windowBackground">@color/splash_background</item>
         <item name="android:statusBarColor">@color/status_bar_background</item>
         <item name="android:navigationBarColor">@color/navigation_bar_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <!-- Text selection popup (Cut / Copy / Paste / Select all): use a light
              surface instead of inheriting colorPrimaryDark. -->
         <item name="windowActionModeOverlay">true</item>
