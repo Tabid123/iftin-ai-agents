@@ -32,11 +32,15 @@ class UssdAccessibilityService : AccessibilityService() {
             .orEmpty()
         if (!UssdMenuFlow.isUssdDialogText(dialogText)) return
 
-        // Discovery stops at the package menu and optionally keeps the carrier session open.
+        // Discovery stops at the package menu. When hold=true we deliberately disable
+        // automation but leave the carrier dialog untouched; DeliveryService will re-arm
+        // the flow only after claim_discovery_selection returns the chosen row.
         if (UssdMenuFlow.isDiscoveryMode(this) && UssdMenuFlow.isPackageMenuDialog(dialogText)) {
             UssdMenuFlow.saveDiscoveryMenu(this, dialogText)
             DeliveryService.signalDiscoveryCaptured(this, dialogText)
-            if (!UssdMenuFlow.isHoldSession(this)) {
+            if (UssdMenuFlow.isHoldSession(this)) {
+                UssdMenuFlow.deactivate(this)
+            } else {
                 clickCancel(roots)
                 UssdMenuFlow.finish(this)
             }
@@ -67,7 +71,6 @@ class UssdAccessibilityService : AccessibilityService() {
             return
         }
 
-        // No known menu step remains: classify final carrier response.
         val lower = dialogText.lowercase()
         val success = listOf(
             "success", "successful", "ugu shubtay", "u shubtay", "haraagaagu waa",
@@ -108,7 +111,6 @@ class UssdAccessibilityService : AccessibilityService() {
         val set = editable.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
         if (!set) return false
 
-        // Give the phone dialog a moment to observe ACTION_SET_TEXT before Send.
         editable.postDelayedCompat(120) {
             roots.asSequence().mapNotNull { findButton(it, listOf("send", "dir", "ok")) }.firstOrNull()
                 ?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
@@ -118,18 +120,14 @@ class UssdAccessibilityService : AccessibilityService() {
 
     private fun findEditable(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
         if (root.isEditable || root.className?.toString()?.contains("EditText") == true) return root
-        for (i in 0 until root.childCount) {
-            findEditable(root.getChild(i))?.let { return it }
-        }
+        for (i in 0 until root.childCount) findEditable(root.getChild(i))?.let { return it }
         return null
     }
 
     private fun findButton(root: AccessibilityNodeInfo, words: List<String>): AccessibilityNodeInfo? {
         val text = "${root.text.orEmpty()} ${root.contentDescription.orEmpty()}".lowercase()
         if (root.isClickable && words.any(text::contains)) return root
-        for (i in 0 until root.childCount) {
-            findButton(root.getChild(i), words)?.let { return it }
-        }
+        for (i in 0 until root.childCount) findButton(root.getChild(i), words)?.let { return it }
         return null
     }
 
