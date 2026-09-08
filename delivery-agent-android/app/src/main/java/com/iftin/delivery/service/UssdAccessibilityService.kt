@@ -125,7 +125,7 @@ class UssdAccessibilityService : AccessibilityService() {
     }
 
     private fun findButton(root: AccessibilityNodeInfo, words: List<String>): AccessibilityNodeInfo? {
-        val text = "${root.text.orEmpty()} ${root.contentDescription.orEmpty()}".lowercase()
+        val text = "${root.text?.toString().orEmpty()} ${root.contentDescription?.toString().orEmpty()}".lowercase()
         if (root.isClickable && words.any(text::contains)) return root
         for (i in 0 until root.childCount) findButton(root.getChild(i), words)?.let { return it }
         return null
