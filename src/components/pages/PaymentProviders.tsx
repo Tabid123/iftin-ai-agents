@@ -58,6 +58,9 @@ const PaymentProviders = () => {
   const packageData = location.state?.package;
   const providerName = location.state?.providerName;
   const categoryName = location.state?.categoryName || '';
+  const discoveryId = location.state?.discoveryId || '';
+  const discoveryLabel = location.state?.discoveryLabel || '';
+  const discoveryReceiverPhone = location.state?.discoveryReceiverPhone || '';
 
   const isADSLPackage = (catName: string) => catName?.toUpperCase().includes('ADSL');
   const isADSL = isADSLPackage(categoryName);
@@ -223,6 +226,13 @@ const PaymentProviders = () => {
   }, []);
 
   React.useEffect(() => {
+    if (discoveryId && discoveryReceiverPhone) {
+      const clean = String(discoveryReceiverPhone).replace(/\D/g, '').replace(/^252/, '').replace(/^0/, '').slice(-9);
+      setReceiverProviderPrefix(clean.slice(0, 2));
+      setReceiverNumber(clean);
+      setReceiverNumberError('');
+      return;
+    }
     if (!providerName) return;
     if (isADSL) {
       setReceiverProviderPrefix('1');
@@ -232,7 +242,7 @@ const PaymentProviders = () => {
       setReceiverProviderPrefix(prefix);
       setReceiverNumber(prefix);
     }
-  }, [providerName, isADSL, getProviderPrefix]);
+  }, [providerName, isADSL, getProviderPrefix, discoveryId, discoveryReceiverPhone]);
 
   const offlineSenderRef = React.useRef(false);
 
@@ -259,6 +269,7 @@ const PaymentProviders = () => {
   }, [paymentProviders, selectedProvider]);
 
   const handleReceiverNumberChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (discoveryId) return;
     const value = e.target.value.replace(/\D/g, '');
     if (isADSL) {
       if (value.length <= 7) {
@@ -274,7 +285,7 @@ const PaymentProviders = () => {
         ? `Fadlan gali lambarka shirkada ${providerName} (${formatPrefixes(allowed)})`
         : '');
     }
-  }, [providerName, isADSL]);
+  }, [providerName, isADSL, discoveryId]);
 
   const handleProceedToPayment = useCallback(() => {
     if (selectedProvider) setShowPaymentModal(true);
@@ -382,7 +393,8 @@ const PaymentProviders = () => {
         ? paymentNumber.substring(4)
         : paymentNumber.startsWith('0') ? paymentNumber.substring(1) : paymentNumber;
 
-      try {
+      if (!discoveryId) {
+        try {
         const created = await createIftinIntent({
           receiver_phone: receiverNumber,
           sender_phone: cleanCustomerPaymentPhone,
@@ -425,6 +437,7 @@ const PaymentProviders = () => {
           return;
         }
       }
+      }
 
       const pendingPaymentData = {
         verified_phone: customerPhone,
@@ -434,18 +447,23 @@ const PaymentProviders = () => {
         package_id: packageData?.id,
         payment_provider: selectedPaymentProvider?.provider_name || '',
         expected_amount: parseFloat(amount),
+        discovery_id: discoveryId || null,
+        discovery_label: discoveryLabel || null,
         status: 'pending'
       };
 
       const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-      const { data: existingPending } = await supabase
+      let existingPendingQuery: any = supabase
         .from('pending_online_payments')
         .select('id')
         .eq('sender_phone', cleanCustomerPaymentPhone)
+        .eq('receiver_phone', receiverNumber)
+        .eq('package_id', packageData?.id)
         .eq('expected_amount', parseFloat(amount))
         .eq('status', 'pending')
-        .gte('created_at', tenMinutesAgo)
-        .limit(1);
+        .gte('created_at', tenMinutesAgo);
+      if (discoveryId) existingPendingQuery = existingPendingQuery.eq('discovery_id', discoveryId);
+      const { data: existingPending } = await existingPendingQuery.limit(1);
 
       if (!(existingPending && existingPending.length > 0)) {
         let insertSuccess = false;
@@ -536,7 +554,7 @@ const PaymentProviders = () => {
     {showPaymentModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"><div className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4">
       <h3 className="text-lg font-medium mb-4 text-center">{paymentProviders.find(p => p.id === selectedProvider)?.provider_name || 'Faahfaahinta lacag bixinta'}</h3>
       <div className="space-y-2"><Label htmlFor="payment-number" className="text-sm font-medium text-foreground">Gali Lambarka aad lacagta ka direyso</Label><div className="flex items-center gap-2"><div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-muted"><img src={somaliaFlag} alt="Somalia" className="w-6 h-4" width={24} height={16} /><span className="text-sm">+252</span></div><Input id="payment-number" type="tel" inputMode="numeric" pattern="[0-9]*" autoComplete="tel-national" enterKeyHint="next" placeholder={paymentProviderPrefix ? `${paymentProviderPrefix}XXXXXXX` : 'XXXXXXXXX'} value={paymentNumber} onChange={handlePaymentNumberChange} maxLength={9} className={`flex-1 focus:border-[#0099ff] focus:ring-[#0099ff] ${paymentNumberError ? 'border-red-500' : ''}`} /></div>{paymentNumberError && <p className="text-sm text-red-500 font-medium">{paymentNumberError}</p>}</div>
-      <div className="space-y-2"><Label htmlFor="receiver-number" className="text-sm font-medium text-foreground">{isADSL ? 'Gali Lambarka ADSL-ka (7 lambar bilaabanaya 1)' : 'Gali Lambarka xirmada lagu shubaayo'}</Label><div className="flex items-center gap-2"><div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-muted"><img src={somaliaFlag} alt="Somalia" className="w-6 h-4" width={24} height={16} /><span className="text-sm">+252</span></div><Input id="receiver-number" type="tel" inputMode="numeric" pattern="[0-9]*" autoComplete="tel-national" enterKeyHint="done" placeholder={isADSL ? '1XXXXXX' : (receiverProviderPrefix ? `${receiverProviderPrefix}XXXXXXX` : 'XXXXXXXXX')} value={receiverNumber} onChange={handleReceiverNumberChange} maxLength={isADSL ? 7 : 9} className={`flex-1 focus:border-[#0099ff] focus:ring-[#0099ff] ${receiverNumberError ? 'border-red-500' : ''}`} /></div>{receiverNumberError && <p className="text-sm text-red-500 font-medium">{receiverNumberError}</p>}{isADSL && <p className="text-xs text-muted-foreground">ADSL: 7 lambar, tusaale: 1234567</p>}</div>
+      <div className="space-y-2"><Label htmlFor="receiver-number" className="text-sm font-medium text-foreground">{isADSL ? 'Gali Lambarka ADSL-ka (7 lambar bilaabanaya 1)' : 'Gali Lambarka xirmada lagu shubaayo'}</Label><div className="flex items-center gap-2"><div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-muted"><img src={somaliaFlag} alt="Somalia" className="w-6 h-4" width={24} height={16} /><span className="text-sm">+252</span></div><Input id="receiver-number" type="tel" inputMode="numeric" pattern="[0-9]*" autoComplete="tel-national" enterKeyHint="done" placeholder={isADSL ? '1XXXXXX' : (receiverProviderPrefix ? `${receiverProviderPrefix}XXXXXXX` : 'XXXXXXXXX')} value={receiverNumber} onChange={handleReceiverNumberChange} readOnly={!!discoveryId} maxLength={isADSL ? 7 : 9} className={`flex-1 focus:border-[#0099ff] focus:ring-[#0099ff] ${receiverNumberError ? 'border-red-500' : ''}`} /></div>{receiverNumberError && <p className="text-sm text-red-500 font-medium">{receiverNumberError}</p>}{isADSL && <p className="text-xs text-muted-foreground">ADSL: 7 lambar, tusaale: 1234567</p>}</div>
       <div className="flex gap-2 pt-4"><Button variant="outline" onClick={() => setShowPaymentModal(false)} className="flex-1">Cancel</Button><Button onClick={handleShowConfirmation} className="flex-1 bg-primary text-white">Pay Now</Button></div>
     </div></div>}
 

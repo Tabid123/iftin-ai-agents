@@ -288,11 +288,13 @@ function normalizePhoneForProvider(phone: string): string {
 }
 
 function sanitizeUssdCode(ussd: string): string {
-  let cleaned = (ussd || '').replace(/\s+/g, '').trim();
+  const [rawDial, ...metadataParts] = (ussd || '').split('|');
+  let cleaned = (rawDial || '').replace(/\s+/g, '').trim();
   cleaned = cleaned.replace(/^(\*\d+?)(\d{9})(\*)/, '$1*$2$3');
   cleaned = cleaned.replace(/\*{2,}/g, '*');
   if (cleaned && !cleaned.endsWith('#')) cleaned += '#';
-  return cleaned;
+  const metadata = metadataParts.join('|').trim();
+  return metadata ? `${cleaned}|${metadata}` : cleaned;
 }
 
 function buildUssdCode(template: string, receiverPhone: string, costPrice: number, simPassword: string, packageCode = ''): string {
@@ -1227,10 +1229,18 @@ serve(async (req) => {
         await supabase.from('payment_receipts').update({
           status: 'matched',
           matched_order_id: newOrder.id,
-          matching_strategy: 'pending_online_payment',
+          matching_strategy: (newOrder as any).discovery_id ? 'pending_online_discovery' : 'pending_online_payment',
           processed_at: new Date().toISOString(),
           admin_notes: `Route: ${route} | ${packageData?.package_name} for ${pendingOnline.receiver_phone} | SIM: ${resolvedSimNumber}`
         }).eq('id', receipt.id);
+
+        if ((newOrder as any).discovery_id) {
+          console.log('📡 *212* discovery order attached; held-session resume/redial is handled by DB trigger:', (newOrder as any).discovery_id);
+          return new Response(
+            JSON.stringify({ success: true, message: 'Pending online discovery payment matched', order_id: newOrder.id, matching_strategy: 'pending_online_discovery', route }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        }
 
         const instruction = await getDeliveryInstruction(supabase, pendingOnline.provider_id, pendingOnline.package_id, packageData?.category_id);
 

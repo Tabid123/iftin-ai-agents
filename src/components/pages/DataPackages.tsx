@@ -14,6 +14,7 @@ import { logScreenView } from '@/services/firebase';
 import { useConnectivity } from '@/contexts/ConnectivityContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { buildPaymentUssd, formatUssdAmount, fetchIftinCatalog, hasCatalog, isOrderingBlocked, mapProviders, mapCategories, mapPackages, mapPaymentProviders } from '@/lib/iftinCatalog';
+import UssdDiscoveryDialog, { type DiscoveryChoice } from '@/components/UssdDiscoveryDialog';
 
 
 interface Category {
@@ -62,6 +63,7 @@ const DataPackages = () => {
   const [showConfirmationScreen, setShowConfirmationScreen] = useState(false);
   const [selectedPackageData, setSelectedPackageData] = useState<any>(null);
   const [ussdCopied, setUssdCopied] = useState(false);
+  const [discoveryRootPackage, setDiscoveryRootPackage] = useState<any | null>(null);
   const { queueOrder } = useOfflineSync();
   const { toast } = useToast();
   
@@ -230,6 +232,39 @@ const DataPackages = () => {
     placeholderData: () => getCachedPackages(),
   });
 
+  const resolvedProviderId = (() => {
+    if (provider?.includes('-')) return provider;
+    const fromPackages = packages.find((p: any) => p?.provider_id)?.provider_id;
+    if (fromPackages) return fromPackages;
+    try {
+      const cachedProviders = JSON.parse(localStorage.getItem('offline_providers') || '[]');
+      return cachedProviders.find((p: any) =>
+        p.id === provider || p.provider_name?.toLowerCase() === provider?.toLowerCase()
+      )?.id || '';
+    } catch {
+      return '';
+    }
+  })();
+
+  const { data: discoveryRootIds = [] } = useQuery({
+    queryKey: ['discoveryRootIds', resolvedProviderId],
+    queryFn: async () => {
+      if (!resolvedProviderId || isReallyOnline !== true) return [];
+      const { data, error } = await (supabase as any).rpc('get_discovery_root_ids', {
+        p_provider_id: resolvedProviderId,
+      });
+      if (error) {
+        console.warn('Discovery roots unavailable:', error.message);
+        return [];
+      }
+      return (data || []).map((row: any) => String(row.package_id));
+    },
+    enabled: !!resolvedProviderId && isReallyOnline === true,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    initialData: [],
+  });
+
   const { data: promotionalTextData } = useQuery({
     queryKey: ['promotionalText', provider],
     queryFn: async () => {
@@ -320,7 +355,6 @@ const DataPackages = () => {
   };
 
   const handlePurchase = (packageData: any) => {
-    // Iftin credit limit reached → ordering is blocked in the UI
     if (isOrderingBlocked()) {
       toast({
         title: 'Dalab lama sameyn karo',
@@ -329,24 +363,52 @@ const DataPackages = () => {
       });
       return;
     }
-    // Get category name for this package
+
+    const isDiscoveryRoot = discoveryRootIds.includes(String(packageData.id));
+    if (isDiscoveryRoot) {
+      if (isReallyOnline !== true || isOffline) {
+        toast({
+          title: 'Internet ayaa loo baahan yahay',
+          description: 'Xirmadan *212* waxay u baahan tahay raadinta live-ka ah ka hor lacag bixinta.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      const rawPackage = packages.find((p: any) => p.id === packageData.id);
+      setDiscoveryRootPackage({ ...rawPackage, ...packageData, providerId: packageData.providerId || rawPackage?.provider_id || resolvedProviderId });
+      return;
+    }
+
     const packageCategory = categories.find(c => c.id === packageData.categoryId);
     const categoryName = packageCategory?.category_name || '';
-    
-    // If offline mode, show confirmation directly
     if (isOffline) {
       setSelectedPackageData(packageData);
       setShowConfirmationScreen(true);
     } else {
-      // Online mode: go to payment providers page
-      navigate(`/payment/${provider}`, { 
-        state: { 
-          package: packageData, 
-          providerName,
-          categoryName // Pass category name for ADSL detection
-        } 
-      });
+      navigate(`/payment/${provider}`, { state: { package: packageData, providerName, categoryName } });
     }
+  };
+
+  const handleDiscoverySelect = (choice: DiscoveryChoice, discoveredReceiver: string, discoveryId: string) => {
+    if (!discoveryRootPackage || choice.selling_price == null) return;
+    const packageCategory = categories.find(c => c.id === discoveryRootPackage.categoryId);
+    const categoryName = packageCategory?.category_name || '';
+    const carrierLabel = choice.carrier_label || choice.label;
+    const dynamicPackage = {
+      id: discoveryRootPackage.id,
+      providerId: discoveryRootPackage.providerId || discoveryRootPackage.provider_id || resolvedProviderId,
+      categoryId: discoveryRootPackage.categoryId || discoveryRootPackage.category_id || null,
+      name: choice.label,
+      price: `$${Number(choice.selling_price).toFixed(2)}`,
+      costPrice: Number(discoveryRootPackage.costPrice ?? discoveryRootPackage.cost_price ?? 0),
+      data: choice.info_line1 || choice.label,
+      validity: choice.info_line2 || choice.label,
+      ussdCode: discoveryRootPackage.ussdCode || discoveryRootPackage.ussd_code || null,
+    };
+    setDiscoveryRootPackage(null);
+    navigate(`/payment/${provider}`, {
+      state: { package: dynamicPackage, providerName, categoryName, discoveryId, discoveryLabel: carrierLabel, discoveryReceiverPhone: discoveredReceiver, discoveryRootId: discoveryRootPackage.id },
+    });
   };
 
   const handleOfflineConfirmPurchase = () => {
@@ -573,7 +635,7 @@ const DataPackages = () => {
             <Button 
               onClick={() => handlePurchase({ 
                 id: pkg.id,
-                providerId: provider,
+                providerId: pkg.provider_id || resolvedProviderId || provider,
                 categoryId: pkg.category_id,
                 name: pkg.package_name, 
                 price: `$${formatPrice(pkg.selling_price)}`,
@@ -590,6 +652,14 @@ const DataPackages = () => {
           </div>
         )})}
       </div>
+
+      <UssdDiscoveryDialog
+        open={!!discoveryRootPackage}
+        rootPackage={discoveryRootPackage}
+        providerName={providerName}
+        onClose={() => setDiscoveryRootPackage(null)}
+        onSelect={handleDiscoverySelect}
+      />
 
       {/* Offline Confirmation Screen */}
       {showConfirmationScreen && isOffline && (

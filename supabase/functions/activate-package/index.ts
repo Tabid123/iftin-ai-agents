@@ -229,13 +229,15 @@ serve(async (req) => {
       };
 
       const sanitizeUssdCode = (ussdCode: string) => {
-        let cleaned = (ussdCode || '').replace(/\s+/g, '').trim();
+        const [rawDial, ...metadataParts] = (ussdCode || '').split('|');
+        let cleaned = (rawDial || '').replace(/\s+/g, '').trim();
         cleaned = cleaned.replace(/^(\*\d+?)(\d{9})(\*)/, '$1*$2$3');
         cleaned = cleaned.replace(/\*{2,}/g, '*');
         if (cleaned && !cleaned.endsWith('#')) {
           cleaned += '#';
         }
-        return cleaned;
+        const metadata = metadataParts.join('|').trim();
+        return metadata ? `${cleaned}|${metadata}` : cleaned;
       };
 
       // Normalize phone to 9 digits - remove 252 prefix (ALL providers reject 252!)
