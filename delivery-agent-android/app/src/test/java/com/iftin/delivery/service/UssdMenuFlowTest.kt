@@ -9,10 +9,10 @@ import org.junit.Test
 class UssdMenuFlowTest {
     private val menu = """
         --Maamuus--
-        1. $0.15=Internet aan xadidnayn, 3 Saac
-        2. $0.5=Internet aan xadidnayn,20 Saac
-        3. $0.1=Internet aan xadidnayn, 1 Saac
-        4. $0.25=Internet aan xadidnayn, 8 Saac
+        1. ${'$'}0.15=Internet aan xadidnayn, 3 Saac
+        2. ${'$'}0.5=Internet aan xadidnayn,20 Saac
+        3. ${'$'}0.1=Internet aan xadidnayn, 1 Saac
+        4. ${'$'}0.25=Internet aan xadidnayn, 8 Saac
     """.trimIndent()
 
     @Test fun exactDurationsNeverCrossMatch() {
@@ -23,7 +23,7 @@ class UssdMenuFlowTest {
     }
 
     @Test fun pipeFlattenedAccessibilityRowsAreParsed() {
-        val flat = "--Maamuus-- | 1. $0.15=Internet aan xadidnayn, 3 Saac | 2. $0.25=Internet aan xadidnayn, 8 Saac | Cancel | Send"
+        val flat = "--Maamuus-- | 1. ${'$'}0.15=Internet aan xadidnayn, 3 Saac | 2. ${'$'}0.25=Internet aan xadidnayn, 8 Saac | Cancel | Send"
         assertEquals(2, UssdMenuFlow.findNumberForKeywords(flat, listOf("Internet aan xadidnayn 8 Saac")))
         assertTrue(UssdMenuFlow.isPackageMenuDialog(flat))
     }
