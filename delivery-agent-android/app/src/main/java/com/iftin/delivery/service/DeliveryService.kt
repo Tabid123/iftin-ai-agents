@@ -123,8 +123,6 @@ class DeliveryService : Service() {
             return
         }
 
-        // Any active USSD send is given a hard upper bound; after dispatch a timeout is
-        // reported to the server, which already uses verification_required/no-resend rules.
         if (mode == ActiveMode.QUEUE || mode == ActiveMode.SELECTION) {
             if (actionStartedAt > 0 && System.currentTimeMillis() - actionStartedAt > 90_000) {
                 when (mode) {
@@ -142,7 +140,6 @@ class DeliveryService : Service() {
             return
         }
 
-        // Held *212* sessions have first priority because the carrier dialog is already open.
         heldDiscoveryId?.let { heldId ->
             val selection = api.claimDiscoverySelection(deviceId)
             if (selection != null && selection.id == heldId) {
@@ -154,9 +151,8 @@ class DeliveryService : Service() {
                 return
             }
 
-            // Riyokaab behavior: don't let a stale held dialog block the discovery queue forever.
             val holdAge = System.currentTimeMillis() - holdStartedAt
-            if (holdAge > 8 * 60_000L || (holdAge > 15_000L && api.hasWaitingDiscovery())) {
+            if (holdAge > 8 * 60_000L || (holdAge > 15_000L && api.hasWaitingDiscovery(deviceId))) {
                 api.discoverySessionLost(heldId)
                 heldDiscoveryId = null
                 UssdMenuFlow.clearDiscovery(this)
@@ -166,14 +162,13 @@ class DeliveryService : Service() {
             }
         }
 
-        // Discovery is checked before ordinary delivery so *212* search feels interactive.
         val discovery = api.claimDiscovery(deviceId)
         if (discovery != null) {
             currentDiscovery = discovery
             mode = ActiveMode.DISCOVERY
             actionStartedAt = System.currentTimeMillis()
             UssdMenuFlow.activateDiscovery(this, discovery.menu1Label, "*212*", hold = true)
-            if (!dial(discovery.ussdCode, simSlot = 0)) {
+            if (!dial(discovery.ussdCode, discovery.simSlot)) {
                 api.failDiscovery(discovery.id, "call_permission_or_sim_error")
                 resetActive()
             }
@@ -204,7 +199,6 @@ class DeliveryService : Service() {
             )
         }
 
-        // One-send lock is written before the phone call leaves this process.
         if (!api.markDispatched(queue.id, deviceId)) {
             resetActive()
             delay(1000)
