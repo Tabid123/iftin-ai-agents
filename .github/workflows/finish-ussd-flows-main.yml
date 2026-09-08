@@ -17,18 +17,23 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
+          bun-version: latest
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: Apply final integration
         run: python3 scripts/finish_ussd_flows_main.py
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: bun install --frozen-lockfile
 
       - name: Build storefront
-        run: npm run build
+        run: bun run build
 
       - name: Test delivery agent
         working-directory: delivery-agent-android
