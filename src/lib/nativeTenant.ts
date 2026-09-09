@@ -10,10 +10,44 @@
 
 export const TENANT_STORAGE_KEY = "najax.tenant_slug";
 
+/**
+ * Detect the native shell. Shared by every tenant build.
+ *
+ * A single signal is not reliable: on some Android WebViews the Capacitor
+ * global is injected late, so `isNativePlatform()` can be false during the
+ * first render. We therefore also accept the native origins/user agent, and
+ * treat "this bundle was built for one tenant" as native-ish, because only
+ * per-tenant APK builds carry VITE_TENANT_SLUG.
+ */
 export function isNativeApp(): boolean {
   if (typeof window === "undefined") return false;
-  const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
-  return Boolean(cap?.isNativePlatform?.());
+
+  const cap = (window as unknown as {
+    Capacitor?: { isNativePlatform?: () => boolean; platform?: string };
+  }).Capacitor;
+  if (cap?.isNativePlatform?.()) return true;
+  if (cap?.platform && cap.platform !== "web") return true;
+
+  try {
+    const protocol = window.location.protocol;
+    if (protocol === "capacitor:" || protocol === "ionic:" || protocol === "file:") return true;
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const ua = navigator.userAgent || "";
+    if (/\b(Capacitor|Cordova)\b/i.test(ua)) return true;
+    // Per-tenant APKs are served from localhost inside the WebView. A browser
+    // dev session also uses localhost, so require the baked-in tenant slug.
+    const host = window.location.hostname;
+    const isLocalHost = host === "localhost" || host === "127.0.0.1";
+    if (isLocalHost && buildTenantSlug() && /\bwv\b|; wv|Android/i.test(ua)) return true;
+  } catch {
+    /* ignore */
+  }
+
+  return false;
 }
 
 /** Slug baked into this build (per-tenant APKs produced by CI). */
