@@ -286,16 +286,14 @@ const CategorySelection = () => {
         }}
       >
         <div className="text-white p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <ArrowLeft className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity text-accent" onClick={() => navigate('/providers')} aria-label="Go back" />
-              <h1 className="text-lg font-bold text-accent">{brandName} - {providerName}</h1>
+          <div className="flex w-full justify-between items-center gap-3">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <ArrowLeft className="w-6 h-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity text-accent" onClick={() => navigate('/providers')} aria-label="Go back" />
+              <h1 className="text-lg font-bold text-accent truncate">{brandName} - {providerName}</h1>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="flex gap-3 ml-2">
-                <Phone className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(support.telHref, '_self')} />
-                <MessageCircle className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(support.whatsappHref, '_blank')} />
-              </div>
+            <div className="flex items-center gap-3 shrink-0 ml-auto">
+              <Phone className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(support.telHref, '_self')} />
+              <MessageCircle className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(support.whatsappHref, '_blank')} />
             </div>
           </div>
         </div>
