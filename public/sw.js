@@ -80,19 +80,18 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.tsx')
   ) return;
 
-  // CACHE-FIRST for Supabase Storage images
+  // NETWORK-FIRST for Supabase Storage images. Admins may replace an image at
+  // the same object URL; cache-first would keep showing the deleted artwork.
+  // The saved response remains the offline fallback.
   if (url.hostname.includes('supabase') && url.pathname.includes('/storage/')) {
     event.respondWith(
-      caches.match(request).then(cachedResponse => {
-        if (cachedResponse) return cachedResponse;
-        return fetch(request).then(response => {
+      fetch(request, { cache: 'no-store' }).then(response => {
           if (response && response.ok) {
             const clone = response.clone();
             caches.open(getCacheName(IMAGE_CACHE_PREFIX)).then(cache => cache.put(request, clone));
           }
           return response;
-        }).catch(() => new Response(null, { status: 404 }));
-      })
+        }).catch(() => caches.match(request).then(cachedResponse => cachedResponse || new Response(null, { status: 404 })))
     );
     return;
   }

@@ -24,6 +24,19 @@ interface Category {
   created_at?: string;
   updated_at?: string;
 }
+
+const versionedCategoryImage = (category: Category) => {
+  const source = category.category_image?.trim();
+  if (!source || !category.updated_at || source.startsWith('data:') || source.startsWith('blob:')) return source;
+  try {
+    const url = new URL(source);
+    url.searchParams.set('updated', category.updated_at);
+    return url.toString();
+  } catch {
+    return source;
+  }
+};
+
 const CategorySelection = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -214,7 +227,7 @@ const CategorySelection = () => {
     if (!categories.length) return;
     const localized = categories.map((category) => ({
       ...category,
-      category_image: localizeImage('category', category.category_image, category.category_name, providerName),
+      category_image: localizeImage('category', versionedCategoryImage(category), category.category_name, providerName),
     }));
     try {
       // Keep only categories that still belong to other providers, then refresh
@@ -290,13 +303,11 @@ const CategorySelection = () => {
           boxSizing: 'border-box' as const
         }}
       >
-        <div className="text-white p-4">
-          <div className="flex w-full justify-between items-center gap-3">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <ArrowLeft className="w-6 h-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity text-accent" onClick={() => navigate('/providers')} aria-label="Go back" />
-              <h1 className="text-lg font-bold text-accent truncate">{brandName} - {providerName}</h1>
-            </div>
-            <div className="flex items-center gap-3 shrink-0 ml-auto">
+          <div className="text-white px-4">
+           <div className="relative flex min-h-[56px] w-full items-center justify-between">
+             <ArrowLeft className="w-6 h-6 shrink-0 cursor-pointer hover:opacity-80 transition-opacity text-accent" onClick={() => navigate('/providers')} aria-label="Go back" />
+             <h1 className="pointer-events-none absolute inset-x-20 truncate text-center text-lg font-bold text-accent">{brandName} - {providerName}</h1>
+             <div className="flex items-center gap-3 shrink-0 ml-auto">
               <Phone className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(support.telHref, '_self')} />
               <MessageCircle className="w-6 h-6 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(support.whatsappHref, '_blank')} />
             </div>
@@ -337,7 +348,7 @@ const CategorySelection = () => {
                     style={{ animationDelay: `${index * 100}ms`, animationFillMode: 'forwards' }}
                   >
                     <CachedImage
-                      src={category.category_image}
+                      src={versionedCategoryImage(category)}
                       alt={category.category_name}
                       kind="category"
                       bundledName={category.category_name}

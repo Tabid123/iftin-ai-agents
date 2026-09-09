@@ -182,13 +182,12 @@ export default function MaamuusFlow({ roots, providerName, brandName, onBack, on
 
   const header = (title: string, onBackClick: () => void) => (
     <div className="bg-primary text-white px-4 pb-4" style={{ paddingTop: 'calc(1rem + var(--effective-safe-area-top, 0px))' }}>
-      <div className="flex items-center min-h-[56px]">
+      <div className="relative flex items-center min-h-[56px]">
         <button onClick={onBackClick} className="p-2 -ml-2 shrink-0" aria-label="Dib u noqo"><ArrowLeft className="w-5 h-5" /></button>
-        <div className="flex-1 min-w-0 text-center">
+        <div className="pointer-events-none absolute inset-x-10 min-w-0 text-center">
           <h1 className="text-base font-bold truncate">{title}</h1>
           <p className="text-white/80 text-sm truncate">{providerName}</p>
         </div>
-        <div className="w-9 shrink-0" aria-hidden="true" />
       </div>
     </div>
   );

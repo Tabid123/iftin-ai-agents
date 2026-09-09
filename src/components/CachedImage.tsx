@@ -14,15 +14,16 @@ type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
 };
 
 /**
- * <img> that prefers a locally cached data URL, then the network image, then a
- * logo bundled in the build — so logos render online/offline without a visible
- * source swap after first paint.
+ * <img> that prefers the exact admin-provided image (or its cached copy), then
+ * falls back to artwork bundled in the app for offline use.
  */
 const CachedImage = ({ src, alt, bundledName, kind = 'provider', providerName, fallback, ...rest }: Props) => {
   const skipBundled = bundledName === null;
   const imageName = bundledName ?? (typeof alt === 'string' ? alt : null);
   const bundled = skipBundled ? null : getLocalImage(kind, imageName, src, providerName);
-  const pick = (s: string | null | undefined) => bundled ?? getCachedImage(s) ?? s ?? null;
+  // A configured image must always win. Previously `bundled` came first, so a
+  // category called "Anfac" could never display the image uploaded by its admin.
+  const pick = (s: string | null | undefined) => getCachedImage(s) ?? s ?? bundled ?? null;
 
   const [resolved, setResolved] = useState<string | null>(() => pick(src));
   const [failed, setFailed] = useState(false);
@@ -34,7 +35,7 @@ const CachedImage = ({ src, alt, bundledName, kind = 'provider', providerName, f
     // Warm the cache for the NEXT mount, but never replace the source of an
     // already-painted image. Replacing remote URL -> data URL after paint made
     // cards/banner artwork visibly blink during navigation.
-    if (!bundled && src && !getCachedImage(src)) {
+    if (src && !getCachedImage(src)) {
       void cacheImage(src);
     }
   }, [src, bundled]);
