@@ -533,7 +533,7 @@ const DataPackages = () => {
         className={`${getBrandBackgroundClass(providerName)} text-white py-4 px-4`}
         style={{ paddingTop: 'calc(1rem + var(--effective-safe-area-top, 0px))', boxSizing: 'border-box' as const }}
       >
-        <div className="relative flex min-h-[56px] items-center">
+        <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2 min-h-[56px]">
           <Button
             variant="ghost"
             size="icon"
@@ -542,6 +542,15 @@ const DataPackages = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
+          <div className="min-w-0 text-center">
+            <h1 className="text-lg font-bold truncate">
+              {getSelectedCategoryName() || location.state?.categoryName || categoryIntent?.name || brandName}
+            </h1>
+            {providerName && providerName !== 'Provider' && (
+              <p className="text-white/80 text-sm truncate">{providerName}</p>
+            )}
+          </div>
+          <div className="w-10" />
         </div>
       </div>
 
