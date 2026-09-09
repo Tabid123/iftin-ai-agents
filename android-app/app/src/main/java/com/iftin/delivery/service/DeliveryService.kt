@@ -130,7 +130,7 @@ class DeliveryService : Service() {
                         api.reportStatus(it.id, deviceId, "timeout", null, "USSD response timeout")
                     }
                     ActiveMode.SELECTION -> currentSelection?.let {
-                        api.completeDiscoverySelection(it.id, false, "USSD response timeout")
+                        api.completeDiscoverySelection(deviceId, it.id, false, "USSD response timeout")
                     }
                     else -> Unit
                 }
@@ -153,7 +153,7 @@ class DeliveryService : Service() {
 
             val holdAge = System.currentTimeMillis() - holdStartedAt
             if (holdAge > 8 * 60_000L || (holdAge > 15_000L && api.hasWaitingDiscovery(deviceId))) {
-                api.discoverySessionLost(heldId)
+                api.discoverySessionLost(deviceId, heldId)
                 heldDiscoveryId = null
                 UssdMenuFlow.clearDiscovery(this)
             } else {
@@ -169,7 +169,7 @@ class DeliveryService : Service() {
             actionStartedAt = System.currentTimeMillis()
             UssdMenuFlow.activateDiscovery(this, discovery.menu1Label, "*212*", hold = true)
             if (!dial(discovery.ussdCode, discovery.simSlot)) {
-                api.failDiscovery(discovery.id, "call_permission_or_sim_error")
+                api.failDiscovery(deviceId, discovery.id, "call_permission_or_sim_error")
                 resetActive()
             }
             delay(1000)
@@ -225,10 +225,10 @@ class DeliveryService : Service() {
             try {
                 val items = UssdMenuFlow.parseMenuItems(rawMenu)
                 if (items.isEmpty()) {
-                    api.failDiscovery(discovery.id, "package_menu_empty")
+                    api.failDiscovery(deviceId, discovery.id, "package_menu_empty")
                     UssdMenuFlow.clearDiscovery(this@DeliveryService)
                 } else {
-                    api.completeDiscovery(discovery.id, rawMenu, items, hold = true)
+                    api.completeDiscovery(deviceId, discovery.id, rawMenu, items, hold = true)
                     heldDiscoveryId = discovery.id
                     holdStartedAt = System.currentTimeMillis()
                 }
@@ -254,7 +254,7 @@ class DeliveryService : Service() {
                         )
                     }
                     ActiveMode.SELECTION -> currentSelection?.let {
-                        api.completeDiscoverySelection(it.id, success, response)
+                        api.completeDiscoverySelection(deviceId, it.id, success, response)
                         heldDiscoveryId = null
                         UssdMenuFlow.clearDiscovery(this@DeliveryService)
                     }
