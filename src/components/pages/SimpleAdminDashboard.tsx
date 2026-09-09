@@ -474,7 +474,7 @@ const SimpleAdminDashboard = () => {
 
             {/* Stat Cards Grid */}
             <div className="grid grid-cols-2 gap-3">
-              {statCards.filter((_, i) => i !== 0).map((card, i) => (
+              {statCards.filter((c) => !(c as any).isWallet).map((card, i) => (
                 <div
                   key={i}
                   className={`rounded-lg overflow-hidden shadow-md cursor-pointer active:scale-95 transition-transform flex flex-col ${(card as any).fullWidth ? 'col-span-2' : ''}`}
