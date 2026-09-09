@@ -923,6 +923,21 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newCode, setNewCode] = useState({ provider_id: '', code_template: '', sim_password: '', notes: '', category_id: '', package_id: '' });
+  const [menuPath, setMenuPath] = useState<[string, string, string]>(['', '', '']);
+
+  // Flow presets-ka Android delivery app-ka taageero (menu-driven USSD).
+  const FLOW_PRESETS: { key: string; template: string }[] = [
+    { key: '870', template: '*870*{receiver_phone}#' },
+    { key: '866', template: '*866*{receiver_phone}#' },
+    { key: '101', template: '*101#' },
+    { key: '212', template: '*212*{receiver_phone}#' },
+  ];
+  const detectFlow = (tpl: string) => FLOW_PRESETS.find(f => (tpl || '').startsWith(`*${f.key}`))?.key || '';
+  const activeFlow = detectFlow(newCode.code_template);
+  const applyPreset = (key: string) => {
+    const preset = FLOW_PRESETS.find(f => f.key === key);
+    if (preset) setNewCode(p => ({ ...p, code_template: preset.template }));
+  };
 
   const loadCodes = useCallback(async () => {
     const [instRes, provRes, catRes, pkgRes] = await Promise.all([
