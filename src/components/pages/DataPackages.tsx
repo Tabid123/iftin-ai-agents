@@ -521,21 +521,22 @@ const DataPackages = () => {
         className={`${getBrandBackgroundClass(providerName)} text-white py-4 px-4`}
         style={{ paddingTop: 'calc(1rem + var(--effective-safe-area-top, 0px))', boxSizing: 'border-box' as const }}
       >
-        <div className="relative flex items-center min-h-[56px]">
+        <div className="flex items-center min-h-[56px]">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate(-1)}
-            className="text-white hover:bg-white/20 relative z-10"
+            className="text-white hover:bg-white/20 shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="absolute inset-x-0 text-center px-12">
+          <div className="flex-1 min-w-0 text-center">
             <h1 className="text-lg font-bold truncate">
               {selectedCategoryId ? getSelectedCategoryName() : brandName}
             </h1>
             <p className="text-white/80 text-sm truncate">{providerName}</p>
           </div>
+          <div className="w-10 shrink-0" aria-hidden="true" />
         </div>
       </div>
 
