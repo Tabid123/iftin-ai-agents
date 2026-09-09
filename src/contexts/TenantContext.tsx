@@ -232,14 +232,16 @@ function writeCachedTenant(slug: string, tenant: Tenant) {
 }
 
 /**
- * Native APKs already know which tenant they were built for. When the device
- * starts fully offline there may be no cached tenant row yet, so use safe
- * build-time identity instead of incorrectly showing "Workspace lama helin".
+ * Per-tenant builds already know which tenant they were built for. When the
+ * device starts fully offline there may be no cached tenant row yet, so use the
+ * safe build-time identity instead of incorrectly showing "Workspace lama
+ * helin". Shared by every tenant build; the check is only "was this bundle
+ * built for this slug", never a per-tenant special case.
  * The empty id is intentional: tenant-scoped network calls stay disabled until
  * the real row is resolved from Supabase.
  */
 function buildFallbackTenant(slug: string): Tenant | null {
-  if (!isNativeApp() || buildTenantSlug() !== slug) return null;
+  if (buildTenantSlug() !== slug) return null;
   const buildName = (import.meta.env.VITE_TENANT_NAME as string | undefined)?.trim();
   const buildLogo = (import.meta.env.VITE_TENANT_LOGO_URL as string | undefined)?.trim();
   const buildColor = (import.meta.env.VITE_SPLASH_COLOR as string | undefined)?.trim();
