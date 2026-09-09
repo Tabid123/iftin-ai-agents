@@ -150,23 +150,28 @@ export default function PartnerApiTab({ tenant, onRefresh }: Props) {
           <Badge variant={isPartner ? 'default' : 'secondary'}>
             {isPartner ? 'API Partner' : 'Android Device'}
           </Badge>
-          <Badge variant={cred.configured ? 'default' : 'destructive'}>
-            {cred.configured ? `Key: ${cred.key_prefix}…` : 'Key ma jiro'}
-          </Badge>
-          <Badge variant={balanceDue > 0 ? 'destructive' : 'secondary'}>
-            Deyn: ${balanceDue.toFixed(2)}
-          </Badge>
-          <Badge variant="outline">Credit limit: ${creditLimit.toFixed(2)}</Badge>
-          {limitReached && <Badge variant="destructive">Xadka la gaaray — dalab la joojiyay</Badge>}
-          {catalog?.stale && <Badge variant="outline">Xog duugoobay (stale)</Badge>}
+          {isPartner && (
+            <>
+              <Badge variant={cred.configured ? 'default' : 'destructive'}>
+                {cred.configured ? `Key: ${cred.key_prefix}…` : 'Key ma jiro'}
+              </Badge>
+              <Badge variant={balanceDue > 0 ? 'destructive' : 'secondary'}>
+                Deyn: ${balanceDue.toFixed(2)}
+              </Badge>
+              <Badge variant="outline">Credit limit: ${creditLimit.toFixed(2)}</Badge>
+              {limitReached && <Badge variant="destructive">Xadka la gaaray — dalab la joojiyay</Badge>}
+              {catalog?.stale && <Badge variant="outline">Xog duugoobay (stale)</Badge>}
+            </>
+          )}
         </div>
       </CardHeader>
       <CardContent>
-        {catalogErrorText && (
+        {isPartner && catalogErrorText && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             {catalogErrorText}
           </div>
         )}
+
         <div className="grid md:grid-cols-3 gap-3 pb-4 mb-4 border-b items-end">
           <div>
             <Label>Delivery mode</Label>
