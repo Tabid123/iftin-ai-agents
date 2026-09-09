@@ -55,6 +55,8 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key'];
 
+const MAAMUUS_ROOTS = ['Data', 'Kuhadal', 'Data iyo Kuhadal'];
+
 const emptyPrice = (rootId: string): PriceRow => ({
   root_package_id: rootId,
   label: '',
