@@ -930,14 +930,15 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
     { key: '870', template: '*870*{receiver_phone}#' },
     { key: '866', template: '*866*{receiver_phone}#' },
     { key: '101', template: '*101#' },
-    { key: '212', template: '*212*{receiver_phone}#' },
   ];
   const detectFlow = (tpl: string) => FLOW_PRESETS.find(f => (tpl || '').startsWith(`*${f.key}`))?.key || '';
   const activeFlow = detectFlow(newCode.code_template);
   const applyPreset = (key: string) => {
     const preset = FLOW_PRESETS.find(f => f.key === key);
     if (preset) setNewCode(p => ({ ...p, code_template: preset.template }));
+    else setNewCode(p => ({ ...p, code_template: '' }));
   };
+
 
   const loadCodes = useCallback(async () => {
     const [instRes, provRes, catRes, pkgRes] = await Promise.all([
