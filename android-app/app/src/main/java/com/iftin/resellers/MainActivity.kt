@@ -1,4 +1,4 @@
-package com.iftin.delivery
+package com.iftin.resellers
 
 import android.Manifest
 import android.app.ActivityManager
@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.iftin.delivery.api.DeliveryApiClient
-import com.iftin.delivery.service.DeliveryService
+import com.iftin.resellers.api.DeliveryApiClient
+import com.iftin.resellers.service.DeliveryService
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {

@@ -1,4 +1,4 @@
-package com.iftin.delivery.service
+package com.iftin.resellers.service
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

@@ -1,4 +1,4 @@
-package com.iftin.delivery.service
+package com.iftin.resellers.service
 
 import android.content.Context
 import android.content.SharedPreferences

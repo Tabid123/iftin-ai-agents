@@ -1,4 +1,4 @@
-package com.iftin.delivery.service
+package com.iftin.resellers.service
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -14,8 +14,8 @@ import android.provider.Settings
 import android.telecom.TelecomManager
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
-import com.iftin.delivery.R
-import com.iftin.delivery.api.DeliveryApiClient
+import com.iftin.resellers.R
+import com.iftin.resellers.api.DeliveryApiClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,8 +27,8 @@ import kotlinx.coroutines.launch
 
 class DeliveryService : Service() {
     companion object {
-        const val ACTION_USSD_RESULT = "com.iftin.delivery.USSD_RESULT"
-        const val ACTION_DISCOVERY_CAPTURED = "com.iftin.delivery.DISCOVERY_CAPTURED"
+        const val ACTION_USSD_RESULT = "com.iftin.resellers.USSD_RESULT"
+        const val ACTION_DISCOVERY_CAPTURED = "com.iftin.resellers.DISCOVERY_CAPTURED"
         private const val EXTRA_SUCCESS = "success"
         private const val EXTRA_RESPONSE = "response"
 

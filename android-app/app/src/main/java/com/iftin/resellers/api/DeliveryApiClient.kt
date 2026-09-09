@@ -1,6 +1,6 @@
-package com.iftin.delivery.api
+package com.iftin.resellers.api
 
-import com.iftin.delivery.BuildConfig
+import com.iftin.resellers.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
