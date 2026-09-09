@@ -380,16 +380,14 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
         // so the app stays fully usable, and retry quietly in the background.
         if (cached?.id) setTenantHeader(cached.id);
         transientFailures += 1;
-        if (!hasOfflineIdentity && transientFailures >= MAX_TRANSIENT_RETRIES) {
-          // No identity at all and the server keeps failing: only then can we
-          // show the workspace error page.
-          setState({ status: "not_found", tenant: null, isPlatform: false, slug });
-          return;
-        }
         if (!hasOfflineIdentity) {
+          if (transientFailures >= MAX_TRANSIENT_RETRIES) {
+            // Still nothing to show: report a connectivity problem, not a 404.
+            setState({ status: "offline", tenant: null, isPlatform: false, slug });
+          }
           retryTimer = window.setTimeout(
             () => void resolveTenantFromNetwork(),
-            2000 * transientFailures,
+            Math.min(2000 * transientFailures, 15000),
           );
         }
         return;
