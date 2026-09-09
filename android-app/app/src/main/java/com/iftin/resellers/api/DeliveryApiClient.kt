@@ -34,11 +34,55 @@ class DeliveryApiClient {
         val orderId: String?,
     )
 
+    data class RegistrationResult(
+        val success: Boolean,
+        val tenantId: String?,
+        val deviceName: String?,
+        val errorMessage: String?,
+    )
+
     private val functionBase = BuildConfig.API_BASE_URL.trimEnd('/')
     private val anonKey = BuildConfig.ANON_KEY
     private val restBase = functionBase.substringBefore("/functions/v1/").trimEnd('/') + "/rest/v1"
+    private val functionsRoot = functionBase.substringBeforeLast('/')
 
     fun isConfigured(): Boolean = functionBase.startsWith("https://") && anonKey.isNotBlank()
+
+    /**
+     * Binds this physical device to the reseller tenant that owns the supplied
+     * account. The server verifies the credentials, resolves the tenant through
+     * tenant_members and refuses devices already bound to another reseller.
+     */
+    suspend fun registerDevice(
+        deviceId: String,
+        deviceName: String,
+        email: String,
+        password: String,
+    ): RegistrationResult = withContext(Dispatchers.IO) {
+        if (!isConfigured()) {
+            return@withContext RegistrationResult(false, null, null, "Backend-ka lama habayn (build configuration)")
+        }
+        val body = JSONObject()
+            .put("deviceId", deviceId)
+            .put("deviceName", deviceName)
+            .put("email", email.trim())
+            .put("password", password)
+        try {
+            val (status, text) = rawRequest("POST", "$functionsRoot/register-device", body)
+            val json = runCatching { JSONObject(text) }.getOrNull()
+            if (status in 200..299 && json?.optBoolean("success", false) == true) {
+                val tenantId = json.optString("tenantId").takeIf { it.isNotBlank() && it != "null" }
+                val name = json.optJSONObject("device")?.optString("device_name")
+                RegistrationResult(true, tenantId, name, null)
+            } else {
+                val message = json?.optString("error").takeIf { !it.isNullOrBlank() }
+                    ?: "Diiwaangelintu way fashilantay (HTTP $status)"
+                RegistrationResult(false, null, null, message)
+            }
+        } catch (e: Exception) {
+            RegistrationResult(false, null, null, e.message ?: "Xiriirka internetka ma shaqeynin")
+        }
+    }
 
     suspend fun getPending(deviceId: String): Pair<QueueJob?, Long> = withContext(Dispatchers.IO) {
         val response = request("GET", "$functionBase/pending?deviceId=${enc(deviceId)}")
@@ -166,6 +210,12 @@ class DeliveryApiClient {
     private fun rpc(name: String, body: JSONObject): String = request("POST", "$restBase/rpc/$name", body)
 
     private fun request(method: String, url: String, body: JSONObject? = null): String {
+        val (status, text) = rawRequest(method, url, body)
+        if (status !in 200..299) error("HTTP $status: ${text.take(300)}")
+        return text
+    }
+
+    private fun rawRequest(method: String, url: String, body: JSONObject? = null): Pair<Int, String> {
         if (!isConfigured()) error("Delivery API is not configured")
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.requestMethod = method
@@ -182,8 +232,7 @@ class DeliveryApiClient {
         val stream = if (status in 200..299) connection.inputStream else connection.errorStream
         val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
         connection.disconnect()
-        if (status !in 200..299) error("HTTP $status: ${text.take(300)}")
-        return text
+        return status to text
     }
 
     private fun enc(value: String): String = java.net.URLEncoder.encode(value, "UTF-8")

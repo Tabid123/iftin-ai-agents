@@ -12,8 +12,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +24,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
@@ -28,34 +34,86 @@ import androidx.core.content.ContextCompat
 import com.iftin.resellers.api.DeliveryApiClient
 import com.iftin.resellers.service.DeliveryService
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+private const val PREFS = "agent"
+private const val KEY_DEVICE_ID = "device_id"
+private const val KEY_TENANT_ID = "tenant_id"
+private const val KEY_ACCOUNT_EMAIL = "account_email"
+private const val KEY_DEVICE_NAME = "device_name"
 
 class MainActivity : ComponentActivity() {
     private val permissionRequestCode = 870
+    private val api = DeliveryApiClient()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestRuntimePermissions()
+        ensureDeviceId()
 
         setContent {
             MaterialTheme {
-                IftinAgentScreen(
-                    configured = DeliveryApiClient().isConfigured(),
-                    isServiceRunning = { isDeliveryServiceRunning() },
-                    onStart = { startAgent() },
-                    onAccessibility = { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
-                )
+                var signedInEmail by remember { mutableStateOf(currentAccountEmail()) }
+
+                if (signedInEmail == null) {
+                    LoginScreen(
+                        configured = api.isConfigured(),
+                        deviceId = ensureDeviceId(),
+                        defaultDeviceName = prefs().getString(KEY_DEVICE_NAME, null)
+                            ?: "${Build.MANUFACTURER} ${Build.MODEL}",
+                        onSubmit = { email, password, deviceName ->
+                            val result = api.registerDevice(ensureDeviceId(), deviceName, email, password)
+                            if (result.success) {
+                                prefs().edit()
+                                    .putString(KEY_TENANT_ID, result.tenantId.orEmpty())
+                                    .putString(KEY_ACCOUNT_EMAIL, email.trim())
+                                    .putString(KEY_DEVICE_NAME, deviceName)
+                                    .apply()
+                                requestRuntimePermissions()
+                                signedInEmail = email.trim()
+                            }
+                            result.errorMessage
+                        },
+                    )
+                } else {
+                    LaunchedEffect(Unit) { requestRuntimePermissions() }
+                    IftinAgentScreen(
+                        configured = api.isConfigured(),
+                        accountEmail = signedInEmail.orEmpty(),
+                        isServiceRunning = { isDeliveryServiceRunning() },
+                        onStart = { startAgent() },
+                        onAccessibility = { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) },
+                        onSignOut = {
+                            signOut()
+                            signedInEmail = null
+                        },
+                    )
+                }
             }
         }
     }
 
+    private fun prefs() = getSharedPreferences(PREFS, MODE_PRIVATE)
+
+    private fun currentAccountEmail(): String? =
+        prefs().getString(KEY_ACCOUNT_EMAIL, null)?.takeIf { it.isNotBlank() }
+
+    private fun ensureDeviceId(): String {
+        val stored = prefs().getString(KEY_DEVICE_ID, "").orEmpty()
+        if (stored.isNotBlank()) return stored
+        val generated = Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
+        prefs().edit().putString(KEY_DEVICE_ID, generated).apply()
+        return generated
+    }
+
+    private fun signOut() {
+        stopService(Intent(this, DeliveryService::class.java))
+        // Device identity stays so the same phone re-binds to the same tenant.
+        prefs().edit().remove(KEY_ACCOUNT_EMAIL).remove(KEY_TENANT_ID).apply()
+    }
+
     private fun startAgent() {
-        val prefs = getSharedPreferences("agent", MODE_PRIVATE)
-        if (prefs.getString("device_id", "").isNullOrBlank()) {
-            prefs.edit().putString(
-                "device_id",
-                Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID).orEmpty(),
-            ).apply()
-        }
+        if (currentAccountEmail() == null) return
+        ensureDeviceId()
         ContextCompat.startForegroundService(this, Intent(this, DeliveryService::class.java))
     }
 
@@ -80,11 +138,141 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
+private fun LoginScreen(
+    configured: Boolean,
+    deviceId: String,
+    defaultDeviceName: String,
+    onSubmit: suspend (email: String, password: String, deviceName: String) -> String?,
+) {
+    val brand = Color(0xFF003082)
+    val scope = rememberCoroutineScope()
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var deviceName by remember { mutableStateOf(defaultDeviceName) }
+    var loading by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F6F8))
+            .verticalScroll(rememberScrollState()),
+    ) {
+        Surface(modifier = Modifier.fillMaxWidth(), color = brand, shadowElevation = 4.dp) {
+            Column(Modifier.statusBarsPadding().padding(horizontal = 24.dp, vertical = 22.dp)) {
+                Text("IFTIN AGENTS", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                Text("Gal akoonkaaga reseller-ka", color = Color(0xFFD6E0F5), fontSize = 14.sp)
+            }
+        }
+
+        Column(Modifier.fillMaxWidth().padding(20.dp)) {
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
+                Column(Modifier.padding(18.dp)) {
+                    Text("Soo gal", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = brand)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Email-ka iyo password-ka reseller-kaaga ku gal. Qalabkan wuxuu u shaqeyn doonaa reseller-kaas kaliya.",
+                        fontSize = 13.sp,
+                        color = Color.DarkGray,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it; error = null },
+                        label = { Text("Email") },
+                        singleLine = true,
+                        enabled = !loading,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it; error = null },
+                        label = { Text("Password") },
+                        singleLine = true,
+                        enabled = !loading,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = deviceName,
+                        onValueChange = { deviceName = it },
+                        label = { Text("Magaca qalabka") },
+                        singleLine = true,
+                        enabled = !loading,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    if (error != null) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(error.orEmpty(), color = Color(0xFFD32F2F), fontSize = 13.sp)
+                    }
+
+                    Spacer(Modifier.height(18.dp))
+                    Button(
+                        onClick = {
+                            if (email.isBlank() || password.isBlank()) {
+                                error = "Email iyo password waa loo baahan yahay"
+                                return@Button
+                            }
+                            loading = true
+                            error = null
+                            scope.launch {
+                                val message = onSubmit(email, password, deviceName.ifBlank { "Android Device" })
+                                loading = false
+                                error = message
+                            }
+                        },
+                        enabled = !loading && configured,
+                        modifier = Modifier.fillMaxWidth().height(54.dp),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
+                        if (loading) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Color.White)
+                            Spacer(Modifier.width(10.dp))
+                            Text("Fadlan sug...")
+                        } else {
+                            Text("GAL OO QALABKA DIIWAAN GELI")
+                        }
+                    }
+
+                    if (!configured) {
+                        Spacer(Modifier.height(10.dp))
+                        Text("Backend-ka lama habayn — build-ka waa in lagu daro API base URL iyo key.", color = Color(0xFFD32F2F), fontSize = 12.sp)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Aqoonsiga qalabka", fontWeight = FontWeight.Bold, color = brand)
+                    Spacer(Modifier.height(6.dp))
+                    Text(deviceId.ifBlank { "—" }, fontSize = 13.sp, color = Color.DarkGray)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Qalab horey loogu xidhay reseller kale lama gali karo — dalabyada tenant kastaa way kala go'an yihiin.",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun IftinAgentScreen(
     configured: Boolean,
+    accountEmail: String,
     isServiceRunning: () -> Boolean,
     onStart: () -> Unit,
     onAccessibility: () -> Unit,
+    onSignOut: () -> Unit,
 ) {
     val context = LocalContext.current
     var running by remember { mutableStateOf(isServiceRunning()) }
@@ -107,11 +295,16 @@ private fun IftinAgentScreen(
 
     val brand = Color(0xFF003082)
     Column(
-        modifier = Modifier.fillMaxSize().background(Color(0xFFF5F6F8))
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F6F8))
+            .verticalScroll(rememberScrollState()),
     ) {
         Surface(modifier = Modifier.fillMaxWidth(), color = brand, shadowElevation = 4.dp) {
             Column(modifier = Modifier.statusBarsPadding().padding(horizontal = 24.dp, vertical = 18.dp)) {
                 Text("IFTIN AGENTS", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(4.dp))
+                Text(accountEmail, color = Color(0xFFD6E0F5), fontSize = 13.sp)
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(12.dp).background(if (running) Color(0xFF00E676) else Color(0xFFFF5252), CircleShape))
@@ -156,12 +349,22 @@ private fun IftinAgentScreen(
             OutlinedButton(onClick = onAccessibility, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(12.dp)) {
                 Text("ENABLE USSD ACCESSIBILITY SERVICE")
             }
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(
+                onClick = onSignOut,
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFD32F2F)),
+            ) {
+                Text("KA BAX (LOG OUT)")
+            }
 
             Spacer(Modifier.height(16.dp))
             Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
                 Column(Modifier.padding(16.dp)) {
                     Text("📱 Delivery Agent", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = brand)
                     Spacer(Modifier.height(8.dp))
+                    Text("Akoon: $accountEmail", fontSize = 13.sp)
                     Text("Backend: ${if (configured) "Configured" else "Not configured"}")
                     Text("Flows: *870* • *866* • *101* • *212*")
                     Text("Customer/reseller APK-ga waa ka gooni; app-kan ayaa SIM + USSD automation qabta.", fontSize = 13.sp, color = Color.DarkGray)
