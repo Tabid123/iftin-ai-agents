@@ -185,6 +185,7 @@ const SimpleAdminDetail = () => {
       case 'banners': return <BannersCustomView isSo={isSo} />;
       case 'payment-settings': return <PaymentSettingsCustomView isSo={isSo} />;
       case 'system-codes': return <SystemCodesCustomView isSo={isSo} />;
+      case 'discovery-pricing': return <DiscoveryPricing />;
       // Full admin components (lazy-loaded)
       case 'transactions': return isPartner ? <IftinTransactions isSo={isSo} /> : <TransactionsDashboard />;
       case 'warbixin': return <IftinReport isSo={isSo} />;
