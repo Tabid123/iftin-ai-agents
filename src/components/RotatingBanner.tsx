@@ -128,7 +128,14 @@ const RotatingBanner = () => {
   };
 
   useEffect(() => {
-    try { localStorage.removeItem('offline_banners'); } catch {}
+    try {
+      localStorage.removeItem('offline_banners');
+      // Tirtir cache-ka tenant-yada kale si banner-kooda uusan halkan u soo bixin.
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith('offline_banners') && k !== bannerCacheKey && k !== bannerTimestampKey)
+        .filter((k) => !bannerTimestampKey || k !== bannerTimestampKey)
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {}
 
     if (!bannerCacheKey) {
       setBanners([]);
@@ -137,10 +144,9 @@ const RotatingBanner = () => {
     }
 
     const cachedBanners = readBannerCache(bannerCacheKey);
-    if (cachedBanners.length > 0) {
-      setBanners(cachedBanners);
-      setIsLoading(false);
-    }
+    setBanners(cachedBanners);
+    if (cachedBanners.length > 0) setIsLoading(false);
+
 
     // Do not re-query banners merely because the user navigated away and back.
     // Refresh only when the tenant snapshot is missing or older than 10 minutes.
