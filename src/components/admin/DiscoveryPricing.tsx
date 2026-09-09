@@ -92,6 +92,8 @@ export default function DiscoveryPricing() {
   const [unmatched, setUnmatched] = useState<Unmatched[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedRoot, setSelectedRoot] = useState<string>('');
+  const [setupProvider, setSetupProvider] = useState<string>('');
+  const [busy, setBusy] = useState(false);
 
   const [rootForm, setRootForm] = useState<{ id?: string; provider_id: string; category_id: string; package_name: string; label: string; is_active: boolean } | null>(null);
   const [priceForm, setPriceForm] = useState<PriceRow | null>(null);
