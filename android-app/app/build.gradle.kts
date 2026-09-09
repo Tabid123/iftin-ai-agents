@@ -1,4 +1,4 @@
-// Build trigger: v5.5 rename to Riyokaab Transfer
+// Iftin Agents delivery agent
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")

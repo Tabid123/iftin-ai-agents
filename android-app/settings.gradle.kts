@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Riyokaab Data"
+rootProject.name = "Iftin Agents Delivery"
 include(":app")
