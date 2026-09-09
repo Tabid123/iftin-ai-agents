@@ -17,10 +17,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useEffect } from 'react';
 import { useSupportPhone } from '@/hooks/useSupportPhone';
+import { useTenant } from '@/contexts/TenantContext';
 
 const Profile = () => {
   const navigate = useNavigate();
   const support = useSupportPhone();
+  const tenantState = useTenant();
+  const tenant = tenantState.status === 'ready' || tenantState.status === 'suspended' ? tenantState.tenant : null;
+  const brandName = tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || 'App';
+  const shareUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
   useEffect(() => {
     showBannerAd();
@@ -76,15 +81,15 @@ const Profile = () => {
 
   const handleShare = async () => {
     const shareData = {
-      title: 'Najax Data',
-      text: 'Soo degso Najax Data App - Internet bundles iibso si fudud!',
-      url: 'https://najaxdata.com'
+      title: brandName,
+      text: `Soo degso ${brandName} App - Internet bundles iibso si fudud!`,
+      url: shareUrl
     };
     try {
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        await navigator.clipboard.writeText('https://najaxdata.com');
+        await navigator.clipboard.writeText(shareUrl);
         toast.success('Link waa la copy-gareeye!');
       }
     } catch (err) {}
@@ -103,7 +108,7 @@ const Profile = () => {
     },
     {
       icon: Star,
-      title: 'Qiimey Najax Data App',
+      title: `Qiimey ${brandName} App`,
       action: () => window.open('https://play.google.com/store/apps/details?id=app.lovable.5178b6a28d534275a37667022407be64', '_blank')
     },
     {
