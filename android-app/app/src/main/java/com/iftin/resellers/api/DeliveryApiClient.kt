@@ -232,8 +232,7 @@ class DeliveryApiClient {
         val stream = if (status in 200..299) connection.inputStream else connection.errorStream
         val text = stream?.bufferedReader()?.use { it.readText() }.orEmpty()
         connection.disconnect()
-        if (status !in 200..299) error("HTTP $status: ${text.take(300)}")
-        return text
+        return status to text
     }
 
     private fun enc(value: String): String = java.net.URLEncoder.encode(value, "UTF-8")
