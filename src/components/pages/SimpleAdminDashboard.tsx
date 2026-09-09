@@ -500,11 +500,11 @@ const SimpleAdminDashboard = () => {
                   onClick={() => navigate(card.link)}
                 >
                   <div className={`bg-gradient-to-br ${card.color} text-white p-4 text-center flex-1`}>
-                    {card.icon && <div className="text-3xl leading-none">{card.icon}</div>}
-                    <div className="text-base font-bold mt-1.5">{card.label}</div>
-                    <div className="text-xs mt-0.5 opacity-90">{card.value}</div>
+                    <div className="text-3xl font-bold">{card.value}</div>
+                    <div className="text-sm mt-1 opacity-90">{card.label}</div>
                     {card.sub && <div className="text-[10px] mt-0.5 opacity-70">{card.sub}</div>}
                   </div>
+
                   <div className={`${card.darkFooter} text-white text-center py-2 text-xs flex items-center justify-center gap-1 shrink-0`}>
                     <span>➡</span> More Info
                   </div>
