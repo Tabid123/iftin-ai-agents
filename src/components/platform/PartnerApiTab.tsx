@@ -44,6 +44,10 @@ export default function PartnerApiTab({ tenant, onRefresh }: Props) {
   }
 
   const load = async () => {
+    if ((tenant.delivery_mode ?? 'android_device') !== 'api_partner') {
+      setOrders([]); setInvoices([]); setCatalog(null); setCred({ configured: false })
+      return
+    }
     const [o, i] = await Promise.all([
       supabase.from('partner_orders_ledger').select('*')
         .eq('tenant_id', tenant.id).order('created_at', { ascending: false }).limit(50),
@@ -150,23 +154,28 @@ export default function PartnerApiTab({ tenant, onRefresh }: Props) {
           <Badge variant={isPartner ? 'default' : 'secondary'}>
             {isPartner ? 'API Partner' : 'Android Device'}
           </Badge>
-          <Badge variant={cred.configured ? 'default' : 'destructive'}>
-            {cred.configured ? `Key: ${cred.key_prefix}…` : 'Key ma jiro'}
-          </Badge>
-          <Badge variant={balanceDue > 0 ? 'destructive' : 'secondary'}>
-            Deyn: ${balanceDue.toFixed(2)}
-          </Badge>
-          <Badge variant="outline">Credit limit: ${creditLimit.toFixed(2)}</Badge>
-          {limitReached && <Badge variant="destructive">Xadka la gaaray — dalab la joojiyay</Badge>}
-          {catalog?.stale && <Badge variant="outline">Xog duugoobay (stale)</Badge>}
+          {isPartner && (
+            <>
+              <Badge variant={cred.configured ? 'default' : 'destructive'}>
+                {cred.configured ? `Key: ${cred.key_prefix}…` : 'Key ma jiro'}
+              </Badge>
+              <Badge variant={balanceDue > 0 ? 'destructive' : 'secondary'}>
+                Deyn: ${balanceDue.toFixed(2)}
+              </Badge>
+              <Badge variant="outline">Credit limit: ${creditLimit.toFixed(2)}</Badge>
+              {limitReached && <Badge variant="destructive">Xadka la gaaray — dalab la joojiyay</Badge>}
+              {catalog?.stale && <Badge variant="outline">Xog duugoobay (stale)</Badge>}
+            </>
+          )}
         </div>
       </CardHeader>
       <CardContent>
-        {catalogErrorText && (
+        {isPartner && catalogErrorText && (
           <div className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             {catalogErrorText}
           </div>
         )}
+
         <div className="grid md:grid-cols-3 gap-3 pb-4 mb-4 border-b items-end">
           <div>
             <Label>Delivery mode</Label>
@@ -189,6 +198,14 @@ export default function PartnerApiTab({ tenant, onRefresh }: Props) {
           </div>
         </div>
 
+        {!isPartner && (
+          <p className="text-sm text-muted-foreground">
+            Tenant-kan wuxuu ku shaqeeyaa Android Device (APK / SIM / USSD) — API key iyo xogta Iftin API looma baahna.
+            Haddii aad rabto API, ka dooro "api_partner" kor.
+          </p>
+        )}
+
+        {isPartner && (
         <Tabs defaultValue="key">
           <TabsList>
             <TabsTrigger value="key">Iftin Key</TabsTrigger>
@@ -348,6 +365,7 @@ X-Signature: sha256=HMAC-SHA256(raw body, callback_secret)
             </div>
           </TabsContent>
         </Tabs>
+        )}
       </CardContent>
     </Card>
   )
