@@ -1018,13 +1018,21 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
       <ProviderFilterRow providers={providers} activeId={providerFilter} onSelect={setProviderFilter}
         activeColor="bg-purple-600" totalCount={instructions.length} allLabel={isSo ? 'Dhammaan' : 'All'}
         countFn={id => instructions.filter(i => i.provider_id === id).length} />
-      <button onClick={() => { setShowAdd(!showAdd); setEditingId(null); setNewCode({ provider_id: '', code_template: '', sim_password: '', notes: '', category_id: '', package_id: '' }); }}
+      <button onClick={() => { setShowAdd(!showAdd); setEditingId(null); setMenuPath(['', '', '']); setNewCode({ provider_id: '', code_template: '', sim_password: '', notes: '', category_id: '', package_id: '' }); }}
         className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.98]">
         <Plus className="w-4 h-4" /> {isSo ? 'Code Cusub' : 'Add System Code'}
       </button>
       {showAdd && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border p-3 space-y-2 animate-in slide-in-from-top-2">
           <div className="text-xs font-bold text-gray-600">{editingId ? '✏️ Edit' : '➕ New'}</div>
+          <div className="flex gap-1.5">
+            {FLOW_PRESETS.map(f => (
+              <button key={f.key} type="button" onClick={() => applyPreset(f.key)}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold border ${activeFlow === f.key ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
+                {f.key}
+              </button>
+            ))}
+          </div>
           <select value={newCode.provider_id} onChange={e => setNewCode(p => ({...p, provider_id: e.target.value, category_id: '', package_id: ''}))} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none">
             <option value="">Select Provider *</option>
             {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
@@ -1038,7 +1046,13 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
             {filteredProvPackages.map(p => <option key={p.id} value={p.id}>{p.package_name}</option>)}
           </select>
           <input value={newCode.code_template} onChange={e => setNewCode(p => ({...p, code_template: e.target.value}))} placeholder="e.g. *729{receiver_phone}*{cost_price}*{sim_password}#" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none font-mono" />
-          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newCode.sim_password} onChange={e => setNewCode(p => ({...p, sim_password: e.target.value.replace(/\D/g, '')}))} placeholder="SIM Password (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+          <div className="grid grid-cols-3 gap-2">
+            {[0, 1, 2].map(i => (
+              <input key={i} value={menuPath[i]} onChange={e => setMenuPath(prev => { const next = [...prev] as [string, string, string]; next[i] = e.target.value; return next; })}
+                placeholder={`Menu ${i + 1}`} className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+            ))}
+          </div>
+          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newCode.sim_password} onChange={e => setNewCode(p => ({...p, sim_password: e.target.value.replace(/\D/g, '')}))} placeholder="SIM PIN (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <input value={newCode.notes} onChange={e => setNewCode(p => ({...p, notes: e.target.value}))} placeholder="Notes (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="flex gap-2">
             <button onClick={saveCode} className="flex-1 py-2 bg-green-500 text-white rounded-lg text-sm font-medium">{editingId ? '💾 Save' : '➕ Add'}</button>
