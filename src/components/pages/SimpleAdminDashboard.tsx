@@ -108,6 +108,7 @@ const SimpleAdminDashboard = () => {
   });
   const [deviceCards, setDeviceCards] = useState<DeviceCardData[]>([]);
   const [wallet, setWallet] = useState<IftinWalletData['wallet']>({ pending: 0, available: 0, paid_out: 0 });
+  const [unmatchedCount, setUnmatchedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [manualDeliveryOpen, setManualDeliveryOpen] = useState(false);
   const [selectedSimForDelivery, setSelectedSimForDelivery] = useState<{ device_id: string; device_name: string; sim_slot: 1 | 2; provider_name: string } | null>(null);
@@ -325,16 +326,19 @@ const SimpleAdminDashboard = () => {
   const periodLabel = selectedDate ? format(selectedDate, 'dd/MM') : selectedPeriod === 'today' ? 'Maanta' : selectedPeriod === 'week' ? 'Isbuucan' : selectedPeriod === 'month' ? 'Bisha' : 'Sanadka';
 
   const statCards = ([
-    { label: "Wallet & Faa'iido", value: `$${wallet.available.toFixed(2)}`, sub: `La baxsan karo · Faa'idada ${periodLabel.toLowerCase()}: $${stats.todayProfit.toFixed(2)}`, color: 'from-emerald-500 to-teal-700', darkFooter: 'bg-emerald-800', link: '/dashboard/iftin-wallet', fullWidth: true, isWallet: true },
-    { label: 'Transactions', value: `$${stats.todayProfit.toFixed(2)}`, color: 'from-green-500 to-green-700', darkFooter: 'bg-green-800', link: '/dashboard/transactions' },
-    { label: 'Warbixin', value: stats.todayOrderCount, sub: 'Shirkad walba & taariikh', color: 'from-indigo-500 to-indigo-700', darkFooter: 'bg-indigo-800', link: '/dashboard/warbixin' },
-    { label: `Dalabyada ${periodLabel}`, value: stats.todayOrderCount, color: 'from-teal-400 to-teal-600', darkFooter: 'bg-teal-700', link: '/dashboard/daily-orders' },
-    { label: 'Abdiqafar', value: stats.todayOrderCount, sub: `${stats.todayDelivered} guul · ${stats.todayFailed} fashil`, color: 'from-pink-500 to-pink-700', darkFooter: 'bg-pink-800', link: '/dashboard/abdiqafar' },
-    { label: 'Devices Online', value: stats.devicesOnline, color: 'from-yellow-400 to-yellow-600', darkFooter: 'bg-yellow-700', link: '/dashboard/devices' },
+    { label: "Wallet & Faa'iido", value: `$${wallet.available.toFixed(2)}`, sub: `La baxsan karo · Faa'idada ${periodLabel.toLowerCase()}: $${stats.todayProfit.toFixed(2)}`, color: 'from-emerald-500 to-teal-700', darkFooter: 'bg-emerald-800', link: '/dashboard/iftin-wallet', fullWidth: true, isWallet: true, partnerOnly: true },
+    { label: 'Transactions', value: `$${stats.todayProfit.toFixed(2)}`, icon: '💳', color: 'from-green-500 to-green-700', darkFooter: 'bg-green-800', link: '/dashboard/transactions' },
+    { label: 'Warbixin', value: stats.todayOrderCount, icon: '📊', sub: 'Shirkad walba & taariikh', color: 'from-indigo-500 to-indigo-700', darkFooter: 'bg-indigo-800', link: '/dashboard/warbixin', partnerOnly: true },
+    { label: `Dalabyada ${periodLabel}`, value: stats.todayOrderCount, icon: '🛒', sub: `${stats.todayFailed} fashilmay · ${stats.todayPending} sugaya`, color: 'from-teal-400 to-teal-600', darkFooter: 'bg-teal-700', link: '/dashboard/daily-orders' },
+    { label: `Dakhliga ${periodLabel}`, value: `$${stats.todaySales.toFixed(2)}`, icon: '💰', sub: `${stats.todayDelivered} dalab la diray`, color: 'from-red-500 to-red-700', darkFooter: 'bg-red-800', link: '/dashboard/transactions', deviceOnly: true },
+    { label: `Faaidada ${periodLabel}`, value: `$${stats.todayProfit.toFixed(2)}`, icon: '📈', sub: `Qarash: $${stats.todayCost.toFixed(2)}`, color: 'from-green-600 to-green-800', darkFooter: 'bg-green-900', link: '/dashboard/transactions', deviceOnly: true },
+    { label: 'Unmatched', value: unmatchedCount, icon: '⚠️', sub: `${unmatchedCount} unmatched · ${stats.todayFailed} fashilmay`, color: 'from-blue-500 to-blue-700', darkFooter: 'bg-blue-800', link: '/dashboard/unmatched', deviceOnly: true },
+    { label: 'Abdiqafar', value: stats.todayOrderCount, icon: '📦', sub: `${stats.todayDelivered} guul · ${stats.todayFailed} fashil`, color: 'from-pink-500 to-pink-700', darkFooter: 'bg-pink-800', link: '/dashboard/abdiqafar', deviceOnly: true },
+    { label: 'Devices Online', value: stats.devicesOnline, icon: '📱', color: 'from-yellow-400 to-yellow-600', darkFooter: 'bg-yellow-700', link: '/dashboard/devices', deviceOnly: true },
   ] as any[]).filter((c) => {
     // Kaararka API-ga kaliya (wallet & warbixin) tenant-ka Android delivery lama tuso
-    if (!isPartner && ['/dashboard/iftin-wallet', '/dashboard/warbixin'].includes(c.link)) return false;
-    if (isPartner && ['/dashboard/abdiqafar', '/dashboard/devices'].includes(c.link)) return false;
+    if (!isPartner && c.partnerOnly) return false;
+    if (isPartner && c.deviceOnly) return false;
     return true;
   });
 
