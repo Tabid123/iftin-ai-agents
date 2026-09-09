@@ -23,15 +23,15 @@ class IftinAgentsApp : Application() {
         // crashes when starting foreground services from Application.onCreate()
         // The service is started from MainActivity after permissions are granted
         
-        android.util.Log.d("RiyokaabApp", "✅ App started - service will be launched from MainActivity")
+        android.util.Log.d("IftinApp", "✅ App started - service will be launched from MainActivity")
         
         try {
             scheduleReliablePolling()
         } catch (e: Throwable) {
-            android.util.Log.e("RiyokaabApp", "Worker scheduling failed: ${e.message}")
+            android.util.Log.e("IftinApp", "Worker scheduling failed: ${e.message}")
         }
         
-        android.util.Log.d("RiyokaabApp", "✅ All workers scheduled")
+        android.util.Log.d("IftinApp", "✅ All workers scheduled")
     }
     
     private fun scheduleReliablePolling() {
@@ -58,7 +58,7 @@ class IftinAgentsApp : Application() {
             pollingRequest
         )
         
-        android.util.Log.d("RiyokaabApp", "📅 UssdPollingWorker scheduled (every 15 min)")
+        android.util.Log.d("IftinApp", "📅 UssdPollingWorker scheduled (every 15 min)")
         
         val watchdogRequest = PeriodicWorkRequestBuilder<ServiceWatchdogWorker>(
             15, TimeUnit.MINUTES
@@ -76,6 +76,6 @@ class IftinAgentsApp : Application() {
             watchdogRequest
         )
         
-        android.util.Log.d("RiyokaabApp", "🐕 ServiceWatchdogWorker scheduled (every 15 min)")
+        android.util.Log.d("IftinApp", "🐕 ServiceWatchdogWorker scheduled (every 15 min)")
     }
 }

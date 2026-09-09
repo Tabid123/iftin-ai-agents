@@ -41,7 +41,7 @@ import kotlin.coroutines.resume
 class UssdDialerService : Service() {
     companion object {
         private const val MAX_RETRIES = 3
-        private const val CHANNEL_ID = "riyokaab_data_service"
+        private const val CHANNEL_ID = "iftin_data_service"
         private const val NOTIFICATION_ID = 1001
         private const val SMS_PREFS_NAME = "sms_inbox_prefs"
         private const val PROCESSED_SMS_IDS_KEY = "processed_sms_ids"
@@ -115,7 +115,7 @@ class UssdDialerService : Service() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "RiyokaabData::UssdDialerLock"
+            "IftinAgents::UssdDialerLock"
         )
         wakeLock.acquire(24 * 60 * 60 * 1000L)  // 24 hours
         lastWakeLockRenewal = System.currentTimeMillis()
@@ -123,7 +123,7 @@ class UssdDialerService : Service() {
         // Acquire WiFi lock to keep WiFi active when screen is off (prevents Doze WiFi sleep)
         val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         @Suppress("DEPRECATION")
-        wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "RiyokaabData::WifiLock")
+        wifiLock = wifiManager.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "IftinAgents::WifiLock")
         wifiLock.acquire()
         android.util.Log.d("UssdDialer", "📶 WiFi lock acquired — WiFi stays active during screen lock")
         
@@ -141,7 +141,7 @@ class UssdDialerService : Service() {
         
         // CRITICAL: Call startForeground IMMEDIATELY to avoid Android 16 crash
         // Must happen within 5 seconds of startForegroundService() call
-        val prefs = getSharedPreferences("riyokaab_data", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("iftin_data", Context.MODE_PRIVATE)
         val savedSuccessful = prefs.getInt("successful_deliveries", 0)
         val savedFailed = prefs.getInt("failed_deliveries", 0)
         val initText = if (savedSuccessful > 0 || savedFailed > 0) {
@@ -325,7 +325,7 @@ class UssdDialerService : Service() {
                     
                     // Update notification with current stats when idle
                     if (!foundOrders) {
-                        val statsPrefs = getSharedPreferences("riyokaab_data", Context.MODE_PRIVATE)
+                        val statsPrefs = getSharedPreferences("iftin_data", Context.MODE_PRIVATE)
                         val s = statsPrefs.getInt("successful_deliveries", 0)
                         val f = statsPrefs.getInt("failed_deliveries", 0)
                         updateNotification("Active - $s successful, $f failed", s, f)
@@ -778,7 +778,7 @@ class UssdDialerService : Service() {
                 .let { if (!it.startsWith("0") && it.length == 9) "0$it" else it }
             
             // Build SMS message in Somali
-            val message = "Riyokaab Data: Code-kaagu waa $otpCode. Wuxuu dhacayaa 5 daqiiqo kadib."
+            val message = "Iftin Agents: Code-kaagu waa $otpCode. Wuxuu dhacayaa 5 daqiiqo kadib."
             
             // Determine which SIM slot to use based on provider
             val simSlot = getSimSlotForProvider(provider)
@@ -1192,7 +1192,7 @@ class UssdDialerService : Service() {
     
     private fun setExpectingUssdDialogs() {
         try {
-            val prefs = getSharedPreferences("riyokaab_ussd_prefs", Context.MODE_PRIVATE)
+            val prefs = getSharedPreferences("iftin_ussd_prefs", Context.MODE_PRIVATE)
             prefs.edit()
                 .putBoolean("expecting_ussd_dialogs", true)
                 .putLong("last_ussd_time", System.currentTimeMillis())
@@ -1272,7 +1272,7 @@ class UssdDialerService : Service() {
                 else -> "Hormuud"
             }
 
-            getSharedPreferences("riyokaab_ussd_prefs", Context.MODE_PRIVATE).edit()
+            getSharedPreferences("iftin_ussd_prefs", Context.MODE_PRIVATE).edit()
                 .remove(UssdAccessibilityService.KEY_LAST_USSD_RESPONSE)
                 .remove(UssdAccessibilityService.KEY_LAST_USSD_RESPONSE_TIME)
                 .remove(UssdAccessibilityService.KEY_LAST_USSD_FINAL_RESULT)
@@ -1290,7 +1290,7 @@ class UssdDialerService : Service() {
             // Sug ilaa 30s in menu-ga xirmooyinka la qabto.
             // Fallback: haddii accessibility-gu uusan step-ka match gareyn, dialog kasta
             // waa la kaydiyaa KEY_LAST_USSD_RESPONSE — halkaas ka akhri menu-ga xirmooyinka.
-            val ussdPrefs = getSharedPreferences("riyokaab_ussd_prefs", Context.MODE_PRIVATE)
+            val ussdPrefs = getSharedPreferences("iftin_ussd_prefs", Context.MODE_PRIVATE)
             var menuText: String? = null
             var waited = 0
             while (waited < 30000 && menuText.isNullOrBlank()) {
@@ -1382,7 +1382,7 @@ class UssdDialerService : Service() {
         originalMenu: String,
         menu1Label: String
     ) {
-        val ussdPrefs = getSharedPreferences("riyokaab_ussd_prefs", Context.MODE_PRIVATE)
+        val ussdPrefs = getSharedPreferences("iftin_ussd_prefs", Context.MODE_PRIVATE)
         var waited = 0L
         // Soft: 5 daqiiqo. Hard: 8 daqiiqo — inta dialog-gu SHAASHADDA ku jiro session-ka
         // lama xirayo, maadaama garaac cusub uu keenayo menu gebi ahaan kala duwan.
@@ -1556,7 +1556,7 @@ class UssdDialerService : Service() {
             database.deliveryTaskDao().insert(task)
             
             // Update notification with current stats + processing indicator
-            val statsPrefs = getSharedPreferences("riyokaab_data", Context.MODE_PRIVATE)
+            val statsPrefs = getSharedPreferences("iftin_data", Context.MODE_PRIVATE)
             val curSuccessful = statsPrefs.getInt("successful_deliveries", 0)
             val curFailed = statsPrefs.getInt("failed_deliveries", 0)
             updateNotification("Processing order... ($curSuccessful successful, $curFailed failed)", curSuccessful, curFailed)
@@ -1573,7 +1573,7 @@ class UssdDialerService : Service() {
                 val four = rawDigits.take(4)
                 if (four.length == 4) four else "8826"
             }
-            getSharedPreferences("riyokaab_ussd_prefs", Context.MODE_PRIVATE)
+            getSharedPreferences("iftin_ussd_prefs", Context.MODE_PRIVATE)
                 .edit()
                 // Never let a previous order's menu/result be reused for this delivery.
                 .remove(UssdAccessibilityService.KEY_LAST_USSD_RESPONSE)
@@ -1818,7 +1818,7 @@ class UssdDialerService : Service() {
         providerResponse: String?
     ) {
         try {
-            val prefs = getSharedPreferences("riyokaab_offline_queue", Context.MODE_PRIVATE)
+            val prefs = getSharedPreferences("iftin_offline_queue", Context.MODE_PRIVATE)
             val existingQueue = prefs.getString("pending_updates", "") ?: ""
             
             // Format: queueId|status|errorMessage|providerResponse;
@@ -1838,7 +1838,7 @@ class UssdDialerService : Service() {
      */
     private suspend fun syncOfflineQueue() {
         try {
-            val prefs = getSharedPreferences("riyokaab_offline_queue", Context.MODE_PRIVATE)
+            val prefs = getSharedPreferences("iftin_offline_queue", Context.MODE_PRIVATE)
             val queue = prefs.getString("pending_updates", "") ?: ""
             
             if (queue.isEmpty()) return
@@ -2414,7 +2414,7 @@ class UssdDialerService : Service() {
     }
 
     private fun updateStats(success: Boolean) {
-        val prefs = getSharedPreferences("riyokaab_data", Context.MODE_PRIVATE)
+        val prefs = getSharedPreferences("iftin_data", Context.MODE_PRIVATE)
         val totalKey = "total_deliveries"
         val successKey = "successful_deliveries"
         val failedKey = "failed_deliveries"
@@ -2446,7 +2446,7 @@ class UssdDialerService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Riyokaab Data Active")
+            .setContentTitle("Iftin Agents Active")
             .setContentText(text)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
@@ -2462,7 +2462,7 @@ class UssdDialerService : Service() {
                 "Delivery Service",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Riyokaab Data background service"
+                description = "Iftin Agents background service"
             }
             
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

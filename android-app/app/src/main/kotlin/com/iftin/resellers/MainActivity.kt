@@ -64,7 +64,7 @@ class MainActivity : ComponentActivity() {
         // Show version toast on startup
         Toast.makeText(
             this,
-            "Riyokaab Data v1.0 ⚡",
+            "Iftin Agents v1.0 ⚡",
             Toast.LENGTH_LONG
         ).show()
         
@@ -319,7 +319,7 @@ fun MainScreen(
             isServiceRunning = checkServiceRunning()
             
             // Read counters from SharedPreferences (updated by service)
-            val prefs = context.getSharedPreferences("riyokaab_data", Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences("iftin_data", Context.MODE_PRIVATE)
             totalDeliveries = prefs.getInt("total_deliveries", 0)
             successfulDeliveries = prefs.getInt("successful_deliveries", 0)
             failedDeliveries = prefs.getInt("failed_deliveries", 0)

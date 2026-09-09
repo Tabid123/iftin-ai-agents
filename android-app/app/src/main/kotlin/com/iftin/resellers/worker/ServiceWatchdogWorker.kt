@@ -23,7 +23,7 @@ class ServiceWatchdogWorker(
         
         try {
             val isRunning = isServiceRunning()
-            val prefs = context.getSharedPreferences("riyokaab_watchdog", Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences("iftin_watchdog", Context.MODE_PRIVATE)
             
             var consecutiveFailures = prefs.getInt("consecutive_failures", 0)
             

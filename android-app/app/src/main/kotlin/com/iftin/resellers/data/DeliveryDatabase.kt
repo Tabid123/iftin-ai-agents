@@ -55,7 +55,7 @@ abstract class DeliveryDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     DeliveryDatabase::class.java,
-                    "riyokaab_data_database"
+                    "iftin_data_database"
                 ).build()
                 INSTANCE = instance
                 instance

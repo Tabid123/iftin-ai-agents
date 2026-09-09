@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Background color - Riyokaab Data brand -->
+    <!-- Background color - Iftin Agents brand -->
     <item android:drawable="@color/splash_background" />
 
-    <!-- Centered logo - Riyokaab -->
+    <!-- Centered logo - Iftin -->
     <item
         android:gravity="center"
         android:width="200dp"
