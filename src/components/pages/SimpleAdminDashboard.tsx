@@ -329,7 +329,12 @@ const SimpleAdminDashboard = () => {
     { label: `Dalabyada ${periodLabel}`, value: stats.todayOrderCount, color: 'from-teal-400 to-teal-600', darkFooter: 'bg-teal-700', link: '/dashboard/daily-orders' },
     { label: 'Abdiqafar', value: stats.todayOrderCount, sub: `${stats.todayDelivered} guul · ${stats.todayFailed} fashil`, color: 'from-pink-500 to-pink-700', darkFooter: 'bg-pink-800', link: '/dashboard/abdiqafar' },
     { label: 'Devices Online', value: stats.devicesOnline, color: 'from-yellow-400 to-yellow-600', darkFooter: 'bg-yellow-700', link: '/dashboard/devices' },
-  ] as any[]).filter((c) => !isPartner || !['/dashboard/transactions', '/dashboard/abdiqafar', '/dashboard/devices'].includes(c.link) || c.link === '/dashboard/transactions');
+  ] as any[]).filter((c) => {
+    // Kaararka API-ga kaliya (wallet & warbixin) tenant-ka Android delivery lama tuso
+    if (!isPartner && ['/dashboard/iftin-wallet', '/dashboard/warbixin'].includes(c.link)) return false;
+    if (isPartner && ['/dashboard/abdiqafar', '/dashboard/devices'].includes(c.link)) return false;
+    return true;
+  });
 
   const clockStr = clock.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
 
