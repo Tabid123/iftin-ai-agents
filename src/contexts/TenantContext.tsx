@@ -30,6 +30,9 @@ type TenantState =
   | { status: "ready"; tenant: Tenant; isPlatform: false }
   | { status: "suspended"; tenant: Tenant; isPlatform: false }
   | { status: "not_found"; tenant: null; isPlatform: false; slug: string }
+  // No connection AND nothing cached/baked in: this is a connectivity problem,
+  // never a "this workspace does not exist" problem.
+  | { status: "offline"; tenant: null; isPlatform: false; slug: string }
   | { status: "needs_code"; tenant: null; isPlatform: false }
   | { status: "platform"; tenant: null; isPlatform: true };
 
