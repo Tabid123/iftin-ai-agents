@@ -98,7 +98,7 @@ export default function DiscoveryPricing() {
     const [rootRes, provRes, catRes, sessRes] = await Promise.all([
       supabase.from('data_packages_config').select('id, package_name, provider_id, category_id, is_active, is_discovery_root, connection_type_label').eq('is_discovery_root', true).order('display_order'),
       supabase.from('providers_config').select('id, provider_name').order('display_order'),
-      supabase.from('package_categories').select('id, category_name, provider_id').order('display_order'),
+      supabase.from('package_categories').select('id, category_name, provider_id, is_active').order('display_order'),
       supabase.from('ussd_package_discoveries').select('id, phone_number, status, device_id, session_state, selected_label, error, queued_at, claimed_at').order('queued_at', { ascending: false }).limit(40),
     ]);
     const rootList = (rootRes.data || []) as Root[];
