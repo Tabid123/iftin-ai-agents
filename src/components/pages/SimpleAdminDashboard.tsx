@@ -301,6 +301,19 @@ const SimpleAdminDashboard = () => {
 
       setDeviceCards(cards);
 
+      // Unmatched payments count (Android/SIM tenants only)
+      if (!isPartner) {
+        try {
+          const { count } = await supabase
+            .from('payment_receipts')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'unmatched');
+          setUnmatchedCount(count || 0);
+        } catch (unmatchedErr) {
+          console.error('Unmatched count error:', unmatchedErr);
+        }
+      }
+
       // Fetch real reseller wallet balance (best-effort; don't block dashboard if edge fn fails)
       if (isPartner) {
         try {
