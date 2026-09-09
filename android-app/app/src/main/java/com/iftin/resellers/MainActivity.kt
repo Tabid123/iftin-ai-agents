@@ -245,7 +245,6 @@ private fun LoginScreen(
         }
     }
 }
-}
 
 @Composable
 private fun IftinAgentScreen(
