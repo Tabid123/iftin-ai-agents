@@ -965,10 +965,15 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
 
   const saveCode = async () => {
     if (!newCode.provider_id || !newCode.code_template) { toast.error('Fill provider and code template'); return; }
-    const ussdCheck = validateUssdTemplate(newCode.code_template);
+    const baseTemplate = newCode.code_template.split('|')[0].trim();
+    const ussdCheck = validateUssdTemplate(baseTemplate);
     if (!ussdCheck.valid) { toast.error(ussdCheck.error); return; }
+    const path = menuPath.map(v => v.trim()).filter(Boolean);
+    if (activeFlow && path.length === 0) { toast.error('Fadlan geli ugu yaraan Menu 1'); return; }
+    if (path.some(v => v.includes('|') || v.includes(','))) { toast.error('Menu-ga ha isticmaalin , ama |'); return; }
+    const finalTemplate = path.length ? `${baseTemplate}|${path.join(',')}` : baseTemplate;
     const payload = {
-      provider_id: newCode.provider_id, code_template: newCode.code_template, sim_password: newCode.sim_password || null,
+      provider_id: newCode.provider_id, code_template: finalTemplate, sim_password: newCode.sim_password || null,
       notes: newCode.notes || null, category_id: newCode.category_id || null, package_id: newCode.package_id || null, instruction_template: '',
     };
     if (editingId) {
