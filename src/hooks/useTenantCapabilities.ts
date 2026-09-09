@@ -19,7 +19,7 @@ const PARTNER_HIDDEN = new Set<string>([
   // ('offline-registrations' waa la muujinayaa: partner-ku Iftin API ayuu isticmaalaa)
   'offline-payment', 'abdiqafar',
   // Settings-ka lacagta ee Iftin maamulo — partner-ku uma baahna
-  'payment-settings', 'iftin-payment-numbers', 'iftin-payments',
+  'payment-settings',
 ]);
 
 /**
@@ -27,10 +27,13 @@ const PARTNER_HIDDEN = new Set<string>([
  * Tenant-ka Android delivery (SIM/USSD) ma arko kuwan.
  */
 const PARTNER_ONLY = new Set<string>([
-  'iftin-wallet',   // Wallet-ka Iftin API
-  'warbixin',       // Warbixinta API-ga
-  'iftin-pricing',  // Qiimaha partner-ka ee Iftin
+  'iftin-wallet',          // Wallet-ka Iftin API
+  'warbixin',              // Warbixinta API-ga
+  'iftin-pricing',         // Qiimaha partner-ka ee Iftin
+  'iftin-payment-numbers', // Lambarada lacagta ee catalog-ka API-ga
+  'iftin-payments',        // Lacagaha SMS-ka ee API-ga
 ]);
+
 
 const CACHE_KEY = 'najax.tenant_delivery_mode';
 const cache = new Map<string, DeliveryMode>();
