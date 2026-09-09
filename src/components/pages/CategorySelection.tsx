@@ -217,9 +217,14 @@ const CategorySelection = () => {
       category_image: localizeImage('category', category.category_image, category.category_name, providerName),
     }));
     try {
-      const existing = JSON.parse(localStorage.getItem('offline_categories') || '[]');
+      // Keep only categories that still belong to other providers, then refresh
+      // this provider's entries — stale/removed ones must not linger.
+      const existing = JSON.parse(localStorage.getItem('offline_categories') || '[]') as any[];
+      const others = Array.isArray(existing)
+        ? existing.filter((c: any) => !providerId || c.provider_id !== providerId)
+        : [];
       const merged = Array.from(
-        new Map([...existing, ...localized].map((c: any) => [c.id, c])).values()
+        new Map([...others, ...localized].map((c: any) => [c.id, c])).values()
       );
       localStorage.setItem('offline_categories', JSON.stringify(merged));
     } catch { /* ignore */ }
