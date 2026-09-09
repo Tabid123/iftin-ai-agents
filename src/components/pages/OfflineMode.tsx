@@ -61,7 +61,7 @@ const OfflineMode = () => {
   const t = useTenant();
   const tenant = t.status === 'ready' || t.status === 'suspended' ? t.tenant : null;
   const brandLogo = tenant?.logo_url || najaxLogo;
-  const brandName = tenant?.name || 'Najax Data';
+  const brandName = tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || 'App';
   const [senderPhone, setSenderPhone] = useState('');
   const [receiverPhone, setReceiverPhone] = useState('');
   const [senderError, setSenderError] = useState(false);

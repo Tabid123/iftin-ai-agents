@@ -234,6 +234,38 @@ function writeCachedTenant(slug: string, tenant: Tenant) {
   }
 }
 
+const CACHE_OWNER_KEY = "najax.cache_owner_slug";
+
+/**
+ * Content caches (providers, categories, packages, payment methods, banners,
+ * catalog) belong to exactly one workspace. When the app opens for a different
+ * slug than the cache was written for, drop them so no workspace can ever show
+ * another one's stale content. Shared by every tenant.
+ */
+function purgeForeignContentCaches(slug: string) {
+  try {
+    const owner = localStorage.getItem(CACHE_OWNER_KEY);
+    if (owner === slug) return;
+    const doomed: string[] = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      if (
+        key.startsWith("offline_") ||
+        key.startsWith("iftin_catalog") ||
+        key.startsWith("najax.banners") ||
+        key.startsWith("banners_")
+      ) {
+        doomed.push(key);
+      }
+    }
+    doomed.forEach(key => localStorage.removeItem(key));
+    localStorage.setItem(CACHE_OWNER_KEY, slug);
+  } catch {
+    /* ignore storage restrictions */
+  }
+}
+
 /**
  * Per-tenant builds already know which tenant they were built for. When the
  * device starts fully offline there may be no cached tenant row yet, so use the
@@ -310,6 +342,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
     // Clear any stale header before resolving the new tenant so the lookup
     // itself isn't filtered by a wrong tenant.
     setTenantHeader(null);
+    purgeForeignContentCaches(slug);
 
     const cached = readCachedTenant(slug);
     const buildFallback = cached ? null : buildFallbackTenant(slug);

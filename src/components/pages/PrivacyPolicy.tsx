@@ -8,7 +8,7 @@ const PrivacyPolicy = () => {
   const location = useLocation();
   const tenantState = useTenant();
   const tenant = tenantState.status === "ready" || tenantState.status === "suspended" ? tenantState.tenant : null;
-  const brandName = tenant?.name || "Najax Data";
+  const brandName = tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || "App";
   const contactEmail = tenant ? `info@${tenant.slug}.com` : "info@najaxdata.com";
   const previousPage = (location.state as { from?: string })?.from || '/providers';
   const sections = [{
