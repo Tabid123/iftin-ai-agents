@@ -90,11 +90,17 @@ function resolveSlug(): { slug: string | null; isPlatform: boolean; needsCode?: 
     return { slug: overrideTenant, isPlatform: false };
   }
 
-  // Native app: hostname is always `localhost`, so never fall through to the
-  // platform console. Use the build-time slug, then the stored one, otherwise
-  // ask the user for their reseller code.
+  // Per-tenant build (APK/AAB): the slug baked into the bundle is the single
+  // source of truth and must win even when the WebView has not yet exposed the
+  // Capacitor global. Shared by every tenant — no per-tenant branches here.
+  const bakedSlug = buildTenantSlug();
+  if (bakedSlug) return { slug: bakedSlug, isPlatform: false };
+
+  // Native app without a baked slug: hostname is always `localhost`, so never
+  // fall through to the platform console. Use the stored slug, otherwise ask
+  // the user for their reseller code.
   if (isNativeApp()) {
-    const slug = buildTenantSlug() || storedTenantSlug();
+    const slug = storedTenantSlug();
     if (slug) return { slug, isPlatform: false };
     return { slug: null, isPlatform: false, needsCode: true };
   }
