@@ -69,6 +69,11 @@ class DeliveryService : Service() {
             return Settings.Secure.getString(contentResolver, Settings.Secure.ANDROID_ID).orEmpty()
         }
 
+    /** The agent only polls once the reseller account has bound this device to a tenant. */
+    private fun isSignedIn(): Boolean =
+        getSharedPreferences("agent", MODE_PRIVATE)
+            .getString("account_email", "").orEmpty().isNotBlank()
+
     override fun onCreate() {
         super.onCreate()
         createChannel()
