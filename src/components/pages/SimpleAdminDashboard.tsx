@@ -301,11 +301,13 @@ const SimpleAdminDashboard = () => {
       setDeviceCards(cards);
 
       // Fetch real reseller wallet balance (best-effort; don't block dashboard if edge fn fails)
-      try {
-        const walletData = await fetchIftinWallet();
-        setWallet(walletData.wallet);
-      } catch (walletErr) {
-        console.error('Wallet fetch error:', walletErr);
+      if (isPartner) {
+        try {
+          const walletData = await fetchIftinWallet();
+          setWallet(walletData.wallet);
+        } catch (walletErr) {
+          console.error('Wallet fetch error:', walletErr);
+        }
       }
     } catch (err) {
       console.error('SimpleAdmin fetch error:', err);
