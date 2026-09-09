@@ -29,6 +29,7 @@ const FeaturedCustomView = lazy(() => import('@/components/admin/simple/ConfigVi
 const BannersCustomView = lazy(() => import('@/components/admin/simple/ConfigViews').then(m => ({ default: m.BannersCustomView })));
 const PaymentSettingsCustomView = lazy(() => import('@/components/admin/simple/ConfigViews').then(m => ({ default: m.PaymentSettingsCustomView })));
 const SystemCodesCustomView = lazy(() => import('@/components/admin/simple/ConfigViews').then(m => ({ default: m.SystemCodesCustomView })));
+const DiscoveryPricing = lazy(() => import('@/components/admin/DiscoveryPricing'));
 
 // Lazy-loaded full admin components
 const TransactionsDashboard = lazy(() => import('@/components/admin/TransactionsDashboard').then(m => ({ default: m.TransactionsDashboard })));
@@ -88,6 +89,7 @@ const DETAIL_CONFIGS: Record<string, DetailConfig> = {
   banners: { title: 'Banners', titleSo: 'Banners', headerBg: 'from-rose-500 to-rose-700' },
   'payment-settings': { title: 'Payment Providers', titleSo: 'Payment Settings', headerBg: 'from-violet-500 to-violet-700' },
   'system-codes': { title: 'System Codes', titleSo: 'USSD Codes', headerBg: 'from-indigo-600 to-indigo-800' },
+  'discovery-pricing': { title: 'Discovery Pricing', titleSo: 'Qiimaha Baarista', headerBg: 'from-fuchsia-600 to-purple-800' },
   transactions: { title: 'Transactions', titleSo: 'Transactions', headerBg: 'from-blue-600 to-blue-800' },
   warbixin: { title: 'Report', titleSo: 'Warbixin', headerBg: 'from-indigo-600 to-indigo-800' },
   'sms-lacago': { title: 'SMS Lacago', titleSo: 'SMS Lacago', headerBg: 'from-orange-600 to-orange-800' },
