@@ -1,7 +1,7 @@
 import React from "react";
 import { useTenant } from "@/contexts/TenantContext";
 import { ResellerCodeGate } from "@/components/ResellerCodeGate";
-import { AlertCircle, Loader2, Lock } from "lucide-react";
+import { AlertCircle, Loader2, Lock, WifiOff } from "lucide-react";
 
 
 interface Props {
