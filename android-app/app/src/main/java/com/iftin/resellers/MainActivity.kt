@@ -148,62 +148,58 @@ private fun LoginScreen(
     val scope = rememberCoroutineScope()
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var deviceName by remember { mutableStateOf(defaultDeviceName) }
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F6F8))
-            .verticalScroll(rememberScrollState()),
+            .background(brand)
+            .statusBarsPadding()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Surface(modifier = Modifier.fillMaxWidth(), color = brand, shadowElevation = 4.dp) {
-            Column(Modifier.statusBarsPadding().padding(horizontal = 24.dp, vertical = 22.dp)) {
-                Text("IFTIN AGENTS", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(6.dp))
-                Text("Gal akoonkaaga reseller-ka", color = Color(0xFFD6E0F5), fontSize = 14.sp)
+        Column(
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Box(
+                modifier = Modifier.size(84.dp).background(Color.White.copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("IA", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Bold)
             }
-        }
+            Spacer(Modifier.height(18.dp))
+            Text("IFTIN AGENTS", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(28.dp))
 
-        Column(Modifier.fillMaxWidth().padding(20.dp)) {
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp)) {
-                Column(Modifier.padding(18.dp)) {
-                    Text("Soo gal", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = brand)
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "Email-ka iyo password-ka reseller-kaaga ku gal. Qalabkan wuxuu u shaqeyn doonaa reseller-kaas kaliya.",
-                        fontSize = 13.sp,
-                        color = Color.DarkGray,
-                    )
-                    Spacer(Modifier.height(16.dp))
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = Color.White,
+                shadowElevation = 8.dp,
+            ) {
+                Column(Modifier.padding(22.dp)) {
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it; error = null },
                         label = { Text("Email") },
                         singleLine = true,
                         enabled = !loading,
+                        shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(Modifier.height(14.dp))
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it; error = null },
                         label = { Text("Password") },
                         singleLine = true,
                         enabled = !loading,
+                        shape = RoundedCornerShape(12.dp),
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = deviceName,
-                        onValueChange = { deviceName = it },
-                        label = { Text("Magaca qalabka") },
-                        singleLine = true,
-                        enabled = !loading,
                         modifier = Modifier.fillMaxWidth(),
                     )
 
@@ -212,7 +208,7 @@ private fun LoginScreen(
                         Text(error.orEmpty(), color = Color(0xFFD32F2F), fontSize = 13.sp)
                     }
 
-                    Spacer(Modifier.height(18.dp))
+                    Spacer(Modifier.height(20.dp))
                     Button(
                         onClick = {
                             if (email.isBlank() || password.isBlank()) {
@@ -222,12 +218,17 @@ private fun LoginScreen(
                             loading = true
                             error = null
                             scope.launch {
-                                val message = onSubmit(email, password, deviceName.ifBlank { "Android Device" })
+                                val message = onSubmit(
+                                    email,
+                                    password,
+                                    defaultDeviceName.ifBlank { "Android Device" },
+                                )
                                 loading = false
                                 error = message
                             }
                         },
-                        enabled = !loading && configured,
+                        enabled = !loading,
+                        colors = ButtonDefaults.buttonColors(containerColor = brand),
                         modifier = Modifier.fillMaxWidth().height(54.dp),
                         shape = RoundedCornerShape(12.dp),
                     ) {
@@ -236,33 +237,14 @@ private fun LoginScreen(
                             Spacer(Modifier.width(10.dp))
                             Text("Fadlan sug...")
                         } else {
-                            Text("GAL OO QALABKA DIIWAAN GELI")
+                            Text("GAL", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
-
-                    if (!configured) {
-                        Spacer(Modifier.height(10.dp))
-                        Text("Backend-ka lama habayn — build-ka waa in lagu daro API base URL iyo key.", color = Color(0xFFD32F2F), fontSize = 12.sp)
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("Aqoonsiga qalabka", fontWeight = FontWeight.Bold, color = brand)
-                    Spacer(Modifier.height(6.dp))
-                    Text(deviceId.ifBlank { "—" }, fontSize = 13.sp, color = Color.DarkGray)
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "Qalab horey loogu xidhay reseller kale lama gali karo — dalabyada tenant kastaa way kala go'an yihiin.",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                    )
                 }
             }
         }
     }
+}
 }
 
 @Composable
