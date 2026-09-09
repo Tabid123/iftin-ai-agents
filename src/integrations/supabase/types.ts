@@ -1955,6 +1955,7 @@ export type Database = {
         Row: {
           created_at: string
           discovery_id: string | null
+          discovery_index: string | null
           discovery_label: string | null
           expected_amount: number
           id: string
@@ -1971,6 +1972,7 @@ export type Database = {
         Insert: {
           created_at?: string
           discovery_id?: string | null
+          discovery_index?: string | null
           discovery_label?: string | null
           expected_amount: number
           id?: string
@@ -1987,6 +1989,7 @@ export type Database = {
         Update: {
           created_at?: string
           discovery_id?: string | null
+          discovery_index?: string | null
           discovery_label?: string | null
           expected_amount?: number
           id?: string

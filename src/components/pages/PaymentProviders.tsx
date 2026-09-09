@@ -61,6 +61,9 @@ const PaymentProviders = () => {
   const discoveryId = location.state?.discoveryId || '';
   const discoveryLabel = location.state?.discoveryLabel || '';
   const discoveryReceiverPhone = location.state?.discoveryReceiverPhone || '';
+  const discoveryIndex = location.state?.discoveryIndex || '';
+  const prefillPaymentProviderId = location.state?.prefillPaymentProviderId || '';
+  const prefillSenderPhone = location.state?.prefillSenderPhone || '';
 
   const isADSLPackage = (catName: string) => catName?.toUpperCase().includes('ADSL');
   const isADSL = isADSLPackage(categoryName);
@@ -291,6 +294,19 @@ const PaymentProviders = () => {
     if (selectedProvider) setShowPaymentModal(true);
   }, [selectedProvider]);
 
+  // Maamuus (*212*): habka lacag bixinta iyo lambarka diraha horeba waa la doortay.
+  const prefillDone = React.useRef(false);
+  React.useEffect(() => {
+    if (prefillDone.current || !prefillPaymentProviderId || paymentProviders.length === 0) return;
+    prefillDone.current = true;
+    handlePaymentSelect(prefillPaymentProviderId);
+    if (prefillSenderPhone) {
+      offlineSenderRef.current = true;
+      setPaymentNumber(String(prefillSenderPhone).replace(/\D/g, '').slice(-9));
+    }
+    setShowPaymentModal(true);
+  }, [prefillPaymentProviderId, prefillSenderPhone, paymentProviders, handlePaymentSelect]);
+
   const handleShowConfirmation = () => {
     if (!paymentNumber || !receiverNumber) return;
     if (paymentNumber.length !== 9) {
@@ -449,6 +465,7 @@ const PaymentProviders = () => {
         expected_amount: parseFloat(amount),
         discovery_id: discoveryId || null,
         discovery_label: discoveryLabel || null,
+        discovery_index: discoveryIndex || null,
         status: 'pending'
       };
 

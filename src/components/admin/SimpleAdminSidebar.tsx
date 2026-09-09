@@ -19,7 +19,7 @@ import {
   XCircle, ListOrdered, History, Send, Megaphone, CreditCard,
   BarChart3, AlertTriangle, Wallet, Package, Briefcase, Grid3x3,
   Star, Layers, Zap, ImageIcon, WifiOff, ShieldCheck, FileText,
-  Receipt, Moon, Sun, Globe, Banknote,
+  Receipt, Moon, Sun, Globe, Banknote, Search,
 } from 'lucide-react';
 import najaxLogo from '@/assets/najax-logo.jpeg';
 import { useTenant } from '@/contexts/TenantContext';
@@ -74,6 +74,7 @@ const menuGroups: MenuItem[] = [
       { label: 'Featured', labelSo: 'Featured', icon: Star, path: '/dashboard/featured' },
       { label: 'Bundling Rules', labelSo: 'Xirmooyin', icon: Layers, path: '/dashboard/delivery-rules' },
       { label: 'System Codes', labelSo: 'USSD Codes', icon: Layers, path: '/dashboard/system-codes' },
+      { label: 'Discovery Pricing', labelSo: 'Qiimaha Baarista', icon: Search, path: '/dashboard/discovery-pricing' },
     ],
   },
   {

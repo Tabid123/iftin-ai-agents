@@ -923,6 +923,21 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newCode, setNewCode] = useState({ provider_id: '', code_template: '', sim_password: '', notes: '', category_id: '', package_id: '' });
+  const [menuPath, setMenuPath] = useState<[string, string, string]>(['', '', '']);
+
+  // Flow presets-ka Android delivery app-ka taageero (menu-driven USSD).
+  const FLOW_PRESETS: { key: string; template: string }[] = [
+    { key: '870', template: '*870*{receiver_phone}#' },
+    { key: '866', template: '*866*{receiver_phone}#' },
+    { key: '101', template: '*101#' },
+    { key: '212', template: '*212*{receiver_phone}#' },
+  ];
+  const detectFlow = (tpl: string) => FLOW_PRESETS.find(f => (tpl || '').startsWith(`*${f.key}`))?.key || '';
+  const activeFlow = detectFlow(newCode.code_template);
+  const applyPreset = (key: string) => {
+    const preset = FLOW_PRESETS.find(f => f.key === key);
+    if (preset) setNewCode(p => ({ ...p, code_template: preset.template }));
+  };
 
   const loadCodes = useCallback(async () => {
     const [instRes, provRes, catRes, pkgRes] = await Promise.all([
@@ -950,10 +965,15 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
 
   const saveCode = async () => {
     if (!newCode.provider_id || !newCode.code_template) { toast.error('Fill provider and code template'); return; }
-    const ussdCheck = validateUssdTemplate(newCode.code_template);
+    const baseTemplate = newCode.code_template.split('|')[0].trim();
+    const ussdCheck = validateUssdTemplate(baseTemplate);
     if (!ussdCheck.valid) { toast.error(ussdCheck.error); return; }
+    const path = menuPath.map(v => v.trim()).filter(Boolean);
+    if (activeFlow && path.length === 0) { toast.error('Fadlan geli ugu yaraan Menu 1'); return; }
+    if (path.some(v => v.includes('|') || v.includes(','))) { toast.error('Menu-ga ha isticmaalin , ama |'); return; }
+    const finalTemplate = path.length ? `${baseTemplate}|${path.join(',')}` : baseTemplate;
     const payload = {
-      provider_id: newCode.provider_id, code_template: newCode.code_template, sim_password: newCode.sim_password || null,
+      provider_id: newCode.provider_id, code_template: finalTemplate, sim_password: newCode.sim_password || null,
       notes: newCode.notes || null, category_id: newCode.category_id || null, package_id: newCode.package_id || null, instruction_template: '',
     };
     if (editingId) {
@@ -964,6 +984,7 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
     const { data: fresh } = await supabase.from('delivery_instructions').select('*').order('created_at', { ascending: false });
     setInstructions(fresh || []);
     setNewCode({ provider_id: '', code_template: '', sim_password: '', notes: '', category_id: '', package_id: '' });
+    setMenuPath(['', '', '']);
     setShowAdd(false); setEditingId(null);
     toast.success(editingId ? 'Updated' : 'Added');
   };
@@ -977,7 +998,11 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
 
   const startEdit = (item: any) => {
     setEditingId(item.id);
-    setNewCode({ provider_id: item.provider_id || '', code_template: item.code_template || '', sim_password: item.sim_password || '', notes: item.notes || '', category_id: item.category_id || '', package_id: item.package_id || '' });
+    const raw = item.code_template || '';
+    const [base, suffix] = raw.includes('|') ? [raw.split('|')[0], raw.split('|').slice(1).join('|')] : [raw, ''];
+    const parts = suffix.replace(/#/g, '').split(',').map((v: string) => v.trim()).filter(Boolean);
+    setMenuPath([parts[0] || '', parts[1] || '', parts[2] || '']);
+    setNewCode({ provider_id: item.provider_id || '', code_template: base, sim_password: item.sim_password || '', notes: item.notes || '', category_id: item.category_id || '', package_id: item.package_id || '' });
     setShowAdd(true);
   };
 
@@ -993,13 +1018,21 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
       <ProviderFilterRow providers={providers} activeId={providerFilter} onSelect={setProviderFilter}
         activeColor="bg-purple-600" totalCount={instructions.length} allLabel={isSo ? 'Dhammaan' : 'All'}
         countFn={id => instructions.filter(i => i.provider_id === id).length} />
-      <button onClick={() => { setShowAdd(!showAdd); setEditingId(null); setNewCode({ provider_id: '', code_template: '', sim_password: '', notes: '', category_id: '', package_id: '' }); }}
+      <button onClick={() => { setShowAdd(!showAdd); setEditingId(null); setMenuPath(['', '', '']); setNewCode({ provider_id: '', code_template: '', sim_password: '', notes: '', category_id: '', package_id: '' }); }}
         className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5 active:scale-[0.98]">
         <Plus className="w-4 h-4" /> {isSo ? 'Code Cusub' : 'Add System Code'}
       </button>
       {showAdd && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border p-3 space-y-2 animate-in slide-in-from-top-2">
           <div className="text-xs font-bold text-gray-600">{editingId ? '✏️ Edit' : '➕ New'}</div>
+          <div className="flex gap-1.5">
+            {FLOW_PRESETS.map(f => (
+              <button key={f.key} type="button" onClick={() => applyPreset(f.key)}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold border ${activeFlow === f.key ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
+                {f.key}
+              </button>
+            ))}
+          </div>
           <select value={newCode.provider_id} onChange={e => setNewCode(p => ({...p, provider_id: e.target.value, category_id: '', package_id: ''}))} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none">
             <option value="">Select Provider *</option>
             {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
@@ -1013,7 +1046,13 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
             {filteredProvPackages.map(p => <option key={p.id} value={p.id}>{p.package_name}</option>)}
           </select>
           <input value={newCode.code_template} onChange={e => setNewCode(p => ({...p, code_template: e.target.value}))} placeholder="e.g. *729{receiver_phone}*{cost_price}*{sim_password}#" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none font-mono" />
-          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newCode.sim_password} onChange={e => setNewCode(p => ({...p, sim_password: e.target.value.replace(/\D/g, '')}))} placeholder="SIM Password (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+          <div className="grid grid-cols-3 gap-2">
+            {[0, 1, 2].map(i => (
+              <input key={i} value={menuPath[i]} onChange={e => setMenuPath(prev => { const next = [...prev] as [string, string, string]; next[i] = e.target.value; return next; })}
+                placeholder={`Menu ${i + 1}`} className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+            ))}
+          </div>
+          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newCode.sim_password} onChange={e => setNewCode(p => ({...p, sim_password: e.target.value.replace(/\D/g, '')}))} placeholder="SIM PIN (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <input value={newCode.notes} onChange={e => setNewCode(p => ({...p, notes: e.target.value}))} placeholder="Notes (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="flex gap-2">
             <button onClick={saveCode} className="flex-1 py-2 bg-green-500 text-white rounded-lg text-sm font-medium">{editingId ? '💾 Save' : '➕ Add'}</button>
