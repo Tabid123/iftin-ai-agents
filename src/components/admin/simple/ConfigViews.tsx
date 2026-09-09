@@ -984,6 +984,7 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
     const { data: fresh } = await supabase.from('delivery_instructions').select('*').order('created_at', { ascending: false });
     setInstructions(fresh || []);
     setNewCode({ provider_id: '', code_template: '', sim_password: '', notes: '', category_id: '', package_id: '' });
+    setMenuPath(['', '', '']);
     setShowAdd(false); setEditingId(null);
     toast.success(editingId ? 'Updated' : 'Added');
   };
@@ -997,7 +998,11 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
 
   const startEdit = (item: any) => {
     setEditingId(item.id);
-    setNewCode({ provider_id: item.provider_id || '', code_template: item.code_template || '', sim_password: item.sim_password || '', notes: item.notes || '', category_id: item.category_id || '', package_id: item.package_id || '' });
+    const raw = item.code_template || '';
+    const [base, suffix] = raw.includes('|') ? [raw.split('|')[0], raw.split('|').slice(1).join('|')] : [raw, ''];
+    const parts = suffix.replace(/#/g, '').split(',').map((v: string) => v.trim()).filter(Boolean);
+    setMenuPath([parts[0] || '', parts[1] || '', parts[2] || '']);
+    setNewCode({ provider_id: item.provider_id || '', code_template: base, sim_password: item.sim_password || '', notes: item.notes || '', category_id: item.category_id || '', package_id: item.package_id || '' });
     setShowAdd(true);
   };
 
