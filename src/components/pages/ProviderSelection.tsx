@@ -255,7 +255,7 @@ const ProviderSelection = () => {
           boxSizing: 'border-box' as const
         }}
       >
-        <div className="grid h-[62px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4">
+        <div className="grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4">
           <h1 className="truncate text-xl font-extrabold text-primary-foreground">
             {brandName}
           </h1>
@@ -289,7 +289,7 @@ const ProviderSelection = () => {
         ref={contentRef}
         className="flex-1 overflow-y-auto"
         style={{ 
-          paddingTop: 'calc(3.875rem + var(--effective-safe-area-top, 0px))',
+          paddingTop: 'calc(3.5rem + var(--effective-safe-area-top, 0px))',
           paddingBottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' 
         }}
         onTouchStart={handleTouchStart}
