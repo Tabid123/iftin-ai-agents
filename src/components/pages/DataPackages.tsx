@@ -15,6 +15,7 @@ import { useConnectivity } from '@/contexts/ConnectivityContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { buildPaymentUssd, formatUssdAmount, fetchIftinCatalog, hasCatalog, isOrderingBlocked, mapProviders, mapCategories, mapPackages, mapPaymentProviders } from '@/lib/iftinCatalog';
 import UssdDiscoveryDialog, { type DiscoveryChoice } from '@/components/UssdDiscoveryDialog';
+import MaamuusFlow from '@/components/ussd/MaamuusFlow';
 
 
 interface Category {
@@ -513,6 +514,48 @@ const DataPackages = () => {
     return <Clock className={iconClass} />;
   };
 
+
+  // *212* Maamuus: haddii xirmooyinka la muujinayo ay dhammaantood yihiin discovery roots,
+  // waxaa la furayaa flow-ga gaarka ah ee live-ka ah (halkii liiska caadiga ah).
+  const maamuusRoots = filteredPackages.filter((p: any) => discoveryRootIds.includes(String(p.id)));
+  if (maamuusRoots.length > 0 && maamuusRoots.length === filteredPackages.length) {
+    return (
+      <MaamuusFlow
+        roots={maamuusRoots}
+        providerName={providerName}
+        brandName={brandName}
+        onBack={() => navigate(-1)}
+        onSelect={(sel) => {
+          const packageCategory = categories.find(c => c.id === (sel.root.category_id || sel.root.categoryId));
+          const dynamicPackage = {
+            id: sel.root.id,
+            providerId: sel.root.provider_id || sel.root.providerId || resolvedProviderId,
+            categoryId: sel.root.category_id || sel.root.categoryId || null,
+            name: sel.choice.label,
+            price: `$${Number(sel.choice.selling_price).toFixed(2)}`,
+            costPrice: Number(sel.root.cost_price ?? sel.root.costPrice ?? 0),
+            data: sel.choice.info_line1 || sel.choice.label,
+            validity: sel.choice.info_line2 || sel.choice.label,
+            ussdCode: sel.root.ussd_code || sel.root.ussdCode || null,
+          };
+          navigate(`/payment/${provider}`, {
+            state: {
+              package: dynamicPackage,
+              providerName,
+              categoryName: packageCategory?.category_name || '',
+              discoveryId: sel.discoveryId,
+              discoveryLabel: sel.choice.carrier_label || sel.choice.label,
+              discoveryIndex: sel.choice.index,
+              discoveryReceiverPhone: sel.receiverPhone,
+              discoveryRootId: sel.root.id,
+              prefillSenderPhone: sel.senderPhone,
+              prefillPaymentProviderId: sel.paymentProviderId,
+            },
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
