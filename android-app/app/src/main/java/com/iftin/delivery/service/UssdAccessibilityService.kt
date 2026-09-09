@@ -2,6 +2,9 @@ package com.iftin.delivery.service
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,23 +15,25 @@ import android.view.accessibility.AccessibilityNodeInfo
 /**
  * Drives Android USSD dialogs for *870*, *866*, *101* and *212*.
  *
- * The carrier/menu selection rules live in UssdMenuFlow. This service deliberately
- * mirrors the proven Riyokaab interaction behaviour: live-window scanning, Samsung/STK
- * polling, hold/resume support, stale-dialog protection and input verification before Send.
+ * Carrier/menu selection rules live in UssdMenuFlow. Interaction behaviour is
+ * intentionally aligned with Riyokaab's proven Android agent: live-window scanning,
+ * Samsung/STK polling, exact-input verification, visible digit-key fallback,
+ * delayed Send retries, hold/resume and stale-dialog protection.
  */
 class UssdAccessibilityService : AccessibilityService() {
     companion object {
         private const val TAG = "IftinUssdAccess"
-        private const val INPUT_SETTLE_MS = 850L
-        private const val ACTIVE_POLL_MS = 220L
+        private const val INPUT_SETTLE_MS = 1000L
+        private const val ACTIVE_POLL_MS = 200L
         private const val HOLD_POLL_MS = 450L
         private const val IDLE_POLL_MS = 900L
-        private const val RETRY_GUARD_MS = 1100L
+        private const val RETRY_GUARD_MS = 1200L
+        private const val SEND_RETRY_MS = 200L
+        private const val MAX_SEND_RETRIES = 20
 
         @Volatile private var instance: UssdAccessibilityService? = null
         @Volatile private var holdAwaitingSelection = false
 
-        /** Close an existing carrier session before a completely new dial if needed. */
         fun closeUssdSession() {
             instance?.closeCurrentSession()
         }
@@ -61,8 +66,6 @@ class UssdAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (!UssdMenuFlow.isActive(this) && !holdAwaitingSelection) return
-        // Events are only hints. Always re-read the live windows instead of retaining
-        // event.source, which Android may recycle immediately after this callback.
         handler.postDelayed({ driveLiveDialog() }, 100L)
     }
 
@@ -76,24 +79,15 @@ class UssdAccessibilityService : AccessibilityService() {
         super.onDestroy()
     }
 
-    /**
-     * Samsung/STK can replace a USSD menu without emitting a useful accessibility event.
-     * Keep a lightweight poller alive for the whole accessibility-service lifetime.
-     */
     private fun startWatcher() {
         if (watcher != null) return
         lateinit var loop: Runnable
         loop = Runnable {
             val active = UssdMenuFlow.isActive(this)
-
-            // Discovery hold intentionally deactivates the flow while the carrier dialog
-            // remains open. Once DeliveryService calls resumeHeldSelection(), the same
-            // dialog must be driven immediately even if Android emits no new event.
             if (active && !UssdMenuFlow.isDiscoveryMode(this) && holdAwaitingSelection) {
                 holdAwaitingSelection = false
                 Log.d(TAG, "Held *212 session re-armed; resuming existing live dialog")
             }
-
             if (active) {
                 if (!lastSeenActive) {
                     actionInFlight = false
@@ -103,28 +97,22 @@ class UssdAccessibilityService : AccessibilityService() {
                 driveLiveDialog()
             }
             lastSeenActive = active
-
-            val delay = when {
+            handler.postDelayed(loop, when {
                 active -> ACTIVE_POLL_MS
                 holdAwaitingSelection -> HOLD_POLL_MS
                 else -> IDLE_POLL_MS
-            }
-            handler.postDelayed(loop, delay)
+            })
         }
         watcher = loop
         handler.post(loop)
     }
 
     private fun driveLiveDialog() {
-        if (holdAwaitingSelection) return
-        if (!UssdMenuFlow.isActive(this)) return
-
+        if (holdAwaitingSelection || !UssdMenuFlow.isActive(this)) return
         val root = obtainBestUssdRoot() ?: return
         val dialogText = collectText(root)
         if (!UssdMenuFlow.isUssdDialogText(dialogText)) return
 
-        // Discovery has priority over all normal step matching. Never press Send when
-        // the package menu is being held for the customer/reseller to choose from.
         if (UssdMenuFlow.isDiscoveryMode(this) && UssdMenuFlow.isPackageMenuDialog(dialogText)) {
             UssdMenuFlow.saveDiscoveryMenu(this, dialogText)
             DeliveryService.signalDiscoveryCaptured(this, dialogText)
@@ -144,7 +132,6 @@ class UssdAccessibilityService : AccessibilityService() {
         val step = UssdMenuFlow.matchStep(this, dialogText)
         if (step != null) {
             if (actionInFlight) return
-
             val input = UssdMenuFlow.inputFor(this, step, dialogText)
             if (input.isBlank()) {
                 Log.e(TAG, "Unsafe/empty selection for ${step.name}; refusing default purchase")
@@ -157,7 +144,6 @@ class UssdAccessibilityService : AccessibilityService() {
             val fingerprint = "${step.order}:$input:${dialogText.take(220)}"
             val now = System.currentTimeMillis()
             if (fingerprint == lastFingerprint && now - lastActionAt < RETRY_GUARD_MS) return
-
             actionInFlight = true
             actionStep = step.order
             lastFingerprint = fingerprint
@@ -167,10 +153,6 @@ class UssdAccessibilityService : AccessibilityService() {
                 clearAction(step.order, allowImmediateRetry = true)
                 return
             }
-
-            // Never click Send in the same frame as ACTION_SET_TEXT. Re-query the live
-            // carrier window and verify that the same step is still visible and the exact
-            // requested value is actually committed in its editable field.
             handler.postDelayed({ verifyAndSubmit(step.order, input) }, INPUT_SETTLE_MS)
             return
         }
@@ -184,7 +166,6 @@ class UssdAccessibilityService : AccessibilityService() {
             "failed", "khalad", "error", "insufficient", "invalid", "declined",
             "rejected", "service error", "try again", "horey furtay"
         ).any(lower::contains)
-
         if (success || failure) {
             actionInFlight = false
             actionStep = -1
@@ -199,7 +180,6 @@ class UssdAccessibilityService : AccessibilityService() {
             clearAction(expectedStep)
             return
         }
-
         val root = obtainBestUssdRoot() ?: run {
             clearAction(expectedStep, allowImmediateRetry = true)
             return
@@ -213,16 +193,20 @@ class UssdAccessibilityService : AccessibilityService() {
         }
 
         if (!verifyInput(root, input)) {
-            Log.w(TAG, "ACTION_SET_TEXT did not commit '$input'; retrying input once")
-            if (!enterInput(root, input)) {
+            val retryEntered = if (input.all(Char::isDigit)) {
+                Log.w(TAG, "Input not visible; using Riyokaab-style visible digit fallback")
+                typeDigitsViaAccessibility(root, input)
+            } else {
+                enterInput(root, input)
+            }
+            if (!retryEntered) {
                 clearAction(expectedStep, allowImmediateRetry = true)
                 return
             }
             handler.postDelayed({ verifyAndSubmitSecondPass(expectedStep, input) }, INPUT_SETTLE_MS)
             return
         }
-
-        submitStep(root, expectedStep)
+        submitStep(root, expectedStep, input)
     }
 
     private fun verifyAndSubmitSecondPass(expectedStep: Int, input: String) {
@@ -236,20 +220,41 @@ class UssdAccessibilityService : AccessibilityService() {
             clearAction(expectedStep, allowImmediateRetry = true)
             return
         }
-        submitStep(root, expectedStep)
+        submitStep(root, expectedStep, input)
     }
 
-    private fun submitStep(root: AccessibilityNodeInfo, expectedStep: Int) {
-        val send = findButton(root, listOf("send", "dir", "ok", "haye"))
-        if (send == null || !clickNodeOrParent(send)) {
-            Log.w(TAG, "Send button not found/clickable; step remains pending")
+    private fun submitStep(root: AccessibilityNodeInfo, expectedStep: Int, input: String, attempt: Int = 0) {
+        if (clickSendAcrossWindows(root)) {
+            UssdMenuFlow.markStepCompleted(this, expectedStep)
+            Log.d(TAG, "USSD step $expectedStep submitted")
+            clearAction(expectedStep)
+            handler.postDelayed({ if (UssdMenuFlow.isActive(this)) driveLiveDialog() }, 350L)
+            return
+        }
+
+        if (attempt >= MAX_SEND_RETRIES) {
+            Log.e(TAG, "Verified input but Send stayed unavailable for step $expectedStep")
             clearAction(expectedStep, allowImmediateRetry = true)
             return
         }
 
-        UssdMenuFlow.markStepCompleted(this, expectedStep)
-        Log.d(TAG, "USSD step $expectedStep submitted")
-        clearAction(expectedStep)
+        handler.postDelayed({
+            if (!UssdMenuFlow.isActive(this) || actionStep != expectedStep) {
+                clearAction(expectedStep)
+                return@postDelayed
+            }
+            val liveRoot = obtainBestUssdRoot() ?: run {
+                clearAction(expectedStep, allowImmediateRetry = true)
+                return@postDelayed
+            }
+            val liveStep = UssdMenuFlow.matchStep(this, collectText(liveRoot))
+            if (liveStep?.order == expectedStep && verifyInput(liveRoot, input)) {
+                submitStep(liveRoot, expectedStep, input, attempt + 1)
+            } else {
+                Log.w(TAG, "Dialog changed while waiting for Send; step will be re-evaluated")
+                clearAction(expectedStep, allowImmediateRetry = true)
+            }
+        }, SEND_RETRY_MS)
     }
 
     private fun clearAction(step: Int, allowImmediateRetry: Boolean = false) {
@@ -263,37 +268,30 @@ class UssdAccessibilityService : AccessibilityService() {
         }
     }
 
-    /** Select the live window most likely to be the carrier dialog, not Gboard/launcher. */
     private fun obtainBestUssdRoot(): AccessibilityNodeInfo? {
         val roots = mutableListOf<AccessibilityNodeInfo>()
         rootInActiveWindow?.let(roots::add)
-        try {
-            windows?.forEach { window -> window.root?.let(roots::add) }
-        } catch (_: Throwable) {
-            // Some vendor builds can throw while the window list is changing.
-        }
+        try { windows?.forEach { window -> window.root?.let(roots::add) } } catch (_: Throwable) {}
         if (roots.isEmpty()) return null
-
-        return roots
-            .distinctBy { System.identityHashCode(it) }
+        return roots.distinctBy { System.identityHashCode(it) }
             .map { it to collectText(it) }
             .filter { (_, text) -> UssdMenuFlow.isUssdDialogText(text) }
-            .maxByOrNull { (root, text) -> scoreRoot(root, text) }
-            ?.first
+            .maxByOrNull { (root, text) -> scoreRoot(root, text) }?.first
     }
 
     private fun scoreRoot(root: AccessibilityNodeInfo, text: String): Int {
         val lower = text.lowercase()
         var score = text.length.coerceAtMost(240) / 20
+        if (UssdMenuFlow.isUssdDialogText(text)) score += 500
         if (UssdMenuFlow.isPackageMenuDialog(text)) score += 300
         if (UssdMenuFlow.parseMenuItems(text).isNotEmpty()) score += 220
+        if (lower.contains("mudnaan")) score += 140
         if (lower.contains("pin") || lower.contains("furaha") || lower.contains("password")) score += 140
         if (lower.contains("send") || lower.contains("dir") || lower.contains("ok")) score += 45
         if (hasEditable(root)) score += 35
-
         val pkg = root.packageName?.toString()?.lowercase().orEmpty()
         if (pkg.contains("inputmethod") || pkg.contains("keyboard") || pkg.contains("gboard")) score -= 500
-        if (lower.contains("english (uk)") || lower.contains("english (us)") || lower.contains("q | w | e")) score -= 250
+        if (lower.contains("english (uk)") || lower.contains("english (us)") || lower.contains("q | w | e") || lower.contains("!#1")) score -= 250
         return score
     }
 
@@ -310,32 +308,96 @@ class UssdAccessibilityService : AccessibilityService() {
     }
 
     private fun enterInput(root: AccessibilityNodeInfo, input: String): Boolean {
-        val editable = findEditable(root) ?: return false
+        val editable = findEditable(root)
+        if (editable == null) return if (input.all(Char::isDigit)) typeDigitsViaAccessibility(root, input) else false
+
+        editable.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
+        editable.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         val args = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, input)
         }
-        editable.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
-        return editable.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        var success = editable.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args)
+        if (!success) {
+            try {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboard.setPrimaryClip(ClipData.newPlainText("ussd_input", input))
+                success = editable.performAction(AccessibilityNodeInfo.ACTION_PASTE)
+                Log.d(TAG, "Paste fallback for USSD input success=$success")
+            } catch (e: Throwable) {
+                Log.w(TAG, "Paste fallback failed: ${e.message}")
+            }
+        }
+        if (!success && input.all(Char::isDigit)) return typeDigitsViaAccessibility(root, input)
+        return success
     }
 
     private fun verifyInput(root: AccessibilityNodeInfo, expected: String): Boolean {
-        val normalizedExpected = expected.trim()
+        val normalizedExpected = expected.replace('\u00A0', ' ').trim()
+        val expectedDigits = normalizedExpected.filter(Char::isDigit)
         fun walk(node: AccessibilityNodeInfo?): Boolean {
             if (node == null) return false
             val isField = node.isEditable || node.className?.toString()?.contains("EditText", ignoreCase = true) == true
             if (isField && node.isVisibleToUser) {
-                val value = node.text?.toString()?.trim().orEmpty()
-                if (value == normalizedExpected || value.endsWith(normalizedExpected)) return true
+                val value = node.text?.toString().orEmpty().replace('\u00A0', ' ').trim()
+                val actualDigits = value.filter(Char::isDigit)
+                if (value == normalizedExpected ||
+                    (expectedDigits.isNotEmpty() && actualDigits == expectedDigits) ||
+                    (node.isPassword && value.length == normalizedExpected.length)
+                ) return true
             }
             for (i in 0 until node.childCount) if (walk(node.getChild(i))) return true
             return false
         }
         if (walk(root)) return true
-
-        // Keyboard can temporarily become the active window, so verify across every live window.
         try {
+            rootInActiveWindow?.let { if (walk(it)) return true }
+            windows?.forEach { window -> if (walk(window.root)) return true }
+        } catch (_: Throwable) {}
+        return false
+    }
+
+    private fun typeDigitsViaAccessibility(root: AccessibilityNodeInfo, value: String): Boolean {
+        val digits = value.filter(Char::isDigit)
+        if (digits.isEmpty()) return false
+        var typedAny = false
+        for (digit in digits) {
+            val clicked = clickDigitKeyAcrossWindows(root, digit.toString())
+            Log.d(TAG, "Digit fallback '$digit' clicked=$clicked")
+            if (!clicked) return typedAny
+            typedAny = true
+        }
+        return typedAny
+    }
+
+    private fun clickDigitKeyAcrossWindows(primary: AccessibilityNodeInfo, digit: String): Boolean {
+        if (clickDigitKey(primary, digit)) return true
+        try {
+            rootInActiveWindow?.let { if (clickDigitKey(it, digit)) return true }
+            windows?.forEach { window -> if (clickDigitKey(window.root, digit)) return true }
+        } catch (_: Throwable) {}
+        return false
+    }
+
+    private fun clickDigitKey(root: AccessibilityNodeInfo?, digit: String): Boolean {
+        if (root == null) return false
+        val nodes = try { root.findAccessibilityNodeInfosByText(digit) } catch (_: Throwable) { emptyList() }
+        for (node in nodes) {
+            val nodeText = node.text?.toString()?.trim().orEmpty()
+            val nodeDesc = node.contentDescription?.toString()?.trim().orEmpty()
+            if ((nodeText == digit || nodeDesc == digit) && clickNodeOrParent(node)) return true
+        }
+        return false
+    }
+
+    private fun clickSendAcrossWindows(primary: AccessibilityNodeInfo): Boolean {
+        if (findButton(primary, listOf("send", "dir", "ok", "confirm", "haye"))?.let(::clickNodeOrParent) == true) return true
+        try {
+            rootInActiveWindow?.let { active ->
+                if (findButton(active, listOf("send", "dir", "ok", "confirm", "haye"))?.let(::clickNodeOrParent) == true) return true
+            }
             windows?.forEach { window ->
-                if (walk(window.root)) return true
+                val root = window.root ?: return@forEach
+                if (findButton(root, listOf("send", "dir", "ok", "confirm", "haye"))?.let(::clickNodeOrParent) == true) return true
             }
         } catch (_: Throwable) {}
         return false
@@ -379,8 +441,15 @@ class UssdAccessibilityService : AccessibilityService() {
         actionInFlight = false
         actionStep = -1
         handler.post {
-            val root = obtainBestUssdRoot()
-            if (root != null) clickCancel(root) else performGlobalAction(GLOBAL_ACTION_BACK)
+            var attempts = 0
+            lateinit var closer: Runnable
+            closer = Runnable {
+                attempts++
+                val root = obtainBestUssdRoot()
+                if (root != null) clickCancel(root) else performGlobalAction(GLOBAL_ACTION_BACK)
+                if (attempts < 3) handler.postDelayed(closer, 400L)
+            }
+            handler.post(closer)
         }
     }
 }
