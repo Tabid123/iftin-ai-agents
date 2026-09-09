@@ -1063,7 +1063,7 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
             </div>
           )}
 
-          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newCode.sim_password} onChange={e => setNewCode(p => ({...p, sim_password: e.target.value.replace(/\D/g, '')}))} placeholder="SIM PIN (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+          <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newCode.sim_password} onChange={e => setNewCode(p => ({...p, sim_password: e.target.value.replace(/\D/g, '')}))} placeholder="SIM Password (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <input value={newCode.notes} onChange={e => setNewCode(p => ({...p, notes: e.target.value}))} placeholder="Notes (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="flex gap-2">
             <button onClick={saveCode} className="flex-1 py-2 bg-green-500 text-white rounded-lg text-sm font-medium">{editingId ? '💾 Save' : '➕ Add'}</button>
