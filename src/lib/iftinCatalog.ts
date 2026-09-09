@@ -109,24 +109,72 @@ export async function resolveTenantId(): Promise<string | null> {
   return resolved;
 }
 
+/**
+ * Iftin API data belongs ONLY to tenants whose delivery_mode is `api_partner`.
+ * Android/SIM tenants must never see the Iftin catalog (providers, packages,
+ * payment numbers) — they use their own local data.
+ */
+const MODE_CACHE_KEY = 'najax.tenant_delivery_mode';
+const modeMemo = new Map<string, boolean>();
+
+function clearCatalogCache() {
+  memo = null;
+  try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+}
+
+export async function isApiPartnerTenant(tenantId: string): Promise<boolean> {
+  if (modeMemo.has(tenantId)) return modeMemo.get(tenantId)!;
+  let cached: boolean | null = null;
+  try {
+    const raw = localStorage.getItem(MODE_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as { id: string; mode: string };
+      if (parsed?.id === tenantId) cached = parsed.mode === 'api_partner';
+    }
+  } catch { /* ignore */ }
+
+  try {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('delivery_mode')
+      .eq('id', tenantId)
+      .maybeSingle();
+    if (error) return cached ?? true; // offline / transient → keep previous behaviour
+    const isPartner = (data as any)?.delivery_mode === 'api_partner';
+    modeMemo.set(tenantId, isPartner);
+    try {
+      localStorage.setItem(
+        MODE_CACHE_KEY,
+        JSON.stringify({ id: tenantId, mode: isPartner ? 'api_partner' : 'android_device' }),
+      );
+    } catch { /* ignore */ }
+    return isPartner;
+  } catch {
+    return cached ?? true;
+  }
+}
+
 /** Fetches the catalog (5 min cache). Returns null when Iftin is not configured. */
 export async function fetchIftinCatalog(opts: { force?: boolean } = {}): Promise<IftinCatalog | null> {
+  const tenantId = await resolveTenantId();
+  if (!tenantId) return null;
+
+  if (!(await isApiPartnerTenant(tenantId))) {
+    clearCatalogCache();
+    return null;
+  }
+
   if (!memo && !opts.force) {
     const entry = readCachedEntry();
     if (entry && Date.now() - entry.at < TTL_MS) {
-      const headerTenant = getTenantId();
-      memo = { at: entry.at, tenantId: headerTenant, catalog: entry.catalog };
-      if (headerTenant) {
-        await ensureResellerOverrides();
-        return entry.catalog;
-      }
+      memo = { at: entry.at, tenantId, catalog: entry.catalog };
+      await ensureResellerOverrides();
+      return entry.catalog;
     }
   }
 
   if (!opts.force && inflight) return inflight;
 
-  const tenantId = await resolveTenantId();
-  if (!tenantId) return null;
 
   if (!opts.force && memo && memo.tenantId === tenantId && Date.now() - memo.at < TTL_MS) {
     await ensureResellerOverrides();
