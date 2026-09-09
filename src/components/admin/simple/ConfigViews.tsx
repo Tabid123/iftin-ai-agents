@@ -1025,14 +1025,6 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
       {showAdd && (
         <div className="bg-white dark:bg-gray-800 rounded-xl border p-3 space-y-2 animate-in slide-in-from-top-2">
           <div className="text-xs font-bold text-gray-600">{editingId ? '✏️ Edit' : '➕ New'}</div>
-          <div className="flex gap-1.5">
-            {FLOW_PRESETS.map(f => (
-              <button key={f.key} type="button" onClick={() => applyPreset(f.key)}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold border ${activeFlow === f.key ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}>
-                {f.key}
-              </button>
-            ))}
-          </div>
           <select value={newCode.provider_id} onChange={e => setNewCode(p => ({...p, provider_id: e.target.value, category_id: '', package_id: ''}))} className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none">
             <option value="">Select Provider *</option>
             {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
@@ -1045,13 +1037,32 @@ export const SystemCodesCustomView = ({ isSo }: { isSo: boolean }) => {
             <option value="">Package (optional)</option>
             {filteredProvPackages.map(p => <option key={p.id} value={p.id}>{p.package_name}</option>)}
           </select>
-          <input value={newCode.code_template} onChange={e => setNewCode(p => ({...p, code_template: e.target.value}))} placeholder="e.g. *729{receiver_phone}*{cost_price}*{sim_password}#" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none font-mono" />
-          <div className="grid grid-cols-3 gap-2">
-            {[0, 1, 2].map(i => (
-              <input key={i} value={menuPath[i]} onChange={e => setMenuPath(prev => { const next = [...prev] as [string, string, string]; next[i] = e.target.value; return next; })}
-                placeholder={`Menu ${i + 1}`} className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
-            ))}
+
+          {/* Preset box */}
+          <div className="rounded-xl border border-indigo-200 dark:border-indigo-800 bg-indigo-50/60 dark:bg-indigo-950/20 p-2.5 space-y-2">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 dark:text-indigo-300">
+              ⚡ Doorasho Preset (USSD Flow Cusub)
+            </div>
+            <select value={activeFlow} onChange={e => applyPreset(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-800 text-sm outline-none">
+              <option value="">— Dooro USSD flow diyaar ah —</option>
+              {FLOW_PRESETS.map(f => <option key={f.key} value={f.key}>Flow *{f.key}* — {f.template}</option>)}
+            </select>
+            <p className="text-[10px] leading-snug text-indigo-600/90 dark:text-indigo-300/80">
+              Flow "870"/"866": geli LAMBAR (tusaale "1") ama KEYWORDS (tusaale "Data,Xogta"). Marka lambarada dialog-ka is-bedelaan, keyword-yada ayaa la scan gareynayaa oo lambarka sax ah ayaa la qoraya. Isticmaal ";" si aad u kala saarto keyword badan.
+            </p>
           </div>
+
+          <input value={newCode.code_template} onChange={e => setNewCode(p => ({...p, code_template: e.target.value}))} placeholder="e.g. *870*{receiver_phone}#" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none font-mono" />
+          {activeFlow && (
+            <div className="grid grid-cols-3 gap-2">
+              {[0, 1, 2].map(i => (
+                <input key={i} value={menuPath[i]} onChange={e => setMenuPath(prev => { const next = [...prev] as [string, string, string]; next[i] = e.target.value; return next; })}
+                  placeholder={`Menu ${i + 1}`} className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
+              ))}
+            </div>
+          )}
+
           <input type="tel" inputMode="numeric" pattern="[0-9]*" value={newCode.sim_password} onChange={e => setNewCode(p => ({...p, sim_password: e.target.value.replace(/\D/g, '')}))} placeholder="SIM PIN (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <input value={newCode.notes} onChange={e => setNewCode(p => ({...p, notes: e.target.value}))} placeholder="Notes (optional)" className="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border text-sm outline-none" />
           <div className="flex gap-2">
