@@ -92,7 +92,7 @@ const SplashScreen = () => {
   const t = useTenant();
   const tenant = t.status === 'ready' || t.status === 'suspended' ? t.tenant : null;
   const logo = tenant?.logo_url || najaxLogoSplash;
-  const name = tenant?.name || 'Najax Data';
+  const name = tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || 'App';
 
   // Hide the native artwork only after this web screen has painted, preventing
   // the white WebView flash while still keeping launch time short.

@@ -33,7 +33,7 @@ const ProviderSelection = () => {
   const support = useSupportPhone();
   const tenant = t.status === 'ready' || t.status === 'suspended' ? t.tenant : null;
   const brandLogo = tenant?.logo_url || najaxLogo;
-  const brandName = tenant?.name || 'Najax Data';
+  const brandName = tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || 'App';
   const [showOfflineToast, setShowOfflineToast] = useState(false);
   const [showContactSheet, setShowContactSheet] = useState(false);
   
@@ -151,7 +151,7 @@ const ProviderSelection = () => {
             }
             const { data, error } = await supabase.from('providers_config').select('promotional_text').eq('id', p.id).maybeSingle();
             if (error) throw error;
-            return data?.promotional_text || 'Najax Data ka iibso Internet adigoona qof wicin, waqti kasta!';
+            return data?.promotional_text || `${brandName} ka iibso Internet adigoona qof wicin, waqti kasta!`;
           },
           staleTime: 10 * 60 * 1000
         });

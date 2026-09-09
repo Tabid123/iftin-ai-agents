@@ -382,8 +382,8 @@ const SimpleAdminDashboard = () => {
             {/* Top row: brand/logo centered */}
             <div className="flex items-center justify-center px-4 py-3">
               <div className="flex items-center gap-2">
-                <CachedImage src={tenant?.logo_url || najaxLogo} alt={`${tenant?.name || 'Najax Data'} logo`} className="w-8 h-8 rounded-lg object-contain bg-white" fallback={<img src={najaxLogo} alt="Logo" className="w-8 h-8 rounded-lg object-contain bg-white" />} />
-                <h1 className="text-lg font-bold">{tenant?.name || 'Najax Data'}</h1>
+                <CachedImage src={tenant?.logo_url || najaxLogo} alt={`${tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || 'App'} logo`} className="w-8 h-8 rounded-lg object-contain bg-white" fallback={<img src={najaxLogo} alt="Logo" className="w-8 h-8 rounded-lg object-contain bg-white" />} />
+                <h1 className="text-lg font-bold">{tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || 'App'}</h1>
                 {/* LIVE indicator */}
                 <span className="flex items-center gap-1 bg-white/15 border border-white/25 px-2 py-0.5 rounded-full ml-1">
                   <span className="relative flex h-2 w-2">
@@ -704,7 +704,7 @@ const SimpleAdminDashboard = () => {
                   : (isSo ? '🔕 Ogeysiisyadu way damanyihiin' : '🔕 Notifications OFF')
                 }
               </button>
-              <div className="text-center text-xs text-gray-400 mt-2">{tenant?.name || 'Najax Data'} Admin v1.0</div>
+              <div className="text-center text-xs text-gray-400 mt-2">{tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || 'App'} Admin v1.0</div>
             </div>
           </main>
         </div>

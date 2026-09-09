@@ -159,7 +159,7 @@ export function SimpleAdminSidebar() {
         <div className="flex items-center gap-3">
           <img src={tenant?.logo_url || najaxLogo} alt="Logo" className="w-12 h-12 rounded-full border-2 border-blue-400 object-contain bg-white" onError={(e) => { (e.currentTarget as HTMLImageElement).src = najaxLogo }} />
           <div>
-            <div className="text-white font-semibold text-base">{tenant?.name || 'Najax Data'}</div>
+            <div className="text-white font-semibold text-base">{tenant?.name || (import.meta.env.VITE_TENANT_NAME as string) || 'App'}</div>
             <div className="flex items-center gap-1 text-xs text-blue-400">
               <span className="w-2 h-2 bg-green-400 rounded-full inline-block" />
               Owner
