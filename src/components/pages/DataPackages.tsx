@@ -266,40 +266,9 @@ const DataPackages = () => {
     initialData: [],
   });
 
-  const { data: promotionalTextData } = useQuery({
-    queryKey: ['promotionalText', provider],
-    queryFn: async () => {
-      // Try cache first only when offline is confirmed
-      if (isReallyOnline === false) {
-        const cached = localStorage.getItem('offline_providers');
-        if (cached) {
-          const providers = JSON.parse(cached);
-          const prov = providers.find((p: any) => p.id === provider);
-          return prov?.promotional_text || null;
-        }
-        return null;
-      }
-      
-      const catalog = await fetchIftinCatalog();
-      if (hasCatalog(catalog)) {
-        const fromIftin = mapProviders(catalog!).find(p => p.id === provider);
-        if (fromIftin) return fromIftin.promotional_text || null;
-      }
-
-      const { data, error } = await supabase
-        .from('providers_config')
-        .select('promotional_text')
-        .eq('id', provider)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.promotional_text;
-    },
-    enabled: !!provider,
-    staleTime: 10 * 60 * 1000,
-    retry: false,
-  });
-
-  const promotionalText = promotionalTextData || `${brandName} ka iibso Internet adigoona qof wicin, waqti kasta, xitaa offline!`;
+  // This line identifies the tenant, not the mobile provider. Derive it from
+  // the active tenant so an old provider promo can never leak another brand.
+  const promotionalText = `${brandName} ka iibso Internet adigoona qof wicin, waqti kasta, xitaa offline!`;
 
   const getFilteredPackages = () => {
     // If coming from category selection, filter by that category
@@ -564,7 +533,7 @@ const DataPackages = () => {
         className={`${getBrandBackgroundClass(providerName)} text-white py-4 px-4`}
         style={{ paddingTop: 'calc(1rem + var(--effective-safe-area-top, 0px))', boxSizing: 'border-box' as const }}
       >
-        <div className="grid grid-cols-[40px_minmax(0,1fr)_40px] items-center min-h-[56px]">
+        <div className="relative flex min-h-[56px] items-center">
           <Button
             variant="ghost"
             size="icon"
@@ -573,13 +542,12 @@ const DataPackages = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="min-w-0 text-center">
+          <div className="pointer-events-none absolute inset-x-12 min-w-0 text-center">
             <h1 className="text-lg font-bold truncate">
               {selectedCategoryId ? getSelectedCategoryName() : brandName}
             </h1>
             <p className="text-white/80 text-sm truncate">{providerName}</p>
           </div>
-          <div aria-hidden="true" />
         </div>
       </div>
 
