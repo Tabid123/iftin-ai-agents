@@ -210,6 +210,12 @@ class DeliveryApiClient {
     private fun rpc(name: String, body: JSONObject): String = request("POST", "$restBase/rpc/$name", body)
 
     private fun request(method: String, url: String, body: JSONObject? = null): String {
+        val (status, text) = rawRequest(method, url, body)
+        if (status !in 200..299) error("HTTP $status: ${text.take(300)}")
+        return text
+    }
+
+    private fun rawRequest(method: String, url: String, body: JSONObject? = null): Pair<Int, String> {
         if (!isConfigured()) error("Delivery API is not configured")
         val connection = URL(url).openConnection() as HttpURLConnection
         connection.requestMethod = method
