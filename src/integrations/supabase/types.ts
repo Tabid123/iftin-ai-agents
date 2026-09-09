@@ -2638,6 +2638,13 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_tenant_owner_emails: {
+        Args: never
+        Returns: {
+          owner_email: string
+          tenant_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
