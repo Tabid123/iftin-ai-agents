@@ -465,6 +465,7 @@ const PaymentProviders = () => {
         expected_amount: parseFloat(amount),
         discovery_id: discoveryId || null,
         discovery_label: discoveryLabel || null,
+        discovery_index: discoveryIndex || null,
         status: 'pending'
       };
 
