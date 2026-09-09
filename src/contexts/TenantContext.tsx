@@ -30,6 +30,9 @@ type TenantState =
   | { status: "ready"; tenant: Tenant; isPlatform: false }
   | { status: "suspended"; tenant: Tenant; isPlatform: false }
   | { status: "not_found"; tenant: null; isPlatform: false; slug: string }
+  // No connection AND nothing cached/baked in: this is a connectivity problem,
+  // never a "this workspace does not exist" problem.
+  | { status: "offline"; tenant: null; isPlatform: false; slug: string }
   | { status: "needs_code"; tenant: null; isPlatform: false }
   | { status: "platform"; tenant: null; isPlatform: true };
 
@@ -90,11 +93,17 @@ function resolveSlug(): { slug: string | null; isPlatform: boolean; needsCode?: 
     return { slug: overrideTenant, isPlatform: false };
   }
 
-  // Native app: hostname is always `localhost`, so never fall through to the
-  // platform console. Use the build-time slug, then the stored one, otherwise
-  // ask the user for their reseller code.
+  // Per-tenant build (APK/AAB): the slug baked into the bundle is the single
+  // source of truth and must win even when the WebView has not yet exposed the
+  // Capacitor global. Shared by every tenant — no per-tenant branches here.
+  const bakedSlug = buildTenantSlug();
+  if (bakedSlug) return { slug: bakedSlug, isPlatform: false };
+
+  // Native app without a baked slug: hostname is always `localhost`, so never
+  // fall through to the platform console. Use the stored slug, otherwise ask
+  // the user for their reseller code.
   if (isNativeApp()) {
-    const slug = buildTenantSlug() || storedTenantSlug();
+    const slug = storedTenantSlug();
     if (slug) return { slug, isPlatform: false };
     return { slug: null, isPlatform: false, needsCode: true };
   }
@@ -226,14 +235,16 @@ function writeCachedTenant(slug: string, tenant: Tenant) {
 }
 
 /**
- * Native APKs already know which tenant they were built for. When the device
- * starts fully offline there may be no cached tenant row yet, so use safe
- * build-time identity instead of incorrectly showing "Workspace lama helin".
+ * Per-tenant builds already know which tenant they were built for. When the
+ * device starts fully offline there may be no cached tenant row yet, so use the
+ * safe build-time identity instead of incorrectly showing "Workspace lama
+ * helin". Shared by every tenant build; the check is only "was this bundle
+ * built for this slug", never a per-tenant special case.
  * The empty id is intentional: tenant-scoped network calls stay disabled until
  * the real row is resolved from Supabase.
  */
 function buildFallbackTenant(slug: string): Tenant | null {
-  if (!isNativeApp() || buildTenantSlug() !== slug) return null;
+  if (buildTenantSlug() !== slug) return null;
   const buildName = (import.meta.env.VITE_TENANT_NAME as string | undefined)?.trim();
   const buildLogo = (import.meta.env.VITE_TENANT_LOGO_URL as string | undefined)?.trim();
   const buildColor = (import.meta.env.VITE_SPLASH_COLOR as string | undefined)?.trim();
@@ -321,32 +332,68 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     let cancelled = false;
+    let retryTimer: number | undefined;
+    let transientFailures = 0;
 
-    const resolveTenantFromNetwork = async () => {
-      let rpcData: unknown = null;
-      let error: unknown = null;
+    const hasOfflineIdentity = Boolean(cached || buildFallback);
+    const LOOKUP_TIMEOUT_MS = 8000;
+    const MAX_TRANSIENT_RETRIES = 3;
+
+    /**
+     * Three distinct outcomes, never collapsed into one another:
+     *  - "missing"    → the server answered and the tenant does not exist (404)
+     *  - "transient"  → no connection, timeout, or server error (5xx)
+     *  - a tenant row → success
+     */
+    const lookupTenant = async (): Promise<
+      { kind: "row"; tenant: Tenant } | { kind: "missing" } | { kind: "transient" }
+    > => {
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        return { kind: "transient" };
+      }
       try {
         // The slug lookup itself must never inherit a stale tenant header.
         setTenantHeader(null);
-        const res = await supabase.rpc("get_tenant_by_slug", { p_slug: slug });
-        rpcData = res.data;
-        error = res.error;
-      } catch (e) {
-        error = e;
+        const res = (await Promise.race([
+          supabase.rpc("get_tenant_by_slug", { p_slug: slug }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("tenant-lookup-timeout")), LOOKUP_TIMEOUT_MS),
+          ),
+        ])) as { data: unknown; error: unknown };
+
+        if (res.error) return { kind: "transient" };
+        const data = Array.isArray(res.data) ? res.data[0] : res.data;
+        if (!data) return { kind: "missing" };
+        return { kind: "row", tenant: data as Tenant };
+      } catch {
+        // Network failure, aborted request, or timeout — never a real 404.
+        return { kind: "transient" };
       }
+    };
+
+    const resolveTenantFromNetwork = async () => {
+      const result = await lookupTenant();
       if (cancelled) return;
 
-      const data = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-
-      if (error) {
-        // Network/server failure: cached/build identity remains usable offline.
+      if (result.kind === "transient") {
+        // Offline / server trouble: keep the cached or build identity in place
+        // so the app stays fully usable, and retry quietly in the background.
         if (cached?.id) setTenantHeader(cached.id);
-        if (cached || buildFallback) return;
-        setState({ status: "not_found", tenant: null, isPlatform: false, slug });
+        transientFailures += 1;
+        if (!hasOfflineIdentity) {
+          if (transientFailures >= MAX_TRANSIENT_RETRIES) {
+            // Still nothing to show: report a connectivity problem, not a 404.
+            setState({ status: "offline", tenant: null, isPlatform: false, slug });
+          }
+          retryTimer = window.setTimeout(
+            () => void resolveTenantFromNetwork(),
+            Math.min(2000 * transientFailures, 15000),
+          );
+        }
         return;
       }
 
-      if (!data) {
+      if (result.kind === "missing") {
         // Successful lookup with no row means this tenant genuinely does not
         // exist; do not let an old cache/build identity mask that result.
         setTenantHeader(null);
@@ -354,7 +401,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      const tenant = data as Tenant;
+      transientFailures = 0;
+      const tenant = result.tenant;
       setTenantHeader(tenant.id);
       applyBranding(tenant);
       writeCachedTenant(slug, tenant);
@@ -371,12 +419,21 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // A fresh-install offline APK has no real tenant id yet. Resolve it as soon
     // as connectivity returns, without forcing a page reload or visible flash.
-    const handleOnline = () => void resolveTenantFromNetwork();
+    const handleOnline = () => {
+      transientFailures = 0;
+      void resolveTenantFromNetwork();
+    };
+    const handleVisible = () => {
+      if (document.visibilityState === "visible") void resolveTenantFromNetwork();
+    };
     window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisible);
 
     return () => {
       cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
       window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisible);
     };
   }, []);
 
