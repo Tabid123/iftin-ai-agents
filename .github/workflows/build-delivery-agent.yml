@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      DELIVERY_API_BASE_URL: ${{ secrets.SUPABASE_URL }}/functions/v1/activate-package
+      DELIVERY_API_BASE_URL: ${{ secrets.SUPABASE_URL && format('{0}/functions/v1/activate-package', secrets.SUPABASE_URL) || '' }}
       DELIVERY_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
