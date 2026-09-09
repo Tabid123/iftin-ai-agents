@@ -52,7 +52,24 @@ const Profile = () => {
   };
 
   const handleDeleteAccount = () => {
-    localStorage.clear();
+    // Wipe user-specific data only. The tenant identity/branding of this build
+    // must survive, otherwise the app would forget which reseller it belongs to
+    // and could show the "workspace not found" page while offline.
+    const keepExact = new Set(['najax.tenant_slug', 'app_cache_version', 'theme', 'language']);
+    const keepPrefixes = ['najax.tenant_cache.', 'offline_', 'iftin_catalog_v', 'img_cache'];
+    try {
+      const doomed: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key) continue;
+        if (keepExact.has(key)) continue;
+        if (keepPrefixes.some((p) => key.startsWith(p))) continue;
+        doomed.push(key);
+      }
+      doomed.forEach((key) => localStorage.removeItem(key));
+    } catch {
+      /* storage unavailable */
+    }
     toast.success('Account-ka waa la tirtiray');
     navigate('/', { replace: true });
   };
