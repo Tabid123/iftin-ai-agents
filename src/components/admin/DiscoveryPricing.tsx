@@ -331,6 +331,48 @@ export default function DiscoveryPricing() {
 
       {tab === 'roots' && (
         <div className="space-y-3">
+          <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-bold text-sm text-indigo-900 dark:text-indigo-200">Maamuus</p>
+              {maamuusCategory && (
+                <button
+                  onClick={toggleMaamuus}
+                  disabled={busy}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold ${maamuusOn ? 'bg-emerald-600 text-white' : 'bg-gray-300 text-gray-700'}`}
+                >
+                  {maamuusOn ? 'Shaqeynaya' : 'Damisan'}
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-indigo-800/80 dark:text-indigo-300/80">
+              Data · Kuhadal · Data iyo Kuhadal — hal gujis ku diyaari, kadibna shid ama demi.
+            </p>
+            <select
+              value={maamuusProviderId}
+              onChange={e => setSetupProvider(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border text-sm outline-none"
+            >
+              {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
+            </select>
+            <div className="flex flex-wrap gap-1.5">
+              {MAAMUUS_ROOTS.map(name => {
+                const ok = maamuusRoots.some(r => r.package_name.trim().toLowerCase() === name.toLowerCase());
+                return (
+                  <span key={name} className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-white dark:bg-gray-800 text-gray-500 border'}`}>
+                    {ok ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} {name}
+                  </span>
+                );
+              })}
+            </div>
+            <button
+              onClick={setupMaamuus}
+              disabled={busy}
+              className="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-60"
+            >
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Diyaari Maamuus
+            </button>
+          </div>
+
           <button
             onClick={() => setRootForm(rootForm ? null : { provider_id: providers[0]?.id || '', category_id: '', package_name: '', label: '', is_active: true })}
             className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5"
