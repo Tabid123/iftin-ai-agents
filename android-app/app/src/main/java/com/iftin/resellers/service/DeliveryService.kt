@@ -132,7 +132,17 @@ class DeliveryService : Service() {
             if (actionStartedAt > 0 && System.currentTimeMillis() - actionStartedAt > 90_000) {
                 when (mode) {
                     ActiveMode.QUEUE -> currentQueue?.let {
-                        api.reportStatus(it.id, deviceId, "timeout", null, "USSD response timeout")
+                        // Before declaring timeout, give the operator SMS a chance:
+                        // many confirmations arrive by SMS after the USSD dialog closes.
+                        val sms = waitForProviderSms(actionStartedAt, 12_000)
+                        when {
+                            sms != null && SmsHelper.looksSuccessful(sms) ->
+                                api.reportStatus(it.id, deviceId, "completed", sms, null)
+                            sms != null ->
+                                api.reportStatus(it.id, deviceId, "failed", sms, "SMS xaqiijin guul darreystay: ${sms.take(300)}")
+                            else ->
+                                api.reportStatus(it.id, deviceId, "timeout", null, "USSD response timeout")
+                        }
                     }
                     ActiveMode.SELECTION -> currentSelection?.let {
                         // Mark the held-session delivery lost. The backend will enqueue the
@@ -258,12 +268,19 @@ class DeliveryService : Service() {
             try {
                 when (mode) {
                     ActiveMode.QUEUE -> currentQueue?.let {
+                        // Attach the operator confirmation SMS (Hormuud/EVC Plus,
+                        // Somtel, ...) so the tenant sees the real SMS, not only
+                        // the USSD dialog text.
+                        val sms = waitForProviderSms(actionStartedAt, 10_000)
+                        val fullResponse = if (sms.isNullOrBlank()) response else "$response\nSMS: $sms"
+                        val smsSuccess = !sms.isNullOrBlank() && SmsHelper.looksSuccessful(sms)
+                        val finalSuccess = success || smsSuccess
                         api.reportStatus(
                             queueId = it.id,
                             deviceId = deviceId,
-                            status = if (success) "completed" else "failed",
-                            providerResponse = response,
-                            errorMessage = if (success) null else response.take(300),
+                            status = if (finalSuccess) "completed" else "failed",
+                            providerResponse = fullResponse,
+                            errorMessage = if (finalSuccess) null else fullResponse.take(300),
                         )
                     }
                     ActiveMode.SELECTION -> currentSelection?.let {
@@ -278,6 +295,17 @@ class DeliveryService : Service() {
                 resetActive()
             }
         }
+    }
+
+    /** Polls briefly for an operator confirmation SMS newer than [sinceMs]. */
+    private suspend fun waitForProviderSms(sinceMs: Long, maxWaitMs: Long): String? {
+        val deadline = System.currentTimeMillis() + maxWaitMs
+        var found = SmsHelper.latestProviderSms(this, sinceMs)
+        while (found == null && System.currentTimeMillis() < deadline) {
+            delay(2000)
+            found = SmsHelper.latestProviderSms(this, sinceMs)
+        }
+        return found
     }
 
     private fun resetActive() {
