@@ -342,6 +342,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
     // Clear any stale header before resolving the new tenant so the lookup
     // itself isn't filtered by a wrong tenant.
     setTenantHeader(null);
+    purgeForeignContentCaches(slug);
 
     const cached = readCachedTenant(slug);
     const buildFallback = cached ? null : buildFallbackTenant(slug);
