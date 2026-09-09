@@ -135,6 +135,81 @@ export default function DiscoveryPricing() {
     [categories, rootForm?.provider_id],
   );
 
+  // ---------- Maamuus quick setup ----------
+  const maamuusProviderId = setupProvider || providers[0]?.id || '';
+  const maamuusCategory = useMemo(
+    () => categories.find(c => c.provider_id === maamuusProviderId && String(c.category_name || '').trim().toLowerCase() === 'maamuus'),
+    [categories, maamuusProviderId],
+  );
+  const maamuusRoots = useMemo(
+    () => (maamuusCategory ? roots.filter(r => r.category_id === maamuusCategory.id) : []),
+    [roots, maamuusCategory],
+  );
+  const maamuusOn = !!maamuusCategory?.is_active && maamuusRoots.some(r => r.is_active);
+
+  const setupMaamuus = async () => {
+    if (!maamuusProviderId) { toast.error('Fadlan dooro shirkadda'); return; }
+    setBusy(true);
+    try {
+      let categoryId = maamuusCategory?.id as string | undefined;
+      if (!categoryId) {
+        const { data, error } = await supabase.from('package_categories')
+          .insert([{ category_name: 'Maamuus', provider_id: maamuusProviderId, display_order: 99, is_active: true } as any])
+          .select('id').single();
+        if (error) throw error;
+        categoryId = data!.id as string;
+      }
+      const existing = new Set(
+        roots.filter(r => r.category_id === categoryId).map(r => r.package_name.trim().toLowerCase()),
+      );
+      const missing = MAAMUUS_ROOTS.filter(n => !existing.has(n.toLowerCase()));
+      if (missing.length) {
+        const { error } = await supabase.from('data_packages_config').insert(
+          missing.map((name, i) => ({
+            provider_id: maamuusProviderId,
+            category_id: categoryId,
+            package_name: name,
+            connection_type_label: name,
+            data_amount: 'Live',
+            validity_days: '—',
+            selling_price: 0,
+            cost_price: 0,
+            ussd_code: '*212*{receiver_phone}#',
+            is_discovery_root: true,
+            is_active: true,
+            display_order: i + 1,
+          })) as any,
+        );
+        if (error) throw error;
+      }
+      toast.success('Maamuus waa diyaar');
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Lama diyaarin karin');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleMaamuus = async () => {
+    if (!maamuusCategory) return;
+    setBusy(true);
+    try {
+      const next = !maamuusOn;
+      const [catRes, rootRes] = await Promise.all([
+        supabase.from('package_categories').update({ is_active: next }).eq('id', maamuusCategory.id),
+        supabase.from('data_packages_config').update({ is_active: next }).eq('category_id', maamuusCategory.id).eq('is_discovery_root', true),
+      ]);
+      if (catRes.error || rootRes.error) throw (catRes.error || rootRes.error);
+      toast.success(next ? 'Maamuus waa la shidey' : 'Maamuus waa la damiyay');
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Lama beddeli karin');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   // ---------- roots ----------
   const saveRoot = async () => {
     if (!rootForm?.provider_id || !rootForm.package_name.trim()) { toast.error('Fadlan buuxi shirkadda iyo magaca'); return; }
