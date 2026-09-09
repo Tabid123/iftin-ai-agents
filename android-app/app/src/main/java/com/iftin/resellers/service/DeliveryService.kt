@@ -132,7 +132,17 @@ class DeliveryService : Service() {
             if (actionStartedAt > 0 && System.currentTimeMillis() - actionStartedAt > 90_000) {
                 when (mode) {
                     ActiveMode.QUEUE -> currentQueue?.let {
-                        api.reportStatus(it.id, deviceId, "timeout", null, "USSD response timeout")
+                        // Before declaring timeout, give the operator SMS a chance:
+                        // many confirmations arrive by SMS after the USSD dialog closes.
+                        val sms = waitForProviderSms(actionStartedAt, 12_000)
+                        when {
+                            sms != null && SmsHelper.looksSuccessful(sms) ->
+                                api.reportStatus(it.id, deviceId, "completed", sms, null)
+                            sms != null ->
+                                api.reportStatus(it.id, deviceId, "failed", sms, "SMS xaqiijin guul darreystay: ${sms.take(300)}")
+                            else ->
+                                api.reportStatus(it.id, deviceId, "timeout", null, "USSD response timeout")
+                        }
                     }
                     ActiveMode.SELECTION -> currentSelection?.let {
                         // Mark the held-session delivery lost. The backend will enqueue the
