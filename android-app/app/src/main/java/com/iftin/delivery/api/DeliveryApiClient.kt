@@ -95,13 +95,14 @@ class DeliveryApiClient {
         )
     }
 
-    suspend fun completeDiscovery(id: String, rawMenu: String, items: List<Pair<Int, String>>, hold: Boolean) =
+    suspend fun completeDiscovery(deviceId: String, id: String, rawMenu: String, items: List<Pair<Int, String>>, hold: Boolean) =
         withContext(Dispatchers.IO) {
             val rows = JSONArray()
             items.forEach { (index, label) -> rows.put(JSONObject().put("index", index.toString()).put("label", label)) }
             rpc(
                 "complete_discovery",
                 JSONObject()
+                    .put("p_device_id", deviceId)
                     .put("p_id", id)
                     .put("p_raw_menu", rawMenu)
                     .put("p_items", rows)
@@ -111,10 +112,11 @@ class DeliveryApiClient {
             Unit
         }
 
-    suspend fun failDiscovery(id: String, error: String) = withContext(Dispatchers.IO) {
+    suspend fun failDiscovery(deviceId: String, id: String, error: String) = withContext(Dispatchers.IO) {
         rpc(
             "complete_discovery",
             JSONObject()
+                .put("p_device_id", deviceId)
                 .put("p_id", id)
                 .put("p_raw_menu", "")
                 .put("p_items", JSONArray())
@@ -138,16 +140,20 @@ class DeliveryApiClient {
         )
     }
 
-    suspend fun completeDiscoverySelection(id: String, success: Boolean, response: String?) = withContext(Dispatchers.IO) {
+    suspend fun completeDiscoverySelection(deviceId: String, id: String, success: Boolean, response: String?) = withContext(Dispatchers.IO) {
         rpc(
             "complete_discovery_selection",
-            JSONObject().put("p_id", id).put("p_success", success).put("p_response", response ?: JSONObject.NULL),
+            JSONObject()
+                .put("p_device_id", deviceId)
+                .put("p_id", id)
+                .put("p_success", success)
+                .put("p_response", response ?: JSONObject.NULL),
         )
         Unit
     }
 
-    suspend fun discoverySessionLost(id: String) = withContext(Dispatchers.IO) {
-        rpc("discovery_session_lost", JSONObject().put("p_id", id))
+    suspend fun discoverySessionLost(deviceId: String, id: String) = withContext(Dispatchers.IO) {
+        rpc("discovery_session_lost", JSONObject().put("p_device_id", deviceId).put("p_id", id))
         Unit
     }
 
