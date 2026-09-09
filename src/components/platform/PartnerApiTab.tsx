@@ -194,6 +194,14 @@ export default function PartnerApiTab({ tenant, onRefresh }: Props) {
           </div>
         </div>
 
+        {!isPartner && (
+          <p className="text-sm text-muted-foreground">
+            Tenant-kan wuxuu ku shaqeeyaa Android Device (APK / SIM / USSD) — API key iyo xogta Iftin API looma baahna.
+            Haddii aad rabto API, ka dooro "api_partner" kor.
+          </p>
+        )}
+
+        {isPartner && (
         <Tabs defaultValue="key">
           <TabsList>
             <TabsTrigger value="key">Iftin Key</TabsTrigger>
