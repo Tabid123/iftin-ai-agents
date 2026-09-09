@@ -160,13 +160,18 @@ const RotatingBanner = () => {
         if (cancelled) return;
         if (error) throw error;
         const freshBanners = Array.isArray(data) ? (data as Banner[]) : [];
-        if (freshBanners.length > 0) {
-          setBanners(freshBanners);
-          try {
+        // Tenant-kan ayaa xogtiisa keliya la muujinayaa. Haddii uu banner
+        // lahayn, tirtir wixii hore — yaan tenant kale banner-kiisa u muuqan.
+        setBanners(freshBanners);
+        try {
+          if (freshBanners.length > 0) {
             localStorage.setItem(bannerCacheKey, JSON.stringify(freshBanners));
-            if (bannerTimestampKey) localStorage.setItem(bannerTimestampKey, String(Date.now()));
-          } catch {}
-        }
+          } else {
+            localStorage.removeItem(bannerCacheKey);
+          }
+          if (bannerTimestampKey) localStorage.setItem(bannerTimestampKey, String(Date.now()));
+        } catch {}
+
       } catch {
         // Keep the last known snapshot.
       } finally {
