@@ -12,14 +12,18 @@ const setVar = (name: string, value: string) => {
   document.documentElement.style.setProperty(name, value);
 };
 
-/** Use Capacitor SystemBars' measured CSS variables on Android and env() elsewhere. */
+/**
+ * Android's WebView is already laid out below the status bar in this app.
+ * Reusing SystemBars' top inset there counts the status bar twice and makes
+ * every tenant header too tall. The bottom inset remains measured because the
+ * fixed navigation still needs to clear the gesture area.
+ */
 export const useEdgeToEdge = () => {
   useEffect(() => {
     const setSafeArea = () => {
       if (isAndroidWebView()) {
-        // Capacitor injects these from the real Android WindowInsets, avoiding
-        // unreliable env() values in older Android WebViews.
-        setVar('--effective-safe-area-top', 'var(--safe-area-inset-top, env(safe-area-inset-top, 0px))');
+        // The native window already places the WebView below the status icons.
+        setVar('--effective-safe-area-top', '0px');
         setVar('--effective-safe-area-bottom', 'var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))');
       } else {
         // iOS / web: the browser reports correct insets.

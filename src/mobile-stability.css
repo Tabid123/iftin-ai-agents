@@ -23,7 +23,7 @@
 @media (max-width: 767px) {
   /* The fixed header wrapper already owns the top safe-area padding. Keep its
    * inner toolbar at 56px so the inset is applied exactly once. */
-  .min-h-screen.bg-background.flex.flex-col > .fixed.top-0.left-0.right-0.z-50 > .grid.h-\[62px\] {
+  .min-h-screen.bg-background.flex.flex-col > .fixed.top-0.left-0.right-0.z-50 > .grid.h-14 {
     height: 56px !important;
     min-height: 56px !important;
   }
