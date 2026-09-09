@@ -542,12 +542,6 @@ const DataPackages = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div className="pointer-events-none absolute inset-x-12 min-w-0 text-center">
-            <h1 className="text-lg font-bold truncate">
-              {selectedCategoryId ? getSelectedCategoryName() : brandName}
-            </h1>
-            <p className="text-white/80 text-sm truncate">{providerName}</p>
-          </div>
         </div>
       </div>
 
