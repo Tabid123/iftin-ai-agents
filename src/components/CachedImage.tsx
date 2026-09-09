@@ -44,6 +44,7 @@ const CachedImage = ({ src, alt, bundledName, kind = 'provider', providerName, f
   }
 
   if (!resolved || failed) {
+    if (kind === 'category') return <img src={genericCategoryImage} alt={alt} {...rest} />;
     return <>{fallback ?? <span className="flex size-full items-center justify-center rounded bg-muted text-muted-foreground" aria-hidden="true"><ImageOff className="size-5" /></span>}</>;
   }
 
