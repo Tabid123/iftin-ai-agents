@@ -30,6 +30,21 @@ export const TenantGate: React.FC<Props> = ({ children }) => {
     return <ResellerCodeGate />;
   }
 
+  if (state.status === "offline") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-md text-center space-y-4">
+          <WifiOff className="h-12 w-12 mx-auto text-muted-foreground" />
+          <h1 className="text-2xl font-bold">Xiriir ma jiro</h1>
+          <p className="text-muted-foreground">
+            App-ku ma gaari karo server-ka hadda. Hubi internet-kaaga — waan
+            isku dayi doonnaa mar kale si toos ah.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (state.status === "not_found") {
 
     return (
