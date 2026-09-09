@@ -38,6 +38,16 @@ export default function ResellerDetailPage() {
   const [newCreds, setNewCreds] = useState<{ email: string | null; password: string } | null>(null)
   const [copied, setCopied] = useState(false)
   const [impersonating, setImpersonating] = useState(false)
+  const [ownerEmail, setOwnerEmail] = useState<string | null>(null)
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.rpc('get_tenant_owner_emails')
+      const row = (data ?? []).find((r: any) => r.tenant_id === id)
+      setOwnerEmail(row?.owner_email ?? null)
+    })()
+  }, [id])
+
 
   const impersonate = async () => {
     setImpersonating(true)
