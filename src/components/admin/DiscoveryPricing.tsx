@@ -55,6 +55,8 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]['key'];
 
+const MAAMUUS_ROOTS = ['Data', 'Kuhadal', 'Data iyo Kuhadal'];
+
 const emptyPrice = (rootId: string): PriceRow => ({
   root_package_id: rootId,
   label: '',
@@ -90,6 +92,8 @@ export default function DiscoveryPricing() {
   const [unmatched, setUnmatched] = useState<Unmatched[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [selectedRoot, setSelectedRoot] = useState<string>('');
+  const [setupProvider, setSetupProvider] = useState<string>('');
+  const [busy, setBusy] = useState(false);
 
   const [rootForm, setRootForm] = useState<{ id?: string; provider_id: string; category_id: string; package_name: string; label: string; is_active: boolean } | null>(null);
   const [priceForm, setPriceForm] = useState<PriceRow | null>(null);
@@ -98,7 +102,7 @@ export default function DiscoveryPricing() {
     const [rootRes, provRes, catRes, sessRes] = await Promise.all([
       supabase.from('data_packages_config').select('id, package_name, provider_id, category_id, is_active, is_discovery_root, connection_type_label').eq('is_discovery_root', true).order('display_order'),
       supabase.from('providers_config').select('id, provider_name').order('display_order'),
-      supabase.from('package_categories').select('id, category_name, provider_id').order('display_order'),
+      supabase.from('package_categories').select('id, category_name, provider_id, is_active').order('display_order'),
       supabase.from('ussd_package_discoveries').select('id, phone_number, status, device_id, session_state, selected_label, error, queued_at, claimed_at').order('queued_at', { ascending: false }).limit(40),
     ]);
     const rootList = (rootRes.data || []) as Root[];
@@ -134,6 +138,81 @@ export default function DiscoveryPricing() {
     () => (rootForm?.provider_id ? categories.filter(c => c.provider_id === rootForm.provider_id) : categories),
     [categories, rootForm?.provider_id],
   );
+
+  // ---------- Maamuus quick setup ----------
+  const maamuusProviderId = setupProvider || providers[0]?.id || '';
+  const maamuusCategory = useMemo(
+    () => categories.find(c => c.provider_id === maamuusProviderId && String(c.category_name || '').trim().toLowerCase() === 'maamuus'),
+    [categories, maamuusProviderId],
+  );
+  const maamuusRoots = useMemo(
+    () => (maamuusCategory ? roots.filter(r => r.category_id === maamuusCategory.id) : []),
+    [roots, maamuusCategory],
+  );
+  const maamuusOn = !!maamuusCategory?.is_active && maamuusRoots.some(r => r.is_active);
+
+  const setupMaamuus = async () => {
+    if (!maamuusProviderId) { toast.error('Fadlan dooro shirkadda'); return; }
+    setBusy(true);
+    try {
+      let categoryId = maamuusCategory?.id as string | undefined;
+      if (!categoryId) {
+        const { data, error } = await supabase.from('package_categories')
+          .insert([{ category_name: 'Maamuus', provider_id: maamuusProviderId, display_order: 99, is_active: true } as any])
+          .select('id').single();
+        if (error) throw error;
+        categoryId = data!.id as string;
+      }
+      const existing = new Set(
+        roots.filter(r => r.category_id === categoryId).map(r => r.package_name.trim().toLowerCase()),
+      );
+      const missing = MAAMUUS_ROOTS.filter(n => !existing.has(n.toLowerCase()));
+      if (missing.length) {
+        const { error } = await supabase.from('data_packages_config').insert(
+          missing.map((name, i) => ({
+            provider_id: maamuusProviderId,
+            category_id: categoryId,
+            package_name: name,
+            connection_type_label: name,
+            data_amount: 'Live',
+            validity_days: '—',
+            selling_price: 0,
+            cost_price: 0,
+            ussd_code: '*212*{receiver_phone}#',
+            is_discovery_root: true,
+            is_active: true,
+            display_order: i + 1,
+          })) as any,
+        );
+        if (error) throw error;
+      }
+      toast.success('Maamuus waa diyaar');
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Lama diyaarin karin');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleMaamuus = async () => {
+    if (!maamuusCategory) return;
+    setBusy(true);
+    try {
+      const next = !maamuusOn;
+      const [catRes, rootRes] = await Promise.all([
+        supabase.from('package_categories').update({ is_active: next }).eq('id', maamuusCategory.id),
+        supabase.from('data_packages_config').update({ is_active: next }).eq('category_id', maamuusCategory.id).eq('is_discovery_root', true),
+      ]);
+      if (catRes.error || rootRes.error) throw (catRes.error || rootRes.error);
+      toast.success(next ? 'Maamuus waa la shidey' : 'Maamuus waa la damiyay');
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message || 'Lama beddeli karin');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // ---------- roots ----------
   const saveRoot = async () => {
@@ -252,6 +331,48 @@ export default function DiscoveryPricing() {
 
       {tab === 'roots' && (
         <div className="space-y-3">
+          <div className="bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="font-bold text-sm text-indigo-900 dark:text-indigo-200">Maamuus</p>
+              {maamuusCategory && (
+                <button
+                  onClick={toggleMaamuus}
+                  disabled={busy}
+                  className={`px-3 py-1.5 rounded-lg text-[11px] font-bold ${maamuusOn ? 'bg-emerald-600 text-white' : 'bg-gray-300 text-gray-700'}`}
+                >
+                  {maamuusOn ? 'Shaqeynaya' : 'Damisan'}
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-indigo-800/80 dark:text-indigo-300/80">
+              Data · Kuhadal · Data iyo Kuhadal — hal gujis ku diyaari, kadibna shid ama demi.
+            </p>
+            <select
+              value={maamuusProviderId}
+              onChange={e => setSetupProvider(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border text-sm outline-none"
+            >
+              {providers.map(p => <option key={p.id} value={p.id}>{p.provider_name}</option>)}
+            </select>
+            <div className="flex flex-wrap gap-1.5">
+              {MAAMUUS_ROOTS.map(name => {
+                const ok = maamuusRoots.some(r => r.package_name.trim().toLowerCase() === name.toLowerCase());
+                return (
+                  <span key={name} className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-white dark:bg-gray-800 text-gray-500 border'}`}>
+                    {ok ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} {name}
+                  </span>
+                );
+              })}
+            </div>
+            <button
+              onClick={setupMaamuus}
+              disabled={busy}
+              className="w-full py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-60"
+            >
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Diyaari Maamuus
+            </button>
+          </div>
+
           <button
             onClick={() => setRootForm(rootForm ? null : { provider_id: providers[0]?.id || '', category_id: '', package_name: '', label: '', is_active: true })}
             className="w-full py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-1.5"
