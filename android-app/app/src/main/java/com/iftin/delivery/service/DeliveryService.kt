@@ -130,7 +130,13 @@ class DeliveryService : Service() {
                         api.reportStatus(it.id, deviceId, "timeout", null, "USSD response timeout")
                     }
                     ActiveMode.SELECTION -> currentSelection?.let {
+                        // Mark the held-session delivery lost. The backend will enqueue the
+                        // safe *212* redial fallback for the already-paid order.
                         api.completeDiscoverySelection(deviceId, it.id, false, "USSD response timeout")
+                        heldDiscoveryId = null
+                        holdStartedAt = 0L
+                        UssdMenuFlow.clearDiscovery(this)
+                        UssdAccessibilityService.closeUssdSession()
                     }
                     else -> Unit
                 }
@@ -155,7 +161,9 @@ class DeliveryService : Service() {
             if (holdAge > 8 * 60_000L || (holdAge > 15_000L && api.hasWaitingDiscovery(deviceId))) {
                 api.discoverySessionLost(deviceId, heldId)
                 heldDiscoveryId = null
+                holdStartedAt = 0L
                 UssdMenuFlow.clearDiscovery(this)
+                UssdAccessibilityService.closeUssdSession()
             } else {
                 delay(1200)
                 return
@@ -256,6 +264,7 @@ class DeliveryService : Service() {
                     ActiveMode.SELECTION -> currentSelection?.let {
                         api.completeDiscoverySelection(deviceId, it.id, success, response)
                         heldDiscoveryId = null
+                        holdStartedAt = 0L
                         UssdMenuFlow.clearDiscovery(this@DeliveryService)
                     }
                     else -> Unit
