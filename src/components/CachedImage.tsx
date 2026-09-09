@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
 import { cacheImage, getCachedImage } from '@/lib/imageCache';
-import { getLocalImage, type LocalImageKind } from '@/lib/localImages';
+import { getLocalImage, genericCategoryImage, type LocalImageKind } from '@/lib/localImages';
 
 type Props = Omit<React.ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
   src: string | null | undefined;
@@ -44,6 +44,7 @@ const CachedImage = ({ src, alt, bundledName, kind = 'provider', providerName, f
   }
 
   if (!resolved || failed) {
+    if (kind === 'category') return <img src={genericCategoryImage} alt={alt} {...rest} />;
     return <>{fallback ?? <span className="flex size-full items-center justify-center rounded bg-muted text-muted-foreground" aria-hidden="true"><ImageOff className="size-5" /></span>}</>;
   }
 

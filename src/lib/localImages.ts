@@ -31,6 +31,10 @@ import banner1 from '@/assets/local-banners/banner1.jpeg';
 import banner2 from '@/assets/local-banners/banner2.jpeg';
 import banner3 from '@/assets/local-banners/banner3.png';
 import banner4 from '@/assets/local-banners/banner4.jpeg';
+import genericCategory from '@/assets/data-icon.png';
+
+/** Shown for categories (e.g. "Maamuus") that have no artwork in the Iftin API. */
+export const genericCategoryImage = genericCategory;
 
 export type LocalImageKind = 'provider' | 'payment' | 'category' | 'banner';
 
