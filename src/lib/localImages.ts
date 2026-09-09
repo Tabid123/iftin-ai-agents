@@ -121,7 +121,11 @@ export function localizeImage(
   name?: string | null,
   providerName?: string | null,
 ): string | null {
-  return getLocalImage(kind, name, source, providerName) ?? source ?? null;
+  // Artwork the tenant uploaded always wins — bundled assets are only a
+  // fallback for entries that have no image of their own.
+  const uploaded = (source ?? '').trim();
+  if (uploaded) return uploaded;
+  return getLocalImage(kind, name, source, providerName) ?? null;
 }
 
 export const bundledStaticImages = [
