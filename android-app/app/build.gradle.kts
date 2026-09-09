@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.iftin.delivery"
+    namespace = "com.iftin.resellers"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.iftin.delivery"
+        applicationId = "com.iftin.resellers"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
