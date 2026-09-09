@@ -875,6 +875,8 @@ export type Database = {
           display_order: number
           id: string
           is_active: boolean
+          is_discovery_root: boolean
+          is_ussd_only: boolean
           package_name: string
           profit_margin: number | null
           provider_id: string
@@ -893,6 +895,8 @@ export type Database = {
           display_order?: number
           id?: string
           is_active?: boolean
+          is_discovery_root?: boolean
+          is_ussd_only?: boolean
           package_name: string
           profit_margin?: number | null
           provider_id: string
@@ -911,6 +915,8 @@ export type Database = {
           display_order?: number
           id?: string
           is_active?: boolean
+          is_discovery_root?: boolean
+          is_ussd_only?: boolean
           package_name?: string
           profit_margin?: number | null
           provider_id?: string
@@ -1046,6 +1052,7 @@ export type Database = {
           attempts: number | null
           completed_at: string | null
           created_at: string
+          discovery_menu_label: string | null
           dispatch_device_id: string | null
           dispatched_at: string | null
           error_message: string | null
@@ -1067,6 +1074,7 @@ export type Database = {
           attempts?: number | null
           completed_at?: string | null
           created_at?: string
+          discovery_menu_label?: string | null
           dispatch_device_id?: string | null
           dispatched_at?: string | null
           error_message?: string | null
@@ -1088,6 +1096,7 @@ export type Database = {
           attempts?: number | null
           completed_at?: string | null
           created_at?: string
+          discovery_menu_label?: string | null
           dispatch_device_id?: string | null
           dispatched_at?: string | null
           error_message?: string | null
@@ -1173,6 +1182,57 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "device_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discovery_unmatched_labels: {
+        Row: {
+          created_at: string
+          hits: number
+          id: string
+          last_seen_at: string
+          normalized_label: string
+          raw_label: string
+          root_package_id: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hits?: number
+          id?: string
+          last_seen_at?: string
+          normalized_label: string
+          raw_label: string
+          root_package_id: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hits?: number
+          id?: string
+          last_seen_at?: string
+          normalized_label?: string
+          raw_label?: string
+          root_package_id?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discovery_unmatched_labels_root_package_id_fkey"
+            columns: ["root_package_id"]
+            isOneToOne: false
+            referencedRelation: "data_packages_config"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discovery_unmatched_labels_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1461,6 +1521,9 @@ export type Database = {
           delivered_at: string | null
           delivery_notes: string | null
           delivery_status: string | null
+          discovery_id: string | null
+          discovery_menu_label: string | null
+          discovery_root_id: string | null
           external_ref: string | null
           id: string
           invoice_url: string | null
@@ -1489,6 +1552,9 @@ export type Database = {
           delivered_at?: string | null
           delivery_notes?: string | null
           delivery_status?: string | null
+          discovery_id?: string | null
+          discovery_menu_label?: string | null
+          discovery_root_id?: string | null
           external_ref?: string | null
           id?: string
           invoice_url?: string | null
@@ -1517,6 +1583,9 @@ export type Database = {
           delivered_at?: string | null
           delivery_notes?: string | null
           delivery_status?: string | null
+          discovery_id?: string | null
+          discovery_menu_label?: string | null
+          discovery_root_id?: string | null
           external_ref?: string | null
           id?: string
           invoice_url?: string | null
@@ -1537,6 +1606,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_discovery_id_fkey"
+            columns: ["discovery_id"]
+            isOneToOne: false
+            referencedRelation: "ussd_package_discoveries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1878,6 +1954,8 @@ export type Database = {
       pending_online_payments: {
         Row: {
           created_at: string
+          discovery_id: string | null
+          discovery_label: string | null
           expected_amount: number
           id: string
           matched_at: string | null
@@ -1892,6 +1970,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discovery_id?: string | null
+          discovery_label?: string | null
           expected_amount: number
           id?: string
           matched_at?: string | null
@@ -1906,6 +1986,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discovery_id?: string | null
+          discovery_label?: string | null
           expected_amount?: number
           id?: string
           matched_at?: string | null
@@ -1919,6 +2001,13 @@ export type Database = {
           verified_phone?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pending_online_payments_discovery_id_fkey"
+            columns: ["discovery_id"]
+            isOneToOne: false
+            referencedRelation: "ussd_package_discoveries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pending_online_payments_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -2370,6 +2459,156 @@ export type Database = {
         }
         Relationships: []
       }
+      ussd_package_discoveries: {
+        Row: {
+          claimed_at: string | null
+          completed_at: string | null
+          created_at: string
+          device_id: string | null
+          error: string | null
+          expires_at: string | null
+          id: string
+          items: Json
+          phone_number: string
+          queued_at: string
+          raw_menu: string | null
+          root_package_id: string
+          selected_index: string | null
+          selected_label: string | null
+          selected_order_id: string | null
+          session_device_id: string | null
+          session_expires_at: string | null
+          session_note: string | null
+          session_state: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          error?: string | null
+          expires_at?: string | null
+          id?: string
+          items?: Json
+          phone_number: string
+          queued_at?: string
+          raw_menu?: string | null
+          root_package_id: string
+          selected_index?: string | null
+          selected_label?: string | null
+          selected_order_id?: string | null
+          session_device_id?: string | null
+          session_expires_at?: string | null
+          session_note?: string | null
+          session_state?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          claimed_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          device_id?: string | null
+          error?: string | null
+          expires_at?: string | null
+          id?: string
+          items?: Json
+          phone_number?: string
+          queued_at?: string
+          raw_menu?: string | null
+          root_package_id?: string
+          selected_index?: string | null
+          selected_label?: string | null
+          selected_order_id?: string | null
+          session_device_id?: string | null
+          session_expires_at?: string | null
+          session_note?: string | null
+          session_state?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ussd_package_discoveries_root_package_id_fkey"
+            columns: ["root_package_id"]
+            isOneToOne: false
+            referencedRelation: "data_packages_config"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ussd_package_discoveries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ussd_price_catalog: {
+        Row: {
+          cost_price: number
+          created_at: string
+          id: string
+          info_line1: string | null
+          info_line2: string | null
+          is_active: boolean
+          label: string
+          normalized_label: string
+          root_package_id: string
+          selling_price: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          cost_price?: number
+          created_at?: string
+          id?: string
+          info_line1?: string | null
+          info_line2?: string | null
+          is_active?: boolean
+          label: string
+          normalized_label?: string
+          root_package_id: string
+          selling_price?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          cost_price?: number
+          created_at?: string
+          id?: string
+          info_line1?: string | null
+          info_line2?: string | null
+          is_active?: boolean
+          label?: string
+          normalized_label?: string
+          root_package_id?: string
+          selling_price?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ussd_price_catalog_root_package_id_fkey"
+            columns: ["root_package_id"]
+            isOneToOne: false
+            referencedRelation: "data_packages_config"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ussd_price_catalog_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       verified_phones: {
         Row: {
           created_at: string
@@ -2417,13 +2656,68 @@ export type Database = {
         Args: { _delta: number; _tenant_id: string }
         Returns: number
       }
+      claim_discovery_selection: {
+        Args: { p_device_id: string }
+        Returns: Json
+      }
       claim_next_delivery: {
         Args: { p_device_id: string; p_providers: string[] }
         Returns: Json
       }
+      claim_next_discovery: { Args: { p_device_id: string }; Returns: Json }
+      complete_discovery: {
+        Args: {
+          p_device_id: string
+          p_error?: string
+          p_hold?: boolean
+          p_id: string
+          p_items?: Json
+          p_raw_menu: string
+        }
+        Returns: Json
+      }
+      complete_discovery_selection: {
+        Args: {
+          p_device_id: string
+          p_id: string
+          p_response?: string
+          p_success: boolean
+        }
+        Returns: Json
+      }
       current_request_tenant_id: { Args: never; Returns: string }
       current_tenant_id: { Args: never; Returns: string }
+      discovery_delivery_fallback: {
+        Args: { p_discovery_id: string }
+        Returns: undefined
+      }
+      discovery_has_waiting_request: {
+        Args: { p_device_id: string }
+        Returns: boolean
+      }
+      discovery_session_lost: {
+        Args: { p_device_id: string; p_id: string }
+        Returns: Json
+      }
       effective_tenant_id: { Args: never; Returns: string }
+      enqueue_discovery_selection:
+        | {
+            Args: {
+              p_discovery_id: string
+              p_label: string
+              p_order_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_discovery_id: string
+              p_label: string
+              p_order_id: string
+              p_tenant_id: string
+            }
+            Returns: Json
+          }
       get_active_categories: {
         Args: { p_provider_id?: string }
         Returns: {
@@ -2498,6 +2792,15 @@ export type Database = {
           validity_days: string
         }[]
       }
+      get_discovery_queue_status:
+        | { Args: { p_id: string }; Returns: Json }
+        | { Args: { p_id: string; p_tenant_id: string }; Returns: Json }
+      get_discovery_root_ids: {
+        Args: { p_provider_id: string }
+        Returns: {
+          package_id: string
+        }[]
+      }
       get_featured_packages: {
         Args: never
         Returns: {
@@ -2526,6 +2829,9 @@ export type Database = {
           selling_price: number
         }[]
       }
+      get_package_discovery:
+        | { Args: { p_id: string }; Returns: Json }
+        | { Args: { p_id: string; p_tenant_id: string }; Returns: Json }
       get_public_packages: {
         Args: { p_provider_id: string }
         Returns: {
@@ -2652,11 +2958,33 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_212_discovery_root: {
+        Args: { p_package_id: string; p_tenant_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: never; Returns: boolean }
       mark_delivery_dispatched: {
         Args: { p_device_id: string; p_queue_id: string }
         Returns: boolean
       }
+      release_discovery_session: { Args: { p_id: string }; Returns: Json }
+      request_header_tenant_id: { Args: never; Returns: string }
+      request_package_discovery:
+        | {
+            Args: { p_phone: string; p_root_package_id: string }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_phone: string
+              p_root_package_id: string
+              p_tenant_id: string
+            }
+            Returns: Json
+          }
+      ussd_duration_key: { Args: { p_label: string }; Returns: string }
+      ussd_normalize_label: { Args: { p_label: string }; Returns: string }
+      ussd_strip_price_prefix: { Args: { p_label: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "super_admin" | "moderator"
