@@ -44,7 +44,11 @@ export default function PartnerApiTab({ tenant, onRefresh }: Props) {
   }
 
   const load = async () => {
-    const [o, i] = await Promise.all([
+    if ((tenant.delivery_mode ?? 'android_device') !== 'api_partner') {
+      setOrders([]); setInvoices([]); setCatalog(null); setCred({ configured: false })
+      return
+    }
+
       supabase.from('partner_orders_ledger').select('*')
         .eq('tenant_id', tenant.id).order('created_at', { ascending: false }).limit(50),
       supabase.from('partner_invoices').select('*')
