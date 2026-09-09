@@ -118,7 +118,7 @@ class DeliveryService : Service() {
     }
 
     private suspend fun tick() {
-        if (!api.isConfigured() || deviceId.isBlank()) {
+        if (!api.isConfigured() || deviceId.isBlank() || !isSignedIn()) {
             delay(10_000)
             return
         }
