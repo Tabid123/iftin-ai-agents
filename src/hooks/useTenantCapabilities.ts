@@ -22,6 +22,16 @@ const PARTNER_HIDDEN = new Set<string>([
   'payment-settings', 'iftin-payment-numbers', 'iftin-payments',
 ]);
 
+/**
+ * Modules-ka kaliya khuseeya reseller-ka API partner ah.
+ * Tenant-ka Android delivery (SIM/USSD) ma arko kuwan.
+ */
+const PARTNER_ONLY = new Set<string>([
+  'iftin-wallet',   // Wallet-ka Iftin API
+  'warbixin',       // Warbixinta API-ga
+  'iftin-pricing',  // Qiimaha partner-ka ee Iftin
+]);
+
 const CACHE_KEY = 'najax.tenant_delivery_mode';
 const cache = new Map<string, DeliveryMode>();
 
@@ -59,7 +69,8 @@ export function useTenantCapabilities() {
     if (!view) return true;
     const key = view.replace(/^\/dashboard\/?/, '');
     if (!key) return true;
-    return !(isPartner && PARTNER_HIDDEN.has(key));
+    if (isPartner) return !PARTNER_HIDDEN.has(key);
+    return !PARTNER_ONLY.has(key);
   };
 
   return { mode, isPartner, canSee };
